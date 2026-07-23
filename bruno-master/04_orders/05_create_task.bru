@@ -1,0 +1,47 @@
+meta {
+  name: Create Task
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{base_url}}/api/v1/master/orders/{{order_id}}/tasks
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+headers {
+  Content-Type: application/json
+  Accept: application/json
+}
+
+body:json {
+  {
+    "title": "Замена прокладки крана",
+    "description": "Заменил резиновую прокладку, кран перестал капать"
+  }
+}
+
+docs {
+  # Create Task
+
+  Creates a task record within an order.
+  Each task can have before/after photos attached via endpoint #6.
+
+  **Response 201:**
+  ```json
+  {
+    "data": {
+      "id": 7,
+      "title": "Замена прокладки крана",
+      "description": "Заменил резиновую прокладку, кран перестал капать",
+      "before_photo": null,
+      "after_photo": null
+    }
+  }
+  ```
+}

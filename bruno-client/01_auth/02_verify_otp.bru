@@ -1,0 +1,56 @@
+meta {
+  name: Verify OTP
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{base_url}}/api/v1/client/auth/verify-otp
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Accept: application/json
+}
+
+body:json {
+  {
+    "phone": "{{client_phone}}",
+    "code": "108905"
+  }
+}
+
+script:post-response {
+  if (res.status === 200) {
+    bru.setVar("client_token", res.body.token);
+  }
+}
+
+docs {
+  # Verify OTP
+  
+  Verifies the OTP code. Auto-registers the client on first login.
+  Returns a Sanctum token with name `mobile-client`.
+  The script saves the token to `client_token` env var.
+  
+  **Response 200:**
+  ```json
+  {
+    "token": "1|...",
+    "is_new": true,
+    "client": {
+      "id": 1,
+      "name": null,
+      "phone": "+99361111222",
+      "city_id": null
+    }
+  }
+  ```
+  
+  Use `is_new: true` to redirect to the profile setup screen in Flutter.
+  
+  **Errors:**
+  - `422` — invalid or expired OTP
+}

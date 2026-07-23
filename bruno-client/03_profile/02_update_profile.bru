@@ -1,0 +1,49 @@
+meta {
+  name: Update Profile
+  type: http
+  seq: 2
+}
+
+patch {
+  url: {{base_url}}/api/v1/client/me
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{client_token}}
+}
+
+headers {
+  Content-Type: application/json
+  Accept: application/json
+}
+
+body:json {
+  {
+    "name": "Merdan Annagurdow",
+    "city_id": {{city_id}}
+  }
+}
+
+docs {
+  # Update Client Profile
+
+  Both fields are optional (`sometimes`). Send only what needs to change.
+  Required before the client can create orders (name + city_id must be set).
+
+  **Response 200:**
+  ```json
+  {
+    "data": {
+      "id": 1,
+      "name": "Merdan Annagurdow",
+      "phone": "+99361111222",
+      "city": { "id": 1, "name": "Ашхабад" }
+    }
+  }
+  ```
+
+  **Errors:**
+  - `422` — validation error (e.g. city_id not found)
+}

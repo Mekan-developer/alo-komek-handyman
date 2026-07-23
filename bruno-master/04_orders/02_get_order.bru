@@ -1,0 +1,51 @@
+meta {
+  name: Get Order Details
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{base_url}}/api/v1/master/orders/{{order_id}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+headers {
+  Accept: application/json
+}
+
+docs {
+  # Get Single Order
+
+  Returns full order details including client info, photos, and tasks.
+
+  **Response 200:**
+  ```json
+  {
+    "data": {
+      "id": 1,
+      "status": "assigned",
+      "client_name": "Merdan",
+      "client_phone": "+99361234567",
+      "address": "Ashgabat, Korogly 12",
+      "latitude": 37.95,
+      "longitude": 58.38,
+      "category": "Сантехника",
+      "description": "Сломался кран на кухне",
+      "photos": [
+        { "id": 1, "url": "https://...", "status": "done" }
+      ],
+      "tasks": [],
+      "created_at": "2026-05-16T10:00:00+05:00"
+    }
+  }
+  ```
+
+  **Errors:**
+  - `403` — order does not belong to this master
+  - `404` — order not found
+}

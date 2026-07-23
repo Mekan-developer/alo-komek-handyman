@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0b0e1a; font-family: 'Inter', sans-serif; color: #e2e8f0; }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 4px; }
+
+    @keyframes pulse-dot {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.5); }
+      50% { box-shadow: 0 0 0 5px rgba(34,197,94,0); }
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Rich text editor content styles */
+    .rte-content { outline: none; min-height: 120px; }
+    .rte-content b, .rte-content strong { font-weight: 700; color: #f1f5f9; }
+    .rte-content i, .rte-content em { font-style: italic; }
+    .rte-content u { text-decoration: underline; }
+    .rte-content s { text-decoration: line-through; }
+    .rte-content h1 { font-size: 18px; font-weight: 700; color: #f1f5f9; margin-bottom: 6px; }
+    .rte-content h2 { font-size: 15px; font-weight: 600; color: #f1f5f9; margin-bottom: 4px; }
+    .rte-content ul { padding-left: 18px; color: #cbd5e1; }
+    .rte-content ol { padding-left: 18px; color: #cbd5e1; }
+    .rte-content li { margin-bottom: 3px; font-size: 13px; }
+    .rte-content p { margin-bottom: 4px; }
+    .rte-content[data-empty="true"]:empty:before {
+      content: attr(data-placeholder);
+      color: #475569;
+      pointer-events: none;
+    }
+
+    /* Toolbar button active state */
+    .tb-btn:hover { background: rgba(255,255,255,0.1) !important; }
+    .tb-btn.active { background: rgba(99,102,241,0.2) !important; color: #818cf8 !important; }
+  </style>
+</helmet>
+
+<div style="display:flex; height:100vh; overflow:hidden; background:#0b0e1a;">
+
+  <!-- SIDEBAR -->
+  <div style="width:220px; min-width:220px; background:#10142a; display:flex; flex-direction:column; border-right:1px solid rgba(255,255,255,0.06);">
+    <div style="padding:20px 20px 16px; border-bottom:1px solid rgba(255,255,255,0.06);">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div style="width:38px; height:38px; border-radius:10px; background:linear-gradient(135deg,#6366f1,#8b5cf6); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; color:#fff; flex-shrink:0;">AK</div>
+        <span style="font-weight:700; font-size:15px; color:#f1f5f9; letter-spacing:-0.3px;">Alo-kömek</span>
+      </div>
+    </div>
+    <nav style="flex:1; padding:10px 10px; display:flex; flex-direction:column; gap:2px; overflow-y:auto;">
+      <sc-for list="{{ navItems }}" as="item">
+        <div style="display:flex; align-items:center; gap:12px; padding:11px 14px; border-radius:10px; background:{{ item.bg }}; cursor:pointer; transition:background 0.15s;" style-hover="background:{{ item.hoverBg }};">
+          <span style="display:flex; align-items:center; color:{{ item.iconColor }}; flex-shrink:0;">{{ item.iconSvg }}</span>
+          <span style="font-size:14px; font-weight:{{ item.weight }}; color:{{ item.color }};">{{ item.label }}</span>
+        </div>
+      </sc-for>
+    </nav>
+    <div style="padding:12px 14px; border-top:1px solid rgba(255,255,255,0.06);">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div style="width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg,#6366f1,#8b5cf6); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; color:#fff; flex-shrink:0;">A</div>
+        <div style="flex:1; min-width:0;">
+          <div style="font-size:13px; font-weight:600; color:#f1f5f9;">Admin</div>
+          <div style="font-size:11px; color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">admin@gmail.com</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div style="flex:1; display:flex; flex-direction:column; overflow:hidden;">
+
+    <!-- HEADER -->
+    <div style="height:60px; background:#10142a; border-bottom:1px solid rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:space-between; padding:0 28px; flex-shrink:0;">
+      <div>
+        <h1 style="font-size:17px; font-weight:700; color:#f1f5f9; letter-spacing:-0.3px;">Настройки</h1>
+        <p style="font-size:11px; color:#475569; margin-top:1px;">Управление приложением и мониторинг системы</p>
+      </div>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div style="position:relative; width:36px; height:36px; border-radius:9px; background:rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:center; cursor:pointer;" style-hover="background:rgba(255,255,255,0.09);">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <div style="position:absolute; top:6px; right:6px; width:8px; height:8px; background:#ef4444; border-radius:50%; border:2px solid #10142a;"></div>
+        </div>
+        <div style="display:flex; background:rgba(255,255,255,0.05); border-radius:9px; overflow:hidden;">
+          <div style="padding:6px 12px; font-size:12px; font-weight:600; color:#fff; background:#6366f1; cursor:pointer;">RU</div>
+          <div style="padding:6px 12px; font-size:12px; font-weight:500; color:#94a3b8; cursor:pointer;" style-hover="color:#fff;">TK</div>
+        </div>
+        <div style="position:relative;">
+          <div onClick="{{ toggleAdminMenu }}" style="display:flex; align-items:center; gap:8px; padding:5px 12px 5px 5px; background:rgba(255,255,255,0.05); border-radius:9px; cursor:pointer;" style-hover="background:rgba(255,255,255,0.09);">
+            <div style="width:28px; height:28px; border-radius:50%; background:linear-gradient(135deg,#6366f1,#8b5cf6); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; color:#fff;">A</div>
+            <span style="font-size:13px; font-weight:500; color:#e2e8f0;">Admin</span>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.5" style="transition:transform 0.15s; transform:{{ adminChevron }};"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+          <sc-if value="{{ adminMenuOpen }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute; top:calc(100% + 6px); right:0; width:170px; background:#1e2235; border:1px solid rgba(255,255,255,0.1); border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,0.4); overflow:hidden; z-index:100;">
+              <div onClick="{{ goProfile }}" style="display:flex; align-items:center; gap:9px; padding:11px 14px; cursor:pointer; transition:background 0.12s;" style-hover="background:rgba(255,255,255,0.07);">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                <span style="font-size:13px; color:#e2e8f0;">Профиль</span>
+              </div>
+              <div style="height:1px; background:rgba(255,255,255,0.06); margin:0 10px;"></div>
+              <div onClick="{{ doLogout }}" style="display:flex; align-items:center; gap:9px; padding:11px 14px; cursor:pointer; transition:background 0.12s;" style-hover="background:rgba(239,68,68,0.08);">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                <span style="font-size:13px; color:#ef4444;">Выйти</span>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTENT -->
+    <div style="flex:1; overflow-y:auto; padding:28px 32px; display:flex; flex-direction:column; gap:32px;">
+
+      <!-- APP SETTINGS SECTION -->
+      <section>
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
+          <div style="width:3px; height:18px; background:linear-gradient(to bottom,#6366f1,#8b5cf6); border-radius:2px;"></div>
+          <h2 style="font-size:14px; font-weight:600; color:#94a3b8; letter-spacing:0.5px; text-transform:uppercase;">Настройки приложений</h2>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:16px;">
+
+          <!-- MASTER APP CARD -->
+          <x-import component-from-global-scope="{{ masterEditorTag }}" hint-size="100%,auto">
+          </x-import>
+          <div style="background:#131729; border:1px solid rgba(255,255,255,0.07); border-radius:14px; overflow:hidden;">
+            <!-- Card header -->
+            <div style="display:flex; align-items:center; gap:14px; padding:18px 22px 14px;">
+              <div style="width:44px; height:44px; border-radius:11px; background:rgba(99,102,241,0.15); display:flex; align-items:center; justify-content:center; flex-shrink:0; border:1px solid rgba(99,102,241,0.2);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#818cf8" stroke-width="1.8"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+              </div>
+              <div style="flex:1;">
+                <div style="font-size:15px; font-weight:600; color:#f1f5f9;">Приложение мастера</div>
+                <div style="font-size:12px; color:#64748b; margin-top:2px;">Правила и условия для мастеров в мобильном приложении</div>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <!-- Edit toggle -->
+                <button onClick="{{ toggleMasterEdit }}" style="display:flex; align-items:center; gap:6px; padding:7px 14px; border-radius:8px; border:1px solid {{ masterEditBorder }}; background:{{ masterEditBg }}; color:{{ masterEditColor }}; font-size:12.5px; font-weight:500; font-family:inherit; cursor:pointer; transition:all 0.15s;">
+                  <sc-if value="{{ masterEditing }}" hint-placeholder-val="{{ false }}">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    Готово
+                  </sc-if>
+                  <sc-if value="{{ masterNotEditing }}" hint-placeholder-val="{{ true }}">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    Редактировать
+                  </sc-if>
+                </button>
+                <!-- Visibility toggle -->
+                <div onClick="{{ toggleMasterOn }}" style="width:40px; height:23px; border-radius:20px; background:{{ masterToggleBg }}; cursor:pointer; transition:background 0.2s; position:relative; flex-shrink:0; border:1px solid rgba(255,255,255,0.06);">
+                  <div style="position:absolute; top:3px; left:{{ masterKnob }}; width:15px; height:15px; background:#fff; border-radius:50%; transition:left 0.2s; box-shadow:0 1px 3px rgba(0,0,0,0.5);"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Toolbar (only in edit mode) -->
+            <sc-if value="{{ masterEditing }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:0 22px 10px;">
+                <div style="display:flex; align-items:center; gap:2px; padding:5px 6px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.07); border-radius:9px; flex-wrap:wrap;">
+                  <button onClick="{{ masterCmd_bold }}" class="tb-btn" title="Жирный" style="width:30px; height:28px; border:none; border-radius:6px; background:transparent; color:#94a3b8; cursor:pointer; font-weight:700; font-size:13px; display:flex; align-items:center; justify-content:center;">B</button>
+                  <button onClick="{{ masterCmd_italic }}" class="tb-btn" title="Курсив" style="width:30px; height:28px; border:none; border-radius:6px; background:transparent; color:#94a3b8; cursor:pointer; font-style:italic; font-size:13px; display:flex; align-items:center; justify-content:center;">I</button>
+                  <button onClick="{{ masterCmd_underline }}" class="tb-btn" title="Подчёркнутый" style="width:30px; height:28px; border:none; border-radius:6px; background:transparent; color:#94a3b8; cursor:pointer; font-size:13px; display:flex; align-items:center; justify-content:center; text-decoration:underline;">U</button>
+                  <button onClick="{{ masterCmd_strikethrough }}" class="tb-btn" title="Зачёркнутый" style="width:30px; height:28px; border:none; border-radius:6px; background:transparent; color:#94a3b8; cursor:pointer; font-size:13px; display:flex; align-items:center; justify-content:center; text-decoration:line-through;">S</button>
+                  <div style="width:1px; height:18px; background:rgba(255,255,255,0.1); margin:0 3px;"></div>
+                  <button onClick="{{ masterCmd_h1 }}" class="tb-btn" title="Заголовок 1" style="width:34px; height:28px; border:none; border-radius:6px; background:transparent; color:#94a3b8; cursor:pointer; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center;">H1</button>
+                  <button onClick="{{ masterCmd_h2 }}" class="tb-btn" title="Заголовок 2" style="width:34px; height:28px; border:none; border-radius:6px; background:transparent; color:#94a3b8; cursor:pointer; font-size:11px; font-weight:600; display:flex; align-items:center; justify-content:center;">H2</button>
+                  <div style="width:1px; height:18px; background:rgba(255,255,255,0.1); margin:0 3px;"></div>
+                  <button onClick="{{ masterCmd_ul }}" class="tb-btn" title="Список" style="width:30px; height:28px; border:none; border-radius:6px; background:transparent; color:#94a3b8; cursor:pointer; display:flex; align-items:center; justify-content:center;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1" fill="currentColor"/><circle cx="3" cy="12" r="1" fill="currentColor"/><circle cx="3" cy="18" r="1" fill="currentColor"/></svg>
+                  </button>
+                  <button onClick="{{ masterCmd_ol }}" class="tb-btn" title="Нумерованный список" style="width:30px; height:28px; border:none; border-radius:6px; background:transparent; color:#94a3b8; cursor:pointer; display:flex; align-items:center; justify-content:center;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg>
+                  </button>
+                  <div style="width:1px; height:18px; background:rgba(255,255,255,0.1); margin:0 3px;"></div>
+                  <button onClick="{{ masterCmd_quote }}" class="tb-btn" title="Цитата" style="width:30px; height:28px; border:none; border-radius:6px; background:transparent; color:#94a3b8; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700; line-height:1;">"</button>
+                  <div style="flex:1;"></div>
+                  <button onClick="{{ masterClear }}" class="tb-btn" title="Очистить" style="width:30px; height:28px; border:none; border-radius:6px; background:transparent; color:#64748b; cursor:pointer; font-size:11px; display:flex; align-items:center; justify-content:center;" style-hover="color:#ef4444 !important;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                  </button>
+                </div>
+              </div>
+            </sc-if>
+
+            <!-- Editor area -->
+            <div style="padding:0 22px 16px;">
+              <div id="{{ masterEditorId }}" class="rte-content" contenteditable="{{ masterContentEditable }}" data-placeholder="Введите правила для приложения мастера..." data-empty="{{ masterIsEmpty }}" style="background:rgba(255,255,255,0.03); border:1px solid {{ masterEditorBorder }}; border-radius:9px; padding:13px 15px; font-size:13px; line-height:1.65; color:#cbd5e1; min-height:{{ masterMinHeight }}; transition:border-color 0.2s; cursor:{{ masterCursor }};"></div>
+            </div>
+
+            <!-- Footer -->
+            <div style="padding:11px 22px; background:rgba(99,102,241,0.04); border-top:1px solid rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:space-between;">
+              <span style="font-size:11.5px; color:#475569;">{{ masterFooterText }}</span>
+              <sc-if value="{{ masterEditing }}" hint-placeholder-val="{{ false }}">
+                <button onClick="{{ saveMaster }}" style="padding:7px 18px; background:#6366f1; border:none; border-radius:8px; font-size:12.5px; font-weight:600; color:#fff; cursor:pointer; font-family:inherit; transition:opacity 0.15s;" style-hover="opacity:0.85;">{{ masterSaveLabel }}</button>
+              </sc-if>
+            </div>
+          </div>
+
+          <!-- CLIENT APP CARD -->
+          <div style="background:#131729; border:1px solid rgba(255,255,255,0.07); border-radius:14px; overflow:hidden;">
+            <div style="display:flex; align-items:center; gap:14px; padding:18px 22px 14px;">
+              <div style="width:44px; height:44px; border-radius:11px; background:rgba(16,185,129,0.12); display:flex; align-items:center; justify-content:center; flex-shrink:0; border:1px solid rgba(16,185,129,0.2);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </div>
+              <div style="flex:1;">
+                <div style="font-size:15px; font-weight:600; color:#f1f5f9;">Приложение клиента</div>
+                <div style="font-size:12px; color:#64748b; margin-top:2px;">Правила и условия для клиентов в мобильном приложении</div>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <button onClick="{{ toggleClientEdit }}" style="display:flex; align-items:center; gap:6px; padding:7px 14px; border-radius:8px; border:1px solid {{ clientEditBorder }}; background:{{ clientEditBg }}; color:{{ clientEditColor }}; font-size:12.5px; font-weight:500; font-family:inherit; cursor:pointer; transition:all 0.15s;">
+                  <sc-if value="{{ clientEditing }}" hint-placeholder-val="{{ false }}">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                    Готово
+                  </sc-if>
+                  <sc-if value="{{ clientNotEditing }}" hint-placeholder-val="{{ true }}">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    Редактировать
+                  </sc-if>
+                </button>
+                <div onClick="{{ toggleClientOn }}" style="width:40px; height:23px; border-radius:20px; background:{{ clientToggleBg }}; cursor:pointer; transition:background 0.2s; position:relative; flex-shrink:0; border:1px solid rgba(255,255,255,0.06);">
+                  <div style="position:absolute; top:3px; left:{{ clientKnob }}; width:15px; height:15px; background:#fff; border-radius:50%; transition:left 0.2s; box-shadow:0 1px 3px rgba(0,0,0,0.5);"></div>
+                </div>
+              </div>
+            </div>
+
+            <sc-if value="{{ clientEditing }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:0 22px 10px;">
+                <div style="display:flex; align-items:center; gap:2px; padding:5px 6px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.07); border-radius:9px; flex-wrap:wrap;">
+                  <button onClick="{{ clientCmd_bold }}" class="tb-btn" style="width:30px; height:28px; border:none; border-radius:6px; background:transparent; color:#94a3b8; cursor:pointer; font-weight:700; font-size:13px; display:flex; align-items:center; justify-content:center;">B</button>
+                  <button onClick="{{ clientCmd_italic }}" class="tb-btn" style="width:30px; height:28px; border:none; border-radius:6px; background:transparent; color:#94a3b8; cursor:pointer; font-style:italic; font-size:13px; display:flex; align-items:center; justify-content:center;">I</button>
+                  <button onClick="{{ clientCmd_underline }}" class="tb-btn" style="width:30px; height:28px; border:none; border-radius:6px; background:transparent; color:#94a3b8; cursor:pointer; font-size:13px; display:flex; align-items:center; justify-content:center; text-decoration:underline;">U</button>
+                  <button onClick="{{ clientCmd_strikethrough }}" class="tb-btn" style="width:30px; height:28px; border:none; border-radius:6px; background:transparent; color:#94a3b8; cursor:pointer; font-size:13px; display:flex; align-items:center; justify-content:center; text-decoration:line-through;">S</button>
+                  <div style="width:1px; height:18px; background:rgba(255,255,255,0.1); margin:0 3px;"></div>
+                  <button onClick="{{ clientCmd_h1 }}" class="tb-btn" style="width:34px; height:28px; border:none; border-radius:6px; background:transparent; color:#94a3b8; cursor:pointer; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center;">H1</button>
+                  <button onClick="{{ clientCmd_h2 }}" class="tb-btn" style="width:34px; height:28px; border:none; border-radius:6px; background:transparent; color:#94a3b8; cursor:pointer; font-size:11px; font-weight:600; display:flex; align-items:center; justify-content:center;">H2</button>
+                  <div style="width:1px; height:18px; background:rgba(255,255,255,0.1); margin:0 3px;"></div>
+                  <button onClick="{{ clientCmd_ul }}" class="tb-btn" style="width:30px; height:28px; border:none; border-radius:6px; background:transparent; color:#94a3b8; cursor:pointer; display:flex; align-items:center; justify-content:center;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3" cy="6" r="1" fill="currentColor"/><circle cx="3" cy="12" r="1" fill="currentColor"/><circle cx="3" cy="18" r="1" fill="currentColor"/></svg>
+                  </button>
+                  <button onClick="{{ clientCmd_ol }}" class="tb-btn" style="width:30px; height:28px; border:none; border-radius:6px; background:transparent; color:#94a3b8; cursor:pointer; display:flex; align-items:center; justify-content:center;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg>
+                  </button>
+                  <div style="width:1px; height:18px; background:rgba(255,255,255,0.1); margin:0 3px;"></div>
+                  <button onClick="{{ clientCmd_quote }}" class="tb-btn" style="width:30px; height:28px; border:none; border-radius:6px; background:transparent; color:#94a3b8; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700; line-height:1;">"</button>
+                  <div style="flex:1;"></div>
+                  <button onClick="{{ clientClear }}" class="tb-btn" style="width:30px; height:28px; border:none; border-radius:6px; background:transparent; color:#64748b; cursor:pointer; display:flex; align-items:center; justify-content:center;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+                  </button>
+                </div>
+              </div>
+            </sc-if>
+
+            <div style="padding:0 22px 16px;">
+              <div id="{{ clientEditorId }}" class="rte-content" contenteditable="{{ clientContentEditable }}" data-placeholder="Введите правила для приложения клиента..." data-empty="{{ clientIsEmpty }}" style="background:rgba(255,255,255,0.03); border:1px solid {{ clientEditorBorder }}; border-radius:9px; padding:13px 15px; font-size:13px; line-height:1.65; color:#cbd5e1; min-height:{{ clientMinHeight }}; transition:border-color 0.2s; cursor:{{ clientCursor }};"></div>
+            </div>
+
+            <div style="padding:11px 22px; background:rgba(16,185,129,0.04); border-top:1px solid rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:space-between;">
+              <span style="font-size:11.5px; color:#475569;">{{ clientFooterText }}</span>
+              <sc-if value="{{ clientEditing }}" hint-placeholder-val="{{ false }}">
+                <button onClick="{{ saveClient }}" style="padding:7px 18px; background:#10b981; border:none; border-radius:8px; font-size:12.5px; font-weight:600; color:#fff; cursor:pointer; font-family:inherit;" style-hover="opacity:0.85;">{{ clientSaveLabel }}</button>
+              </sc-if>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- MONITORING SECTION -->
+      <section>
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
+          <div style="width:3px; height:18px; background:linear-gradient(to bottom,#22c55e,#16a34a); border-radius:2px;"></div>
+          <h2 style="font-size:14px; font-weight:600; color:#94a3b8; letter-spacing:0.5px; text-transform:uppercase;">Мониторинг системы</h2>
+          <div style="margin-left:auto; display:flex; align-items:center; gap:6px; padding:4px 10px; background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.2); border-radius:20px;">
+            <div style="width:6px; height:6px; border-radius:50%; background:#22c55e; animation:pulse-dot 2s infinite;"></div>
+            <span style="font-size:11.5px; font-weight:500; color:#22c55e;">{{ systemStatus }}</span>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:14px;">
+
+          <!-- Queue -->
+          <div style="background:#131729; border:1px solid rgba(255,255,255,0.07); border-radius:14px; padding:18px 20px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <div style="width:36px; height:36px; border-radius:9px; background:rgba(245,158,11,0.12); display:flex; align-items:center; justify-content:center; border:1px solid rgba(245,158,11,0.2);">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="1.8"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                </div>
+                <div>
+                  <div style="font-size:13.5px; font-weight:600; color:#f1f5f9;">Очередь</div>
+                  <div style="font-size:11px; color:#64748b; margin-top:1px;">Queue Worker</div>
+                </div>
+              </div>
+              <div style="display:flex; align-items:center; gap:5px; padding:3px 9px; border-radius:20px; background:{{ queueBg }}; border:1px solid {{ queueBorder }};">
+                <div style="width:6px; height:6px; border-radius:50%; background:{{ queueDot }}; animation:pulse-dot 2s infinite;"></div>
+                <span style="font-size:11px; font-weight:600; color:{{ queueColor }};">{{ queueText }}</span>
+              </div>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px;">
+              <div style="background:rgba(255,255,255,0.04); border-radius:8px; padding:9px 10px;">
+                <div style="font-size:11px; color:#64748b; margin-bottom:3px;">В очереди</div>
+                <div style="font-size:20px; font-weight:700; color:#f1f5f9; line-height:1.2;">{{ queueCount }}</div>
+              </div>
+              <div style="background:rgba(255,255,255,0.04); border-radius:8px; padding:9px 10px;">
+                <div style="font-size:11px; color:#64748b; margin-bottom:3px;">Обработано</div>
+                <div style="font-size:20px; font-weight:700; color:#22c55e; line-height:1.2;">{{ queueDone }}</div>
+              </div>
+            </div>
+            <div style="font-size:11px; color:#475569; display:flex; align-items:center; gap:4px;">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              Обновлено {{ nowTime }}
+            </div>
+          </div>
+
+          <!-- Reverb -->
+          <div style="background:#131729; border:1px solid rgba(255,255,255,0.07); border-radius:14px; padding:18px 20px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <div style="width:36px; height:36px; border-radius:9px; background:rgba(139,92,246,0.12); display:flex; align-items:center; justify-content:center; border:1px solid rgba(139,92,246,0.2);">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="1.8"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                </div>
+                <div>
+                  <div style="font-size:13.5px; font-weight:600; color:#f1f5f9;">Reverb</div>
+                  <div style="font-size:11px; color:#64748b; margin-top:1px;">Broadcasting</div>
+                </div>
+              </div>
+              <div style="display:flex; align-items:center; gap:5px; padding:3px 9px; border-radius:20px; background:{{ reverbBg }}; border:1px solid {{ reverbBorder }};">
+                <div style="width:6px; height:6px; border-radius:50%; background:{{ reverbDot }}; animation:pulse-dot 2s infinite;"></div>
+                <span style="font-size:11px; font-weight:600; color:{{ reverbColor }};">{{ reverbText }}</span>
+              </div>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px;">
+              <div style="background:rgba(255,255,255,0.04); border-radius:8px; padding:9px 10px;">
+                <div style="font-size:11px; color:#64748b; margin-bottom:3px;">Каналы</div>
+                <div style="font-size:20px; font-weight:700; color:#f1f5f9; line-height:1.2;">{{ reverbChannels }}</div>
+              </div>
+              <div style="background:rgba(255,255,255,0.04); border-radius:8px; padding:9px 10px;">
+                <div style="font-size:11px; color:#64748b; margin-bottom:3px;">Пинг</div>
+                <div style="font-size:20px; font-weight:700; color:#a78bfa; line-height:1.2;">{{ reverbPing }}</div>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <div style="font-size:11px; color:#475569;">Аптайм 99.9%</div>
+              <button onClick="{{ reconnectReverb }}" style="font-size:11px; font-weight:500; color:#94a3b8; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:6px; padding:4px 9px; cursor:pointer; font-family:inherit;" style-hover="background:rgba(255,255,255,0.09);">Переподключить</button>
+            </div>
+          </div>
+
+          <!-- WebSocket -->
+          <div style="background:#131729; border:1px solid rgba(255,255,255,0.07); border-radius:14px; padding:18px 20px;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <div style="width:36px; height:36px; border-radius:9px; background:rgba(14,165,233,0.12); display:flex; align-items:center; justify-content:center; border:1px solid rgba(14,165,233,0.2);">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="1.8"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+                </div>
+                <div>
+                  <div style="font-size:13.5px; font-weight:600; color:#f1f5f9;">WebSocket</div>
+                  <div style="font-size:11px; color:#64748b; margin-top:1px;">WS Server</div>
+                </div>
+              </div>
+              <div style="display:flex; align-items:center; gap:5px; padding:3px 9px; border-radius:20px; background:{{ wsBg }}; border:1px solid {{ wsBorder }};">
+                <div style="width:6px; height:6px; border-radius:50%; background:{{ wsDot }}; animation:pulse-dot 2s infinite;"></div>
+                <span style="font-size:11px; font-weight:600; color:{{ wsColor }};">{{ wsText }}</span>
+              </div>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px;">
+              <div style="background:rgba(255,255,255,0.04); border-radius:8px; padding:9px 10px;">
+                <div style="font-size:11px; color:#64748b; margin-bottom:3px;">Клиентов</div>
+                <div style="font-size:20px; font-weight:700; color:#f1f5f9; line-height:1.2;">{{ wsClients }}</div>
+              </div>
+              <div style="background:rgba(255,255,255,0.04); border-radius:8px; padding:9px 10px;">
+                <div style="font-size:11px; color:#64748b; margin-bottom:3px;">Сообщ/сек</div>
+                <div style="font-size:20px; font-weight:700; color:#38bdf8; line-height:1.2;">{{ wsMsgRate }}</div>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between;">
+              <div style="font-size:11px; color:#475569;">Сейчас активно</div>
+              <button onClick="{{ reconnectWs }}" style="font-size:11px; font-weight:500; color:#94a3b8; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08); border-radius:6px; padding:4px 9px; cursor:pointer; font-family:inherit;" style-hover="background:rgba(255,255,255,0.09);">Переподключить</button>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    masterOn: true,
+    clientOn: true,
+    masterEditing: false,
+    clientEditing: false,
+    masterSaved: false,
+    clientSaved: false,
+    masterLastSaved: 'сегодня, 14:32',
+    clientLastSaved: 'вчера, 09:18',
+    reverbConnected: true,
+    wsConnected: true,
+    queueCount: 7,
+    queueDone: 1284,
+    reverbChannels: 23,
+    reverbPing: 12,
+    wsClients: 41,
+    wsMsgRate: 18,
+    tick: 0,
+    adminMenuOpen: false,
+  };
+
+  _interval = null;
+  _masterRef = null;
+  _clientRef = null;
+
+  componentDidMount() {
+    this._interval = setInterval(() => {
+      this.setState(s => ({
+        tick: s.tick + 1,
+        queueCount: Math.max(0, s.queueCount + (Math.random() > 0.6 ? 1 : -1)),
+        queueDone: s.queueDone + Math.floor(Math.random() * 3),
+        reverbChannels: Math.max(1, s.reverbChannels + (Math.random() > 0.55 ? 1 : -1)),
+        reverbPing: Math.max(5, Math.floor(s.reverbPing + (Math.random() - 0.5) * 6)),
+        wsClients: Math.max(0, s.wsClients + (Math.random() > 0.5 ? 1 : -1)),
+        wsMsgRate: Math.max(0, Math.floor(s.wsMsgRate + (Math.random() - 0.5) * 4)),
+      }));
+    }, 2500);
+  }
+
+  componentWillUnmount() {
+    clearInterval(this._interval);
+  }
+
+  _exec(editorId, cmd, value) {
+    const el = document.getElementById(editorId);
+    if (el) { el.focus(); document.execCommand(cmd, false, value || null); }
+  }
+
+  _setEmpty(editorId) {
+    const el = document.getElementById(editorId);
+    if (el) el.setAttribute('data-empty', el.innerText.trim() === '' ? 'true' : 'false');
+  }
+
+  renderVals() {
+    const s = this.state;
+    const now = new Date();
+    const nowTime = now.getHours() + ':' + String(now.getMinutes()).padStart(2, '0');
+
+    const icons = {
+      dashboard: React.createElement('svg',{width:18,height:18,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:1.9},React.createElement('rect',{x:3,y:3,width:7,height:7}),React.createElement('rect',{x:14,y:3,width:7,height:7}),React.createElement('rect',{x:14,y:14,width:7,height:7}),React.createElement('rect',{x:3,y:14,width:7,height:7})),
+      regions:   React.createElement('svg',{width:18,height:18,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:1.9},React.createElement('path',{d:'M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z'}),React.createElement('polyline',{points:'9 22 9 12 15 12 15 22'})),
+      categories:React.createElement('svg',{width:18,height:18,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:1.9},React.createElement('path',{d:'M4 6h16M4 12h16M4 18h7'})),
+      masters:   React.createElement('svg',{width:18,height:18,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:1.9},React.createElement('path',{d:'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z'})),
+      clients:   React.createElement('svg',{width:18,height:18,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:1.9},React.createElement('path',{d:'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2'}),React.createElement('circle',{cx:9,cy:7,r:4}),React.createElement('path',{d:'M23 21v-2a4 4 0 0 0-3-3.87'}),React.createElement('path',{d:'M16 3.13a4 4 0 0 1 0 7.75'})),
+      orders:    React.createElement('svg',{width:18,height:18,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:1.9},React.createElement('path',{d:'M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z'}),React.createElement('line',{x1:3,y1:6,x2:21,y2:6}),React.createElement('path',{d:'M16 10a4 4 0 0 1-8 0'})),
+      payments:  React.createElement('svg',{width:18,height:18,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:1.9},React.createElement('rect',{x:1,y:4,width:22,height:16,rx:2,ry:2}),React.createElement('line',{x1:1,y1:10,x2:23,y2:10})),
+      banners:   React.createElement('svg',{width:18,height:18,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:1.9},React.createElement('rect',{x:3,y:3,width:18,height:18,rx:2}),React.createElement('circle',{cx:8.5,cy:8.5,r:1.5}),React.createElement('polyline',{points:'21 15 16 10 5 21'})),
+      users:     React.createElement('svg',{width:18,height:18,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:1.9},React.createElement('path',{d:'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'}),React.createElement('circle',{cx:12,cy:7,r:4})),
+      settings:  React.createElement('svg',{width:18,height:18,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:1.9},React.createElement('circle',{cx:12,cy:12,r:3}),React.createElement('path',{d:'M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z'})),
+    };
+
+    const mkNav = (label, iconKey, active) => ({
+      label,
+      iconSvg: icons[iconKey],
+      bg:        active ? '#5b5ef0' : 'transparent',
+      hoverBg:   active ? '#5b5ef0' : 'rgba(255,255,255,0.06)',
+      weight:    active ? '600' : '400',
+      color:     active ? '#fff' : '#94a3b8',
+      iconColor: active ? '#fff' : '#64748b',
+    });
+
+    const navItems = [
+      mkNav('Дашборд',      'dashboard',  false),
+      mkNav('Велаяты',      'regions',    false),
+      mkNav('Категории',    'categories', false),
+      mkNav('Мастера',      'masters',    false),
+      mkNav('Клиенты',      'clients',    false),
+      mkNav('Заказы',       'orders',     false),
+      mkNav('Платежи',      'payments',   false),
+      mkNav('Баннеры',      'banners',    false),
+      mkNav('Пользователи', 'users',      false),
+      mkNav('Настройки',    'settings',   true),
+    ];
+
+    const mkSt = (ok) => ({
+      bg:     ok ? 'rgba(34,197,94,0.1)'  : 'rgba(239,68,68,0.1)',
+      border: ok ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.25)',
+      dot:    ok ? '#22c55e' : '#ef4444',
+      color:  ok ? '#22c55e' : '#ef4444',
+      text:   ok ? 'Активен' : 'Отключён',
+    });
+
+    const qSt = mkSt(true);
+    const rSt = mkSt(s.reverbConnected);
+    const wSt = mkSt(s.wsConnected);
+
+    const allOk = s.reverbConnected && s.wsConnected;
+    const MASTER_ID = 'rte-master';
+    const CLIENT_ID = 'rte-client';
+
+    // Editor button styles
+    const editBtnActive   = { bg: 'rgba(99,102,241,0.15)', border: 'rgba(99,102,241,0.35)', color: '#818cf8' };
+    const editBtnInactive = { bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)', color: '#94a3b8' };
+
+    const mBtn = s.masterEditing ? editBtnActive : editBtnInactive;
+    const cBtn = s.clientEditing ? editBtnActive : editBtnInactive;
+
+    return {
+      navItems,
+      nowTime,
+      // Admin dropdown
+      adminMenuOpen: s.adminMenuOpen,
+      adminChevron: s.adminMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+      toggleAdminMenu: () => this.setState(s => ({ adminMenuOpen: !s.adminMenuOpen })),
+      goProfile: () => this.setState({ adminMenuOpen: false }),
+      doLogout: () => this.setState({ adminMenuOpen: false }),
+
+      masterEditorTag: '',  // not used
+
+      // Master
+      masterEditorId: MASTER_ID,
+      masterEditing: s.masterEditing,
+      masterNotEditing: !s.masterEditing,
+      masterEditBg:     mBtn.bg,
+      masterEditBorder: mBtn.border,
+      masterEditColor:  mBtn.color,
+      masterToggleBg: s.masterOn ? '#6366f1' : 'rgba(255,255,255,0.12)',
+      masterKnob: s.masterOn ? '21px' : '3px',
+      masterContentEditable: s.masterEditing ? 'true' : 'false',
+      masterEditorBorder: s.masterEditing ? 'rgba(99,102,241,0.4)' : 'rgba(255,255,255,0.07)',
+      masterMinHeight: s.masterEditing ? '140px' : '60px',
+      masterCursor: s.masterEditing ? 'text' : 'default',
+      masterIsEmpty: 'true',
+      masterFooterText: s.masterSaved ? '✓ Сохранено!' : ('Последнее сохранение: ' + s.masterLastSaved),
+      masterSaveLabel: s.masterSaved ? '✓ Сохранено' : 'Сохранить',
+
+      toggleMasterEdit: () => {
+        const editing = !s.masterEditing;
+        this.setState({ masterEditing: editing });
+        if (editing) {
+          setTimeout(() => {
+            const el = document.getElementById(MASTER_ID);
+            if (el) el.focus();
+          }, 50);
+        }
+      },
+      toggleMasterOn: () => this.setState(s => ({ masterOn: !s.masterOn })),
+      masterCmd_bold:          () => this._exec(MASTER_ID, 'bold'),
+      masterCmd_italic:        () => this._exec(MASTER_ID, 'italic'),
+      masterCmd_underline:     () => this._exec(MASTER_ID, 'underline'),
+      masterCmd_strikethrough: () => this._exec(MASTER_ID, 'strikethrough'),
+      masterCmd_h1:            () => this._exec(MASTER_ID, 'formatBlock', 'H1'),
+      masterCmd_h2:            () => this._exec(MASTER_ID, 'formatBlock', 'H2'),
+      masterCmd_ul:            () => this._exec(MASTER_ID, 'insertUnorderedList'),
+      masterCmd_ol:            () => this._exec(MASTER_ID, 'insertOrderedList'),
+      masterCmd_quote:         () => this._exec(MASTER_ID, 'formatBlock', 'BLOCKQUOTE'),
+      masterClear: () => {
+        const el = document.getElementById(MASTER_ID);
+        if (el) { el.innerHTML = ''; el.setAttribute('data-empty','true'); }
+      },
+      saveMaster: () => {
+        const t = nowTime;
+        this.setState({ masterSaved: true, masterEditing: false, masterLastSaved: 'сегодня, ' + t });
+        setTimeout(() => this.setState({ masterSaved: false }), 2500);
+      },
+
+      // Client
+      clientEditorId: CLIENT_ID,
+      clientEditing: s.clientEditing,
+      clientNotEditing: !s.clientEditing,
+      clientEditBg:     cBtn.bg,
+      clientEditBorder: cBtn.border,
+      clientEditColor:  cBtn.color,
+      clientToggleBg: s.clientOn ? '#10b981' : 'rgba(255,255,255,0.12)',
+      clientKnob: s.clientOn ? '21px' : '3px',
+      clientContentEditable: s.clientEditing ? 'true' : 'false',
+      clientEditorBorder: s.clientEditing ? 'rgba(16,185,129,0.4)' : 'rgba(255,255,255,0.07)',
+      clientMinHeight: s.clientEditing ? '140px' : '60px',
+      clientCursor: s.clientEditing ? 'text' : 'default',
+      clientIsEmpty: 'true',
+      clientFooterText: s.clientSaved ? '✓ Сохранено!' : ('Последнее сохранение: ' + s.clientLastSaved),
+      clientSaveLabel: s.clientSaved ? '✓ Сохранено' : 'Сохранить',
+
+      toggleClientEdit: () => {
+        const editing = !s.clientEditing;
+        this.setState({ clientEditing: editing });
+        if (editing) {
+          setTimeout(() => {
+            const el = document.getElementById(CLIENT_ID);
+            if (el) el.focus();
+          }, 50);
+        }
+      },
+      toggleClientOn: () => this.setState(s => ({ clientOn: !s.clientOn })),
+      clientCmd_bold:          () => this._exec(CLIENT_ID, 'bold'),
+      clientCmd_italic:        () => this._exec(CLIENT_ID, 'italic'),
+      clientCmd_underline:     () => this._exec(CLIENT_ID, 'underline'),
+      clientCmd_strikethrough: () => this._exec(CLIENT_ID, 'strikethrough'),
+      clientCmd_h1:            () => this._exec(CLIENT_ID, 'formatBlock', 'H1'),
+      clientCmd_h2:            () => this._exec(CLIENT_ID, 'formatBlock', 'H2'),
+      clientCmd_ul:            () => this._exec(CLIENT_ID, 'insertUnorderedList'),
+      clientCmd_ol:            () => this._exec(CLIENT_ID, 'insertOrderedList'),
+      clientCmd_quote:         () => this._exec(CLIENT_ID, 'formatBlock', 'BLOCKQUOTE'),
+      clientClear: () => {
+        const el = document.getElementById(CLIENT_ID);
+        if (el) { el.innerHTML = ''; el.setAttribute('data-empty','true'); }
+      },
+      saveClient: () => {
+        const t = nowTime;
+        this.setState({ clientSaved: true, clientEditing: false, clientLastSaved: 'сегодня, ' + t });
+        setTimeout(() => this.setState({ clientSaved: false }), 2500);
+      },
+
+      // Monitoring
+      systemStatus: allOk ? 'Все системы работают' : 'Обнаружены проблемы',
+
+      queueBg: qSt.bg, queueBorder: qSt.border, queueDot: qSt.dot, queueColor: qSt.color, queueText: qSt.text,
+      queueCount: s.queueCount,
+      queueDone: s.queueDone.toLocaleString('ru'),
+
+      reverbBg: rSt.bg, reverbBorder: rSt.border, reverbDot: rSt.dot, reverbColor: rSt.color, reverbText: rSt.text,
+      reverbChannels: s.reverbChannels,
+      reverbPing: s.reverbPing + 'ms',
+      reconnectReverb: () => {
+        this.setState({ reverbConnected: false });
+        setTimeout(() => this.setState({ reverbConnected: true }), 1800);
+      },
+
+      wsBg: wSt.bg, wsBorder: wSt.border, wsDot: wSt.dot, wsColor: wSt.color, wsText: wSt.text,
+      wsClients: s.wsClients,
+      wsMsgRate: s.wsMsgRate,
+      reconnectWs: () => {
+        this.setState({ wsConnected: false });
+        setTimeout(() => this.setState({ wsConnected: true }), 1800);
+      },
+    };
+  }
+}
+
+</script>
+</body>
+</html>

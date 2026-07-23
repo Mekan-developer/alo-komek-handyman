@@ -1,0 +1,53 @@
+meta {
+  name: Send Location (with order)
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{base_url}}/api/v1/master/{{master_id}}/location
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Accept: application/json
+}
+
+body:json {
+  {
+    "latitude": 37.983321,
+    "longitude": 58.385545,
+    "order_id": 1,
+    "recorded_at": "2026-05-16T13:45:00+05:00"
+  }
+}
+
+docs {
+  # Send Live Location
+  
+  Public endpoint (no auth required — temporary until OTP flow stabilises).
+  Call every 10–15 seconds while the master is active.
+  
+  - `order_id` — optional; set when tied to a specific order trip
+  - `recorded_at` — optional ISO8601; defaults to server now()
+  
+  **Response 201:**
+  ```json
+  {
+    "data": {
+      "id": 1234,
+      "master_id": 11,
+      "order_id": 1,
+      "latitude": 37.952321,
+      "longitude": 58.382345,
+      "recorded_at": "2026-05-16T13:45:00+05:00"
+    }
+  }
+  ```
+  
+  **Errors:**
+  - `404` — master not found
+  - `422` — validation error
+}

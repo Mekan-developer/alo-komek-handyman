@@ -1,0 +1,34 @@
+meta {
+  name: Get Master App Settings
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{base_url}}/api/v1/master/settings
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/json
+}
+
+docs {
+  # Get Master App Settings
+
+  Public endpoint. Returns the master app rules/terms of use configured in the admin panel.
+  Use this to show T&C screen before or during master onboarding (no auth required).
+
+  **Response 200:**
+  ```json
+  {
+    "data": {
+      "content": "<h1>Правила</h1><p>Текст правил пользования...</p>"
+    }
+  }
+  ```
+
+  `content` is raw HTML — render it in a WebView or parse it to display in the app.
+  Returns empty string `""` if no rules have been configured yet.
+}

@@ -1,0 +1,41 @@
+meta {
+  name: Cancel Order
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{base_url}}/api/v1/client/orders/{{client_order_id}}/cancel
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{client_token}}
+}
+
+headers {
+  Accept: application/json
+}
+
+body:json {
+  {
+    "reason": "Передумал, проблема решилась сама"
+  }
+}
+
+docs {
+  # Cancel Order
+
+  Cancels the client's own order. Allowed **only while no master is assigned**
+  (status `pending`). Once a master is on the order, cancellation is forbidden.
+
+  `reason` is optional (max 500 chars) and is stored on the order.
+
+  **Response 200:** `ClientOrderResource` with `status: "cancelled"` and `cancelled_at` set.
+
+  **Errors:**
+  - `422` — a master is already assigned, or the order is in a final status
+  - `404` — order not found or does not belong to this client
+  - `401` — missing / invalid client token
+}

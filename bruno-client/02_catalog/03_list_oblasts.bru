@@ -1,0 +1,31 @@
+meta {
+  name: Client — List active oblasts
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{base_url}}/api/v1/client/oblasts
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/json
+}
+
+docs {
+  # Client — Active oblasts
+
+  Public endpoint. Returns all active oblasts (regions/provinces) sorted by name.
+
+  **Response 200:**
+  ```json
+  {
+    "data": [
+      { "id": 1, "name": "Ahal" },
+      { "id": 2, "name": "Balkan" }
+    ]
+  }
+  ```
+}

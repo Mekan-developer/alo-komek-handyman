@@ -1,0 +1,63 @@
+meta {
+  name: Track Order
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{base_url}}/api/v1/client/orders/{{client_order_id}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{client_token}}
+}
+
+headers {
+  Accept: application/json
+}
+
+docs {
+  # Track Order (show)
+
+  Returns full order with city, category, assigned master (when set),
+  photos and tasks (before/after WebP). Use this endpoint for
+  real-time status tracking on the client mobile app.
+
+  When order status is `assigned` or `in_progress`, `master.location` contains
+  the master's latest GPS ping (`lat`, `lng`, `recorded_at`). For all other
+  statuses `master.location` is `null`.
+
+  **Response 200:**
+  ```json
+  {
+    "data": {
+      "id": 1,
+      "status": "assigned",
+      "category": "Сантехника",
+      "description": "Кран в ванной течёт",
+      "address": "ул. Атамырата Ниязова, д. 42",
+      "master": {
+        "id": 11,
+        "name": "Aydogdy Ussadow",
+        "phone": "+99362111222",
+        "location": {
+          "lat": 37.9364,
+          "lng": 58.3795,
+          "recorded_at": "2026-06-15T14:32:00"
+        }
+      },
+      "photos": [
+        { "id": 1, "url": "https://...", "status": "done" }
+      ],
+      "tasks": [],
+      "created_at": "2026-05-16T10:00:00+05:00"
+    }
+  }
+  ```
+
+  **Errors:**
+  - `403` — order does not belong to this client
+  - `404` — order not found
+}

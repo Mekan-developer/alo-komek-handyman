@@ -1,0 +1,86 @@
+meta {
+  name: Upload Task Photo
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{base_url}}/api/v1/master/orders/{{order_id}}/tasks/{{task_id}}/photo
+  body: multipartForm
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+headers {
+  Accept: application/json
+}
+
+body:multipart-form {
+  type: before
+  photo: @file(/path/to/photo.jpg)
+}
+
+docs {
+  # Upload Task Photo
+
+  Upload one photo (before or after) for a task.
+  Call this endpoint **twice** to upload 2 photos of the same type.
+  Maximum **2 photos per type** (`before` and `after` are counted separately).
+
+  Photo is processed asynchronously (Queue + Job) and converted to WebP.
+  The response is immediate — `status` starts as `pending`.
+
+  ## Fields
+
+  | Field   | Type   | Required | Description                          |
+  |---------|--------|----------|--------------------------------------|
+  | `type`  | string | ✅       | `"before"` or `"after"`              |
+  | `photo` | file   | ✅       | Image file, max 8 MB (image/*)       |
+
+  ## Flow: upload 2 before photos
+
+  1. POST with `type=before` + first photo → `before_photos` has 1 item
+  2. POST with `type=before` + second photo → `before_photos` has 2 items
+  3. POST with `type=before` again → **422** (limit reached)
+
+  ## Response 202 Accepted
+
+  ```json
+  {
+    "data": {
+      "id": 7,
+      "title": "Замена труб",
+      "description": null,
+      "before_photos": [
+        { "id": 1, "url": "https://example.com/storage/orders/1/tasks/7/before/photo.webp", "status": "pending" },
+        { "id": 2, "url": "https://example.com/storage/orders/1/tasks/7/before/photo2.webp", "status": "done" }
+      ],
+      "after_photos": []
+    }
+  }
+  ```
+
+  ## Photo statuses
+
+  | Status       | Meaning                        |
+  |--------------|--------------------------------|
+  | `pending`    | Queued for conversion          |
+  | `converting` | WebP conversion in progress    |
+  | `done`       | Ready, URL points to .webp     |
+  | `failed`     | Conversion failed              |
+
+  ## Response 422 — limit exceeded
+
+  ```json
+  { "message": "Maximum 2 before photos allowed per task." }
+  ```
+
+  ## Response 404 — order or task not found
+
+  ```json
+  { "message": "No query results for model [App\\Models\\Order]." }
+  ```
+}

@@ -1,0 +1,49 @@
+meta {
+  name: Complete Order
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{base_url}}/api/v1/master/orders/{{order_id}}/complete
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+headers {
+  Content-Type: application/json
+  Accept: application/json
+}
+
+body:json {
+  {
+    "final_price": 150.00
+  }
+}
+
+docs {
+  # Complete Order
+
+  Changes order status: `in_progress` → `completed`.
+  Setting `final_price` triggers automatic balance accrual for the master
+  based on their payment model (percentage / fixed_per_job / salary).
+
+  **Response 200:**
+  ```json
+  {
+    "data": {
+      "id": 1,
+      "status": "completed",
+      "final_price": 150.00
+    }
+  }
+  ```
+
+  **Errors:**
+  - `403` — not the assigned master
+  - `422` — order not in `in_progress` status
+}

@@ -1,0 +1,55 @@
+meta {
+  name: Set Availability
+  type: http
+  seq: 1
+}
+
+patch {
+  url: {{base_url}}/api/v1/master/availability
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+headers {
+  Accept: application/json
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "is_available": false
+  }
+}
+
+docs {
+  # Set Master Availability
+
+  Master controls their own work availability. When `is_available` is `false`, the admin
+  cannot assign this master to any order — the attempt returns 422.
+
+  **Body:**
+  | Field          | Type    | Required | Description                          |
+  |----------------|---------|----------|--------------------------------------|
+  | `is_available` | boolean | yes      | `true` = ready for work, `false` = not |
+
+  **Response 200:**
+  ```json
+  {
+    "data": {
+      "id": 1,
+      "name": "Aydogdy Ussadow",
+      "is_active": true,
+      "is_available": false,
+      ...
+    }
+  }
+  ```
+
+  **Errors:**
+  - `401` — не авторизован
+  - `422` — поле `is_available` обязательно и должно быть boolean
+}

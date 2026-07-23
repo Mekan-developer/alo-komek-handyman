@@ -1,0 +1,39 @@
+meta {
+  name: Start Order
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{base_url}}/api/v1/master/orders/{{order_id}}/start
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+headers {
+  Accept: application/json
+}
+
+docs {
+  # Start Order
+
+  Changes order status: `assigned` → `in_progress`.
+
+  **Response 200:**
+  ```json
+  {
+    "data": {
+      "id": 1,
+      "status": "in_progress"
+    }
+  }
+  ```
+
+  **Errors:**
+  - `403` — not the assigned master
+  - `422` — order not in `assigned` status
+}

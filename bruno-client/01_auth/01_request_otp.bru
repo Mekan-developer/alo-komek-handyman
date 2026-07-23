@@ -1,0 +1,39 @@
+meta {
+  name: Request OTP
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{base_url}}/api/v1/client/auth/request-otp
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Accept: application/json
+}
+
+body:json {
+  {
+    "phone": "{{client_phone}}"
+  }
+}
+
+docs {
+  # Request OTP
+
+  Sends a 6-digit OTP to the client's phone via the SMS gateway
+  (Socket.IO bridge in `socket-server/` → Flutter SMS-gateway phone).
+  The code is valid for 3 minutes.
+
+  **Response 200:**
+  ```json
+  { "message": "OTP sent." }
+  ```
+
+  **Errors:**
+  - `422` — phone validation error
+  - `503` — SMS gateway unreachable or no gateway phone connected
+}

@@ -1,0 +1,52 @@
+meta {
+  name: Search Categories
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{base_url}}/api/v1/client/categories/search?q=сан
+  body: none
+  auth: none
+}
+
+params:query {
+  q: сан
+}
+
+headers {
+  Accept: application/json
+}
+
+docs {
+  # Search Services (categories) by name
+
+  Public endpoint backing the client app's search input. Returns a flat list of
+  active categories whose name matches `q` (case-insensitive, substring),
+  ordered by name, limited to 20 results.
+
+  Each match carries its `parent` group (id + name) when it is a subcategory,
+  or `null` for a root category. Icon fields mirror the categories list endpoint.
+
+  **Query params:**
+  - `q` (required) — search term, 2–255 characters.
+
+  **Response 200:**
+  ```json
+  {
+    "data": [
+      {
+        "id": 5,
+        "name": "Замена труб",
+        "parent_id": 1,
+        "icon_type": "preset",
+        "icon": "wrench",
+        "icon_url": "http://localhost/icons/services/wrench.svg",
+        "parent": { "id": 1, "name": "Сантехника" }
+      }
+    ]
+  }
+  ```
+
+  **Response 422** — when `q` is missing or shorter than 2 characters.
+}

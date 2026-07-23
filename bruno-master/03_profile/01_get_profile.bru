@@ -1,0 +1,54 @@
+meta {
+  name: Get My Profile
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{base_url}}/api/v1/master/me
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+headers {
+  Accept: application/json
+}
+
+docs {
+  # Get Master Profile
+
+  Returns the authenticated master's profile with balance, categories, and access info.
+
+  **Response 200:**
+  ```json
+  {
+    "data": {
+      "id": 1,
+      "name": "Aydogdy Ussadow",
+      "phone": "+99362111222",
+      "balance": 250.00,
+      "payment_model": "percentage",
+      "payment_value": 15,
+      "is_active": true,
+      "is_available": true,
+      "access_expires_at": "2026-12-31",
+      "city": { "id": 1, "name": "Ашхабад" },
+      "categories": [
+        { "id": 1, "name": "Сантехника" }
+      ]
+    }
+  }
+  ```
+
+  **Fields:**
+  | Field              | Type    | Description                                      |
+  |--------------------|---------|--------------------------------------------------|
+  | `is_active`        | boolean | Activated by admin (can accept orders)           |
+  | `is_available`     | boolean | Set by master — ready for work right now         |
+  | `access_expires_at`| date    | When master's access subscription expires        |
+  | `payment_model`    | string  | `percentage` / `fixed_per_job` / `salary` / `salary_percentage` |
+}

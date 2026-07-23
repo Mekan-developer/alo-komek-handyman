@@ -1,0 +1,27 @@
+meta {
+  name: Logout
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{base_url}}/api/v1/master/auth/logout
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+headers {
+  Accept: application/json
+}
+
+docs {
+  # Logout
+
+  Revokes the current Sanctum token.
+
+  **Response:** `204 No Content`
+}

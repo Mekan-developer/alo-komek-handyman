@@ -1,0 +1,61 @@
+meta {
+  name: Update Order
+  type: http
+  seq: 5
+}
+
+patch {
+  url: {{base_url}}/api/v1/client/orders/{{client_order_id}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{client_token}}
+}
+
+headers {
+  Content-Type: application/json
+  Accept: application/json
+}
+
+body:json {
+  {
+    "city_id": {{city_id}},
+    "category_id": {{category_id}},
+    "description": "Уточнение — течёт из-под смесителя, а не из трубы.",
+    "client_phone": "{{client_phone}}",
+    "client_address": "ул. Атамырата Ниязова, д. 42, кв. 17",
+    "client_lat": 37.9382,
+    "client_lng": 58.3833
+  }
+}
+
+docs {
+  # Update Order
+
+  Edits the client's own order. Every field below is optional (`sometimes`) —
+  the body shows all of them together, but in practice send only what
+  actually changed. Delete the rest, don't just leave them with old values
+  if you want a true partial update.
+
+  - `city_id` — must exist in `cities`
+  - `category_id` — must exist in `categories`
+  - `description` — 5..2000 chars
+  - `client_phone` — 6..20 chars
+  - `client_address` — nullable, up to 255 chars
+  - `client_lat` / `client_lng` — decimal coordinates
+
+  To also add/remove photos in the same edit, see **Update Order Photos**
+  (needs `multipart/form-data`, which requires a small workaround for PATCH).
+
+  Allowed **only while the order is still `pending`** (no master assigned yet).
+  Once a master is assigned/working/order is finished or cancelled, editing is forbidden.
+
+  **Response 200:** `ClientOrderResource`
+
+  **Errors:**
+  - `422` — validation error, or order is no longer editable (not `pending`)
+  - `404` — order not found or does not belong to this client
+  - `401` — missing / invalid client token
+}

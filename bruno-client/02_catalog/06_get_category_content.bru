@@ -1,0 +1,43 @@
+meta {
+  name: Get Category Content
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{base_url}}/api/v1/client/categories/7/content
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/json
+  X-Locale: tk
+}
+
+docs {
+  # Get Category Content
+  
+  Public endpoint. Returns the content (description, price, image) for a single active subcategory.
+  Returns **404** if the category does not exist, is inactive, or has no content yet.
+  
+  **URL param:** `{category}` — category ID
+  
+  **Response 200:**
+  ```json
+  {
+    "data": {
+      "id": 3,
+      "title": "Профессиональная укладка плитки",
+      "description": "Мастера выполняют укладку любых типов плитки...",
+      "price": "от 50 TMT",
+      "image_url": "http://localhost/storage/category-content/abc.webp"
+    }
+  }
+  ```
+  
+  **Response 404** — category inactive or has no content:
+  ```json
+  { "message": "Not Found" }
+  ```
+}

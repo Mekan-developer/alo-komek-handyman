@@ -1,0 +1,58 @@
+meta {
+  name: Verify OTP
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{base_url}}/api/v1/master/auth/verify-otp
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Accept: application/json
+}
+
+body:json {
+  {
+    "phone": "+99361000003",
+    "code": "041039"
+  }
+}
+
+script:post-response {
+  if (res.status === 200) {
+    bru.setVar("token", res.body.token);
+  }
+}
+
+docs {
+  # Verify OTP
+  
+  Verifies the OTP code and returns a Sanctum Bearer token on success.
+  The script automatically saves the token to the `token` env variable.
+  
+  **Response 200:**
+  ```json
+  {
+    "token": "1|abc...",
+    "master": {
+      "id": 1,
+      "name": "Aydogdy Ussadow",
+      "phone": "+99362111222",
+      "balance": 250.00,
+      "is_active": true,
+      "access_expires_at": "2026-12-31",
+      "categories": [{ "id": 1, "name": "Сантехника" }],
+      "city": { "id": 1, "name": "Ашхабад" }
+    }
+  }
+  ```
+  
+  **Errors:**
+  - `404` — master not found
+  - `403` — master disabled
+  - `422` — invalid or expired OTP
+}

@@ -1,0 +1,52 @@
+meta {
+  name: List My Orders
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{base_url}}/api/v1/master/orders
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+headers {
+  Accept: application/json
+}
+
+params:query {
+  filter: active
+}
+
+docs {
+  # List Master Orders
+
+  Returns paginated list of orders assigned to the authenticated master.
+
+  **Query params:**
+  - `filter=active` — assigned + in_progress orders
+  - `filter=history` — completed + cancelled orders
+  - (no filter) — all orders
+
+  **Response 200:**
+  ```json
+  {
+    "data": [
+      {
+        "id": 42,
+        "status": "assigned",
+        "client_name": "Merdan",
+        "address": "Ashgabat, Korogly 12",
+        "category": "Сантехника",
+        "description": "Сломался кран",
+        "created_at": "2026-05-16T10:00:00+05:00"
+      }
+    ],
+    "meta": { "current_page": 1, "last_page": 1 }
+  }
+  ```
+}

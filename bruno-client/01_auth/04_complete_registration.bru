@@ -1,0 +1,50 @@
+meta {
+  name: Complete Registration
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{base_url}}/api/v1/client/auth/complete-registration
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{client_token}}
+}
+
+headers {
+  Content-Type: application/json
+  Accept: application/json
+}
+
+body:json {
+  {
+    "name": "Merdan Annagurdow",
+    "city_id": {{city_id}}
+  }
+}
+
+docs {
+  # Complete Registration
+
+  Called after `verify-otp` when `is_new: true`.
+  Saves the client's name and city. Requires a valid Sanctum token.
+
+  **Response 200:**
+  ```json
+  {
+    "client": {
+      "id": 1,
+      "name": "Merdan Annagurdow",
+      "phone": "+99361111222",
+      "city": { "id": 12, "name": "Ashgabat" }
+    }
+  }
+  ```
+
+  **Errors:**
+  - `422` — name or city_id validation error
+  - `401` — missing or invalid token
+}

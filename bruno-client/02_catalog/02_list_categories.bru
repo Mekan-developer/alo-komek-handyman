@@ -1,0 +1,52 @@
+meta {
+  name: List Categories
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{base_url}}/api/v1/client/categories
+  body: none
+  auth: none
+}
+
+headers {
+  Accept: application/json
+}
+
+docs {
+  # List Active Categories (tree)
+
+  Public endpoint. Returns active root categories with their active children.
+  Use this on the order creation screen.
+
+  Each category carries an icon: `icon_type` is `preset` (built-in set),
+  `custom` (admin-uploaded SVG) or `null`. `icon_url` is the ready-to-render
+  SVG URL (monochrome, paint with the app's text color) — use it directly.
+
+  **Response 200:**
+  ```json
+  {
+    "data": [
+      {
+        "id": 1,
+        "name": "Сантехника",
+        "parent_id": null,
+        "icon_type": "preset",
+        "icon": "wrench",
+        "icon_url": "http://localhost/icons/services/wrench.svg",
+        "children": [
+          {
+            "id": 5,
+            "name": "Замена труб",
+            "parent_id": 1,
+            "icon_type": "custom",
+            "icon": "category-icons/abc123.svg",
+            "icon_url": "http://localhost/storage/category-icons/abc123.svg"
+          }
+        ]
+      }
+    ]
+  }
+  ```
+}

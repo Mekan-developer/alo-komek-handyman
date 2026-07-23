@@ -1,0 +1,57 @@
+meta {
+  name: Update Order Photos
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{base_url}}/api/v1/client/orders/{{client_order_id}}
+  body: multipartForm
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{client_token}}
+}
+
+headers {
+  Accept: application/json
+}
+
+body:multipart-form {
+  _method: PATCH
+  ~description: Уточнение — течёт из-под смесителя, а не из трубы.
+  photos[]: @file()
+  ~remove_photo_ids[]: 1
+}
+
+docs {
+  # Update Order Photos
+
+  Same endpoint as **Update Order** (`PATCH /client/orders/{order}`), used
+  whenever the edit needs to attach or remove photos.
+
+  **Why `POST` + `_method: PATCH` instead of a real PATCH verb:**
+  PHP only populates file uploads (`$_FILES`) for `POST` requests — a genuine
+  `PATCH` with a `multipart/form-data` body arrives with the files silently
+  dropped. Laravel's documented workaround is to send `POST` with a `_method`
+  field spoofing the real verb; the router then dispatches it to the same
+  `update` action as a `PATCH`. Any other field from **Update Order** can be
+  included here too.
+
+  **Fields:**
+  - `photos[]` — new photos to attach, up to 4 **total** (existing + new).
+    Go through the same background WebP-conversion queue as on create.
+  - `remove_photo_ids[]` — IDs of existing photos to delete (uncomment and
+    set real IDs from the order's `data.photos[].id`). Scoped to this order —
+    an ID from another order is silently ignored.
+
+  Allowed **only while the order is still `pending`**, same as Update Order.
+
+  **Response 200:** `ClientOrderResource`
+
+  **Errors:**
+  - `422` — validation error, resulting photo count > 4, or order no longer editable
+  - `404` — order not found or does not belong to this client
+  - `401` — missing / invalid client token
+}

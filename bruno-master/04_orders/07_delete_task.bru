@@ -1,0 +1,40 @@
+meta {
+  name: Delete Task
+  type: http
+  seq: 7
+}
+
+delete {
+  url: {{base_url}}/api/v1/master/orders/{{order_id}}/tasks/{{task_id}}
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+headers {
+  Accept: application/json
+}
+
+docs {
+  # Delete Task
+
+  Deletes a task and all of its before/after photos (files removed from
+  storage, `order_task_photos` rows cascade-deleted with the task).
+
+  Allowed **only while the order is `in_progress`** — same window as task
+  creation. Once the order is completed/cancelled, the task list becomes
+  a fixed record and can no longer be edited.
+
+  **Response 204:** empty body.
+
+  **Errors:**
+  - `422` — order is not `in_progress`
+    ```json
+    { "message": "Tasks can only be deleted while the order is in progress." }
+    ```
+  - `404` — order/task not found, or doesn't belong to this master
+  - `401` — missing / invalid master token
+}

@@ -1,0 +1,63 @@
+meta {
+  name: Leave Review
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{base_url}}/api/v1/client/orders/{{client_order_id}}/review
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{client_token}}
+}
+
+headers {
+  Content-Type: application/json
+  Accept: application/json
+}
+
+body:json {
+  {
+    "rating": 5,
+    "comment": "Отличный мастер, всё быстро и качественно!"
+  }
+}
+
+docs {
+  # Leave Review
+
+  Leaves the client's review for the master on this order. Allowed **only
+  after the order is `completed`**, and only **once per order** — a second
+  attempt on the same order is rejected.
+
+  **Fields:**
+  - `rating` — required, integer 1..5
+  - `comment` — optional, up to 1000 chars
+
+  The submitted review is also returned inside **Get Order** / **List My
+  Orders** from then on, as `data.review` (`null` until submitted).
+
+  **Response 201:**
+  ```json
+  {
+    "data": {
+      "id": 1,
+      "rating": 5,
+      "comment": "Отличный мастер, всё быстро и качественно!",
+      "created_at": "2026-07-20 15:04:00"
+    }
+  }
+  ```
+
+  **Errors:**
+  - `422` — validation error, order not yet `completed`, or already reviewed
+    ```json
+    { "message": "Отзыв можно оставить только после завершения заявки" }
+    { "message": "Вы уже оставили отзыв на эту заявку" }
+    ```
+  - `404` — order not found or does not belong to this client
+  - `401` — missing / invalid client token
+}
