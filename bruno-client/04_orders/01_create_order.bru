@@ -19,7 +19,6 @@ auth:bearer {
 }
 
 body:multipart-form {
-  city_id: {{city_id}}
   category_id: {{category_id}}
   description: Кран в ванssной течёт, нужна замена прокладки и проверка сифона.
   client_phone: {{client_phone}}
@@ -44,7 +43,7 @@ docs {
   Saves new order id into `client_order_id` env var.
   
   **Required fields:**
-  - `city_id`, `category_id`, `description`
+  - `category_id`, `description`
   - `client_phone`, `client_address`, `client_lat`, `client_lng`
   
   **Optional:**
@@ -54,5 +53,5 @@ docs {
   
   **Errors:**
   - `422` — validation error
-  - `403` — client profile incomplete (name or city_id missing)
+  - `403` — client profile incomplete (name missing)
 }

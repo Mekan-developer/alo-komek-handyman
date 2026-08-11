@@ -21,8 +21,7 @@ headers {
 
 body:json {
   {
-    "name": "Merdan Annagurdow",
-    "city_id": {{city_id}}
+    "name": "Merdan Annagurdow"
   }
 }
 
@@ -30,7 +29,7 @@ docs {
   # Complete Registration
 
   Called after `verify-otp` when `is_new: true`.
-  Saves the client's name and city. Requires a valid Sanctum token.
+  Saves the client’s name. Requires a valid Sanctum token.
 
   **Response 200:**
   ```json
@@ -38,13 +37,12 @@ docs {
     "client": {
       "id": 1,
       "name": "Merdan Annagurdow",
-      "phone": "+99361111222",
-      "city": { "id": 12, "name": "Ashgabat" }
+      "phone": "+99361111222"
     }
   }
   ```
 
   **Errors:**
-  - `422` — name or city_id validation error
+  - `422` — name validation error
   - `401` — missing or invalid token
 }
