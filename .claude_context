@@ -47,27 +47,27 @@ Laravel 11 + Inertia v2 + Vue 3 + Tailwind v3 админ-панель для м�
 - `App\Enums\CategoryIconType` (`app/Enums/CategoryIconType.php`): Preset, Custom — тип иконки категории
 
 ### Exceptions (typed factories)
-- `App\Exceptions\OrderException::masterAccessExpired() | cityMismatch() | categoryMismatch() | alreadyFinal() | invalidTransition($from, $to)`
+- `App\Exceptions\OrderException::masterAccessExpired() | categoryMismatch() | alreadyFinal() | invalidTransition($from, $to)`
 - `App\Exceptions\OtpException::invalid()`
 - `App\Exceptions\MasterDisabledException` — мастер деактивирован
 - `App\Exceptions\PaymentException` — ошибки выплат (например, нулевой/превышающий баланс)
 - `App\Exceptions\ApiException` — базовый класс для API-ошибок, имеет `statusCode()`; все API-ошибки рендерятся через единый handler в `bootstrap/app.php` → локализованный JSON
 
 ### Модели и миграции
-- Готовы: `User` (с `role`), `Oblast` (hasMany Cities/Regions), `Region` (belongsTo Oblast), `City` (belongsTo Oblast, поле oblast_id), `Category` (с parent_id древовидная + поля иконки), `CategoryContent` (one-to-one к Category, текст описания), `CategoryContentImage` (many-to-one к CategoryContent, изображения), `Master` (поля `is_available`, `monthly_salary`, `balance`), `MasterLocation`, `MasterPayout` (история выплат), `Order`, `OrderPhoto`, `OrderTask`, `OrderTaskPhoto` (до 2 фото на тип — before/after), `Client`, `Banner`
+- Географии НЕТ: сервис обслуживает только Ашхабад. Модели `Oblast`/`City`/`Region` и поле `city_id` удалены (миграция `remove_geography_for_ashgabat_only`) — не возвращай их
+- Готовы: `User` (с `role`), `Category` (с parent_id древовидная + поля иконки), `CategoryContent` (one-to-one к Category, текст описания), `CategoryContentImage` (many-to-one к CategoryContent, изображения), `Master` (поля `is_available`, `monthly_salary`, `balance`), `MasterLocation`, `MasterPayout` (история выплат), `Order`, `OrderPhoto`, `OrderTask`, `OrderTaskPhoto` (до 2 фото на тип — before/after), `Client`, `Banner`
 - Pivot `category_master` — связь many-to-many
-- Все модели имеют Factory; Seeders: Oblast (6 областей: Aşgabat/Ahal/Mary/Daşoguz/Balkan/Lebap), City, Category, Master, MasterLocation, Order, Client, Banner
+- Все модели имеют Factory; Seeders: Category, Master, MasterLocation, Order, Client, Banner
 - Телефоны хранятся как `+993XXXXXXXX` (12 символов)
 
 ### Репозитории
-- `OblastRepository`, `RegionRepository`, `CityRepository`, `CategoryRepository`, `CategoryContentRepository`, `MasterRepository`, `OrderRepository`, `ClientRepository`, `BannerRepository`, `DashboardRepository`, `UserRepository`, `PaymentRepository`
-- `MasterRepository::forMap()`, `trajectory($master, $hours)`, `eligibleForOrder($cityId, $categoryId)`, `withOutstandingBalance()`, `totalOutstandingBalance()`, `countWithOutstandingBalance()`, `incrementBalance()/decrementBalance()/resetBalance()` — НЕ переписывать
+- `CategoryRepository`, `CategoryContentRepository`, `MasterRepository`, `OrderRepository`, `ClientRepository`, `BannerRepository`, `DashboardRepository`, `UserRepository`, `PaymentRepository`
+- `MasterRepository::forMap()`, `trajectory($master, $hours)`, `eligibleForOrder($categoryId)`, `withOutstandingBalance()`, `totalOutstandingBalance()`, `countWithOutstandingBalance()`, `incrementBalance()/decrementBalance()/resetBalance()` — НЕ переписывать
 - `OrderRepository::paginate($filters)`, `forMaster($master, $filter)`, `findForMasterOrFail($id, $master)`; грузит before/after фото задач — есть
 - `PaymentRepository::history()`, `totalPaid()` — история и сумма выплат
 
 ### Actions (одно действие = один класс)
-Области/Районы: Create/Update/Delete Oblast | Region
-Города/Категории/Мастера: Create/Update/Delete City | Category | Master
+Категории/Мастера: Create/Update/Delete Category | Master
 Доступность мастера: ToggleMasterAvailabilityAction
 Контент категорий: UpsertCategoryContent
 Клиенты: Create/Update/Delete/ToggleBlock Client
@@ -79,7 +79,7 @@ Laravel 11 + Inertia v2 + Vue 3 + Tailwind v3 админ-панель для м�
 Финансы: CreditMasterBalance (по PaymentModel, авто из UpdateOrderStatus при Completed), RecordMasterPayout (выплата мастеру, частичная/полная). Сброс баланса — `MasterRepository::resetBalance()` + `MasterController::resetBalance()` (не отдельный Action)
 
 ### Контроллеры (Web — Inertia)
-- Oblast, Region, City, Category, CategoryContent (upsert), Master (+ map, trajectory, resetBalance), Order (index/show/store/update/destroy/assign/setPrice/updateStatus/masterTrajectory), Client (+ toggleBlock), Banner (+ toggle), User (CRUD, роль-based), Payment (index + payout), Profile, Dashboard, Notification (index/read/readAll/destroy/destroyAll), Tiles, SystemStatus (`GET /system-status` → JSON статус queue+websocket)
+- Category, CategoryContent (upsert), Master (+ map, trajectory, resetBalance), Order (index/show/store/update/destroy/assign/setPrice/updateStatus/masterTrajectory), Client (+ toggleBlock), Banner (+ toggle), User (CRUD, роль-based), Payment (index + payout), Profile, Dashboard, Notification (index/read/readAll/destroy/destroyAll), Tiles, SystemStatus (`GET /system-status` → JSON статус queue+websocket)
 
 ### Контроллеры API v1
 - Master: MasterAuth, MasterLocation, MasterProfile, MasterAvailability (`PATCH /master/availability`), MasterOrder, MasterTask
@@ -94,7 +94,7 @@ Laravel 11 + Inertia v2 + Vue 3 + Tailwind v3 админ-панель для м�
 - `OrderCreated` → публичный канал `orders`, alias `.order.created`
 - `OrderStatusChanged` → при изменении статуса заказа
 - `MasterAssigned` → при назначении мастера на заказ
-- `MasterLocationUpdated` → публичный канал `masters-map.{cityId}`, alias `.master.location.updated`
+- `MasterLocationUpdated` → публичный канал `masters-map`, alias `.master.location.updated`
 - **Приватные каналы** (Sanctum): `client.{clientId}`, `master.{masterId}` — мобильные приложения слушают `master.assigned` / `order.status.changed`. Auth в [routes/channels.php](routes/channels.php). `orders` и `masters-map.*` остаются публичными (TODO: private + admin gate для прод)
 - Broadcast auth для мобилы: `POST /api/v1/broadcasting/auth` (`auth:sanctum`)
 
@@ -107,7 +107,6 @@ Laravel 11 + Inertia v2 + Vue 3 + Tailwind v3 админ-панель для м�
 - `ImageLightbox` — просмотрщик изображений (использовать для всех кликабельных фото)
 - `ConfirmModal` — универсальный диалог подтверждения (centered)
 - `PhoneInput` — поле телефона с префиксом +993 и форматом `XX XX-XX-XX`
-- `OblastCitySelect` — каскадный выбор области → город
 - `ServiceIcon` — рендер иконки категории (preset через CSS mask / загруженный SVG)
 - `IconPicker` — выбор preset-иконки из сгруппированного грида
 - Перед написанием нового компонента — проверь, нет ли уже
@@ -116,8 +115,8 @@ Laravel 11 + Inertia v2 + Vue 3 + Tailwind v3 админ-панель для м�
 - `formatPhone(phone)` — форматирует `+993XXXXXXXX` → `+993 XX XX-XX-XX` для отображения в таблицах/карточках
 
 ### Страницы Vue
-- Auth (Breeze), Dashboard, Profile (Edit + Partials), Oblasts/Index, Regions/Index, Cities/Index, Categories/Index, Masters/Index + Map, Orders/Index + Show, Clients/Index, Banners/Index, Users/Index, Payments/Index (реальный — баланс мастеров, выплаты, история)
-- Modals существуют: OblastFormModal, RegionFormModal, CityFormModal, CategoryFormModal, CategoryContentModal, MasterFormModal, BannerFormModal, ClientFormModal, UserFormModal, CreateOrderModal, EditOrderModal, AssignMasterModal, SetPriceModal, ChangeStatusModal, OrderStatusBadge
+- Auth (Breeze), Dashboard, Profile (Edit + Partials), Categories/Index, Masters/Index + Map, Orders/Index + Show, Clients/Index, Banners/Index, Users/Index, Payments/Index (реальный — баланс мастеров, выплаты, история)
+- Modals существуют: CategoryFormModal, CategoryContentModal, MasterFormModal, BannerFormModal, ClientFormModal, UserFormModal, CreateOrderModal, EditOrderModal, AssignMasterModal, SetPriceModal, ChangeStatusModal, OrderStatusBadge
 
 ### Иконки категорий
 - Источник истины пресетов: [config/service_icons.php](config/service_icons.php) — сгруппированные ключи (`repair`, `home`, `tech`, `security`, `services`), каждый ключ = файл `public/icons/services/{key}.svg` (`currentColor`, Heroicons outline)
@@ -126,7 +125,7 @@ Laravel 11 + Inertia v2 + Vue 3 + Tailwind v3 админ-панель для м�
 - Группы переводятся на фронте (`categories.icon_group_*`)
 
 ### Локализация
-- Файлы в `lang/{ru,tk}/`: api, auth, banners, categories, cities, clients, dashboard, layout, masters, notifications, oblasts, orders, payments, profile, regions, resources, users, validation
+- Файлы в `lang/{ru,tk}/`: api, auth, banners, categories, clients, dashboard, layout, masters, notifications, orders, payments, profile, resources, users, validation
 - Использовать `__('key')` в PHP и `t('key')` в Vue. **Не хардкодить строки**
 
 ---
@@ -177,7 +176,7 @@ Laravel 11 + Inertia v2 + Vue 3 + Tailwind v3 админ-панель для м�
 
 1. **OrderStatus state machine** — переходы только: Pending→Assigned/Cancelled, Assigned→InProgress/Cancelled, InProgress→Completed/Cancelled. Логика в `UpdateOrderStatusAction::isValidTransition()`. Не дублируй проверки в других местах.
 
-2. **AssignMasterAction валидирует** 4 условия: статус не финал, мастер активен, city_id совпадает, категория мастера включает категорию заказа. Не пиши свою валидацию — используй экшен.
+2. **AssignMasterAction валидирует** 4 условия: статус не финал, мастер активен, мастер доступен, категория мастера включает категорию заказа. Не пиши свою валидацию — используй экшен.
 
 3. **CreditMasterBalanceAction** автоматически вызывается из `UpdateOrderStatusAction` при `Completed`. Не вызывать вручную. Выплата (списание баланса) — отдельный `RecordMasterPayoutAction` через страницу Payments.
 

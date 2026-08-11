@@ -61,7 +61,7 @@ resources/js/
 ├── Components/             # Атомарные компоненты (PrimaryButton, Modal, InputLabel, ...)
 ├── Composables/            # (пусто на данный момент)
 ├── Layouts/                # AdminLayout, AuthenticatedLayout, GuestLayout
-├── Pages/                  # Inertia-страницы по доменам: Cities, Categories, Masters, Orders, Clients, Payments, Profile, Auth, Dashboard
+├── Pages/                  # Inertia-страницы по доменам: Categories, Masters, Orders, Clients, Payments, Profile, Auth, Dashboard
 ├── stores/                 # Pinia: useThemeStore, useLocaleStore, useNotificationStore
 ├── app.js                  # Точка входа, монтаж Inertia + i18n + Pinia + Ziggy
 ├── bootstrap.js            # Глобальный axios
@@ -81,21 +81,23 @@ routes/
 
 ## Ключевые модули
 
-### 1. Cities
-Простая иерархия CRUD: `Migration → Model → Factory → Repository → Action × 3 (Create/Update/Delete) → FormRequest × 2 → Controller → Resource → Vue Index + FormModal`.
+### 1. Categories
+Эталон CRUD-модуля: `Migration → Model → Factory → Repository → Action × 3 (Create/Update/Delete) → FormRequest × 2 → Controller → Resource → Vue Index + FormModal`.
+Плюс self-referencing `parent_id` (древовидная структура), методы `parent()`, `children()`, `isRoot()`.
 
-### 2. Categories
-То же что Cities + self-referencing `parent_id` (древовидная структура), методы `parent()`, `children()`, `isRoot()`.
+> Географии (велаяты / города / районы) в системе нет: сервис обслуживает только Ашхабад.
+> Мастера, клиенты и заказы не имеют привязки к местности — координаты заказа хранятся в
+> `client_lat` / `client_lng`.
 
-### 3. Masters
-- Мастер привязан к одному `City` и многим `Category` (pivot `category_master`)
+### 2. Masters
+- Мастер привязан ко многим `Category` (pivot `category_master`). Географии нет — сервис работает только по Ашхабаду
 - `PaymentModel` enum определяет схему расчёта зарплаты
 - `balance` поле — для накопления заработка, обнуляется `ResetMasterBalanceAction`
 - `is_active` + `access_expires_at` — контроль доступа (`hasActiveAccess()`)
 - Геолокация — `MasterLocation` модель, `latestLocation` через `hasOne()->latestOfMany()`
-- Реализована карта `Masters/Map.vue` с Leaflet, real-time через канал `masters-map.{cityId}`
+- Реализована карта `Masters/Map.vue` с Leaflet, real-time через канал `masters-map`
 
-### 4. Orders
+### 3. Orders
 **Центральный домен.** State machine через `OrderStatus`:
 
 ```
@@ -114,10 +116,9 @@ Pending → Assigned → InProgress → Completed
 `AssignMasterAction` валидирует:
 - Заказ не финальный
 - Мастер активен и доступ не истёк
-- `master.city_id === order.city_id`
 - Категория мастера включает категорию заказа
 
-### 5. Master Mobile API (v1)
+### 4. Master Mobile API (v1)
 Авторизация OTP → Sanctum:
 1. `POST /api/v1/master/auth/request-otp { phone }` — `RequestMasterOtpAction` генерирует 6-значный код, отправляет через `OtpGatewayService` (Socket.IO мост `socket-server/` → Flutter SMS-gateway телефон), кладёт в Cache на 3 мин
 2. `POST /api/v1/master/auth/verify-otp { phone, code }` — `VerifyMasterOtpAction` сверяет и возвращает Sanctum token (`name=mobile`)
@@ -130,29 +131,29 @@ Pending → Assigned → InProgress → Completed
 - `POST /master/orders/{order}/tasks` + `POST /master/orders/{order}/tasks/{task}/photo` (type=before|after)
 - `POST /master/{master}/location` — публичный (пока без auth, см. комментарий в роутах)
 
-### 6. Photo Pipeline
+### 5. Photo Pipeline
 1. Файл загружается → `OrderPhoto`/`OrderTask` со статусом `pending`
 2. `ConvertOrderPhotoJob` / `ConvertTaskPhotoJob` (tries=3, backoff=30) ставит `converting`
 3. `PhotoConverter::convert()` — GD конвертирует в WebP, при height > 1800 px скейлит, quality 85
 4. Старый файл удаляется, путь и статус `done` пишутся в БД
 5. На исключении — статус `failed` + throw
 
-### 7. Broadcasting (Reverb)
+### 6. Broadcasting (Reverb)
 | Event | Channel | Кто слушает |
 |---|---|---|
 | `OrderCreated` | `orders` (public) | AdminLayout (real-time toast + звук нового заказа) |
-| `MasterLocationUpdated` | `masters-map.{cityId}` (public) | `Masters/Map.vue` и `Orders/Show.vue` (живые точки) |
+| `MasterLocationUpdated` | `masters-map` (public) | `Masters/Map.vue` и `Orders/Show.vue` (живые точки) |
 
 `broadcastAs()` задаёт alias, на фронте подписка через `.order.created`.
 
-### 8. Notifications (UI)
+### 7. Notifications (UI)
 - Backend: `WithNotification` trait → `session()->flash('notification', ...)`
 - Inertia share → prop `notification`
 - AdminLayout watch'ит prop и пушит в `useNotificationStore` (Pinia)
 - Тосты автоматически уходят через 6 сек
 - Все ключи — из `lang/{ru,tk}/notifications.php`, ресурсы — из `resources.php`
 
-### 9. Локализация
+### 8. Локализация
 - **Source of truth**: PHP-файлы в `lang/{ru,tk}/`
 - `HandleInertiaRequests::loadTranslations()` собирает всё в bundle, кэширует на production
 - Bundle отправляется в shared prop `translations`
@@ -171,9 +172,9 @@ Pending → Assigned → InProgress → Completed
                        │
        ┌───────────────┼─────────────────────────────┐
        ▼               ▼                             ▼
-  Pages/Cities    Pages/Orders                  Pages/Masters
+  Pages/Clients   Pages/Orders                  Pages/Masters
                   Index.vue                      Index.vue
-                  Show.vue ──── Echo: masters-map.{cityId} ──── Map.vue
+                  Show.vue ──── Echo: masters-map ──── Map.vue
                        │
                        │ Inertia POST/GET (Ziggy route())
                        ▼

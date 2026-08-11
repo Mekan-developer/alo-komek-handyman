@@ -22,9 +22,6 @@
 
 | Модуль | Маршруты | Vue | Тест |
 |--------|---------|-----|------|
-| Oblasts | ✅ CRUD | ✅ Index + Modal | ✅ OblastTest |
-| Regions | ✅ CRUD | ✅ Index + Modal | ✅ RegionTest |
-| Cities | ✅ CRUD | ✅ Index + Modal | ✅ CityTest |
 | Categories | ✅ CRUD + иконки (preset/custom SVG) | ✅ Index + Modal + IconPicker | ✅ CategoryTest |
 | CategoryContent | ✅ upsert + неск. изображений | ✅ CategoryContentModal | ✅ CategoryContentTest |
 | Masters | ✅ CRUD + Map + Trajectory + Balance + availability + monthly_salary | ✅ Index + Map | ✅ MasterTest, MasterAvailabilityTest |
@@ -57,7 +54,7 @@
 #### Client API
 - OTP auth: request-otp (через SMS-шлюз, 3 мин TTL), verify-otp, logout, complete-registration
 - GET/PATCH /api/v1/client/me (ClientProfileController)
-- Catalog: GET oblasts, regions, cities, categories, categories/search, category content, banners
+- Catalog: GET categories, categories/search, category content, banners
 - Orders: index, show, store, cancel
 
 #### Broadcasting
@@ -65,28 +62,27 @@
 - Broadcast auth для мобилы: `POST /api/v1/broadcasting/auth`
 
 ### Backend Infrastructure
-- Модели: User (с ролями), Oblast, Region, City, Category, CategoryContent, CategoryContentImage, Master, MasterLocation, MasterPayout, Order, OrderTask, OrderTaskPhoto, OrderPhoto, Client, Banner
+- Модели: User (с ролями), Category, CategoryContent, CategoryContentImage, Master, MasterLocation, MasterPayout, Order, OrderTask, OrderTaskPhoto, OrderPhoto, Client, Banner
 - Enums: `OrderStatus` (`app/OrderStatus.php`), `PaymentModel` (`app/PaymentModel.php`), `UserRole` (`app/Enums/UserRole.php`), `CategoryIconType` (`app/Enums/CategoryIconType.php`)
 - Exceptions: OrderException, OtpException, MasterDisabledException, PaymentException, ApiException
 - Events: OrderCreated, OrderStatusChanged, MasterAssigned, MasterLocationUpdated
 - Jobs: ConvertOrderPhotoJob, ConvertTaskPhotoJob (WebP, tries=3, backoff=30); queue heartbeat — через `Queue::looping()` в `AppServiceProvider`, не отдельный job
-- Repositories: Oblast, Region, City, Category, CategoryContent, Master, Order, Client, Banner, Dashboard, User, Payment
+- Repositories: Category, CategoryContent, Master, Order, Client, Banner, Dashboard, User, Payment
 - Services: `OtpGatewayService` — отправка OTP через `socket-server/` (Node.js Socket.IO мост) на Flutter SMS-gateway телефон
 - Actions: полный набор для всех модулей (48 классов, включая User CRUD, ToggleMasterAvailability, RecordMasterPayout)
 - Policies: `UserPolicy` (`app/Policies/`)
 - Middleware: `CheckRole` (`role:`), `EnsureMaster`, `EnsureClient`, `ProtectScribeDocs`, `SetLocale`, `HandleInertiaRequests`
 - Resources: Admin + API V1 (Master + Client) + UserResource + MasterPayoutResource
 - Support: `PhotoConverter`, `CategoryIcon`; `config/service_icons.php` — preset-набор иконок
-- Lang: `lang/{ru,tk}/` — api, auth, banners, categories, cities, clients, dashboard, layout, masters, notifications, oblasts, orders, payments, profile, regions, resources, users, validation (18 файлов каждый)
+- Lang: `lang/{ru,tk}/` — api, auth, banners, categories, clients, dashboard, layout, masters, notifications, orders, payments, profile, resources, users, validation (15 файлов каждый)
 
 ### UI компоненты
 - PhoneInput.vue — поле телефона с +993, форматом `XX XX-XX-XX`; `formatPhone` утилита
-- OblastCitySelect.vue — каскадный выбор области → город (формы заказов/мастеров)
 - ServiceIcon.vue — рендер иконки категории (CSS mask preset / custom SVG), IconPicker.vue — выбор preset
 - Карты: MapLibre GL (мост `L.maplibreGL`) + self-hosted tileserver / pmtiles + protomaps-leaflet
 
 ### Тесты (Feature)
-- ✅ OblastTest, RegionTest, CityTest, CategoryTest, CategoryContentTest
+- ✅ CategoryTest, CategoryContentTest
 - ✅ MasterTest, MasterAvailabilityTest, OrderTest, BannerTest, ClientTest, UserTest, PaymentTest
 - ✅ CreditMasterBalanceActionTest, ConvertOrderPhotoJobTest, PhotoConverterTest, UploadTaskPhotoTest
 - ✅ MasterLocationApiTest, MasterAuthTest

@@ -123,7 +123,7 @@ lang/
 │   ├── layout.php
 │   ├── notifications.php       # Flash notification messages
 │   ├── profile.php
-│   └── resources.php           # Model names ("City", "Master", etc.)
+│   └── resources.php           # Model names ("Master", "Order", etc.)
 └── tk/                         # Turkmen translations (mirrors ru/ exactly)
 
 routes/
@@ -300,13 +300,12 @@ return [
 
 // lang/ru/resources.php
 return [
-    'city'   => 'Город',
     'master' => 'Мастер',
     'order'  => 'Заказ',
 ];
 
 // Usage
-__('notifications.created', ['resource' => __('resources.city')])
+__('notifications.created', ['resource' => __('resources.master')])
 ```
 
 ### JavaScript — Client Side
@@ -333,14 +332,14 @@ const messages = {
 ```php
 use App\Http\Traits\WithNotification;
 
-class CityController extends Controller
+class MasterController extends Controller
 {
     use WithNotification;
 
-    public function store(StoreCityRequest $request, CreateCityAction $action): RedirectResponse
+    public function store(StoreMasterRequest $request, CreateMasterAction $action): RedirectResponse
     {
         $action->handle($request->validated());
-        $this->notifySuccess('notifications.created', ['resource' => __('resources.city')]);
+        $this->notifySuccess('notifications.created', ['resource' => __('resources.master')]);
         return redirect()->route('cities.index');
     }
 }
@@ -401,8 +400,8 @@ The admin map (`/masters/map`) shows masters in real-time. When a master mobile 
 
 1. Master POSTs to `/api/v1/master/{id}/location`
 2. Backend stores it and dispatches `MasterLocationUpdated` event
-3. Event broadcasts to public channel `masters-map.{cityId}`
-4. Admin's open map subscribes to relevant city channels and animates the marker smoothly
+3. Event broadcasts to public channel `masters-map`
+4. Admin's open map subscribes to that channel and animates the marker smoothly
 
 ### Basemap Rendering (`Pages/Masters/Map.vue`)
 
@@ -434,7 +433,7 @@ docker run --rm -it -v $(pwd)/data:/data -p 8080:8080 \
 The order detail page (`/orders/{id}`) provides live tracking when a master is assigned and the order is `assigned` or `in_progress`:
 
 - On mount, loads the master's trajectory polyline from `/orders/{id}/master-trajectory`
-- Subscribes to `masters-map.{cityId}` via Reverb and moves the master marker in real-time
+- Subscribes to `masters-map` via Reverb and moves the master marker in real-time
 - Extends the trajectory polyline as new location events arrive
 - Shows a live distance (Haversine) and ETA chip (assuming 60 km/h) with a pulsing dot
 - Unsubscribes and cleans up on `onBeforeUnmount`
@@ -483,8 +482,28 @@ Web (Inertia) and API controllers are **strictly separate**. Never reuse or shar
 |--------|------|------|---------|
 | `POST` | `/api/v1/auth/request-otp` | — | Send OTP to phone number |
 | `POST` | `/api/v1/auth/verify-otp` | — | Verify OTP, returns Sanctum token |
-| `POST` | `/api/v1/auth/complete-registration` | Sanctum | Save name + city after first login |
+| `POST` | `/api/v1/auth/complete-registration` | Sanctum | Save name after first login |
 | `POST` | `/api/v1/auth/logout` | Sanctum | Revoke current token |
+
+### ⚠️ Breaking change — geography removed (v1)
+
+The service now operates in **Ashgabat only**. Every geography concept (oblast → city, plus
+the unused region directory) was dropped from the database, the admin panel and the API.
+
+Mobile apps must be updated before this release ships:
+
+| Removed | Replacement |
+|---|---|
+| `GET /api/v1/client/oblasts` | — (no directory; the city is implicitly Ashgabat) |
+| `GET /api/v1/client/regions` | — |
+| `GET /api/v1/client/cities` | — |
+| `city_id` in `complete-registration`, `PATCH /client/me`, create/update order | Drop the field; the address is carried by `client_address` + `client_lat` / `client_lng` |
+| `city` / `city_id` in client, profile, order and master responses | Removed from every resource |
+
+The broadcast channel is now the single public `masters-map` (was `masters-map.{cityId}`).
+
+**Full migration guide for mobile developers**: [docs/API_V1_GEOGRAPHY_REMOVAL.md](docs/API_V1_GEOGRAPHY_REMOVAL.md)
+— before/after payloads, a per-app checklist, and the open questions to settle before release.
 
 ---
 
@@ -557,8 +576,8 @@ vendor/bin/phpstan analyse
 
 ```bash
 php artisan test --compact                                     # All tests
-php artisan test --compact tests/Feature/CityTest.php         # Single file
-php artisan test --compact --filter=it_creates_a_city         # Single test
+php artisan test --compact tests/Feature/MasterTest.php       # Single file
+php artisan test --compact --filter=it_creates_a_master     # Single test
 ```
 
 Every feature, action, and model must have PHPUnit tests covering happy path, validation failure, and edge cases.
@@ -609,7 +628,7 @@ php artisan test --compact        # Full test suite
 | `docs:` | Documentation updates |
 | `test:` | Adding or fixing tests |
 
-Example: `feat: add city management with repository and PHPUnit tests`
+Example: `feat: add master management with repository and PHPUnit tests`
 
 ---
 

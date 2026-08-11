@@ -123,7 +123,7 @@ Use the **`pusher_channels_flutter`** package (Pusher SDK is fully compatible wi
 | `private-master.{masterId}` | After login | `.order.assigned` | `{ order_id, client_name, address, lat, lng }` *(planned)* |
 | `private-order.{orderId}` | When viewing an active order | `.order.status.changed` | `{ status, by }` *(planned)* |
 
-> The masters-map channel `masters-map.{cityId}` is for the **admin panel only**; the master app should NOT subscribe to it.
+> The `masters-map` channel is for the **admin panel only**; the master app should NOT subscribe to it.
 
 ### Authorization for private channels
 
