@@ -4,7 +4,6 @@ namespace Tests\Feature\Api\V1;
 
 use App\Jobs\ConvertOrderPhotoJob;
 use App\Models\Category;
-use App\Models\City;
 use App\Models\Client;
 use App\Models\Master;
 use App\Models\Order;
@@ -31,11 +30,9 @@ class ClientOrderUpdateTest extends TestCase
     {
         $client = $this->actingAsClient();
         $order = Order::factory()->create(['client_id' => $client->id]);
-        $city = City::factory()->create();
         $category = Category::factory()->create();
 
         $this->patchJson(route('api.v1.client.orders.update', $order), [
-            'city_id' => $city->id,
             'category_id' => $category->id,
             'description' => 'Обновлённое описание проблемы с краном.',
             'client_phone' => '+99362000000',
@@ -49,7 +46,6 @@ class ClientOrderUpdateTest extends TestCase
 
         $this->assertDatabaseHas('orders', [
             'id' => $order->id,
-            'city_id' => $city->id,
             'category_id' => $category->id,
             'description' => 'Обновлённое описание проблемы с краном.',
             'client_phone' => '+99362000000',
@@ -73,7 +69,6 @@ class ClientOrderUpdateTest extends TestCase
 
         $this->assertDatabaseHas('orders', [
             'id' => $order->id,
-            'city_id' => $order->city_id,
             'description' => 'Только описание изменилось',
         ]);
     }
@@ -116,11 +111,10 @@ class ClientOrderUpdateTest extends TestCase
         $order = Order::factory()->create(['client_id' => $client->id]);
 
         $this->patchJson(route('api.v1.client.orders.update', $order), [
-            'city_id' => 999999,
             'client_lat' => 200,
         ])
             ->assertStatus(422)
-            ->assertJsonValidationErrors(['city_id', 'client_lat']);
+            ->assertJsonValidationErrors(['client_lat']);
     }
 
     public function test_client_can_add_photos_when_updating_order(): void

@@ -167,10 +167,6 @@ return [
             'required' => 'Tassyklama kodyny giriziň.',
             'size' => 'Tassyklama kody anyk 6 simwoldan ybarat bolmalydyr.',
         ],
-        'city_id' => [
-            'required' => 'Şäheri saýlaň.',
-            'exists' => 'Saýlanan şäher tapylmady.',
-        ],
         'category_id' => [
             'required' => 'Kategoriýany saýlaň.',
             'exists' => 'Saýlanan kategoriýa tapylmady.',
@@ -246,7 +242,6 @@ return [
         'phone' => 'telefon belgisi',
         'code' => 'tassyklama kody',
         'name' => 'at',
-        'city_id' => 'şäher',
         'category_id' => 'kategoriýa',
         'description' => 'düşündiriş',
         'client_phone' => 'müşteriniň telefony',

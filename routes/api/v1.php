@@ -78,9 +78,6 @@ Route::prefix('client')->group(function () {
     Route::get('settings', [ClientSettingController::class, 'show'])->name('api.v1.client.settings');
 
     // Public catalog
-    Route::get('oblasts', [ClientCatalogController::class, 'oblasts'])->name('api.v1.client.oblasts');
-    Route::get('regions', [ClientCatalogController::class, 'regions'])->name('api.v1.client.regions');
-    Route::get('cities', [ClientCatalogController::class, 'cities'])->name('api.v1.client.cities');
     Route::get('categories', [ClientCatalogController::class, 'categories'])->name('api.v1.client.categories');
     Route::get('categories/search', [ClientCatalogController::class, 'searchCategories'])->name('api.v1.client.categories.search');
     Route::get('categories/{category}/content', [ClientCatalogController::class, 'categoryContent'])->name('api.v1.client.categories.content');

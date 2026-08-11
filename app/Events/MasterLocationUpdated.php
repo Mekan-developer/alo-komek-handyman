@@ -19,7 +19,7 @@ class MasterLocationUpdated implements ShouldBroadcastNow
     public function broadcastOn(): array
     {
         return [
-            new Channel('masters-map.'.$this->location->master->city_id),
+            new Channel('masters-map'),
         ];
     }
 

@@ -9,7 +9,6 @@ return [
     'cancel' => 'Отмена',
     'actions' => 'Действия',
     'empty' => 'Клиентов пока нет',
-    'select_city' => 'Выберите город',
 
     'active' => 'Активен',
     'blocked' => 'Заблокирован',
@@ -21,17 +20,12 @@ return [
     'unblock_confirm' => 'Разблокировать клиента?',
 
     'filters' => [
-        'all_oblasts' => 'Все велаяты',
-        'all_cities' => 'Все города',
-        'by_oblast' => 'По велаяту',
-        'by_city' => 'По городу',
         'reset' => 'Сбросить',
     ],
 
     'fields' => [
         'name' => 'Имя',
         'phone' => 'Телефон',
-        'city' => 'Город',
         'orders_count' => 'Заявки',
         'status' => 'Статус',
     ],

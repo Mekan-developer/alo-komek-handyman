@@ -38,7 +38,7 @@ class CreateOrderAction
                 ConvertOrderPhotoJob::dispatch($record->id);
             }
 
-            $order->load(['city', 'category', 'photos']);
+            $order->load(['category', 'photos']);
 
             OrderCreated::dispatch($order);
 

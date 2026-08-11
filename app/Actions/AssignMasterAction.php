@@ -31,10 +31,6 @@ class AssignMasterAction
             throw OrderException::masterUnavailable();
         }
 
-        if ($master->city_id !== $order->city_id) {
-            throw OrderException::cityMismatch();
-        }
-
         $masterCategoryIds = $master->categories()->pluck('categories.id')->all();
         if (! in_array($order->category_id, $masterCategoryIds, true)) {
             throw OrderException::categoryMismatch();

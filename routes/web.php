@@ -3,16 +3,13 @@
 use App\Http\Controllers\BannerController;
 use App\Http\Controllers\CategoryContentController;
 use App\Http\Controllers\CategoryController;
-use App\Http\Controllers\CityController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MasterController;
 use App\Http\Controllers\NotificationController;
-use App\Http\Controllers\OblastController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\RegionController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\SystemStatusController;
 use App\Http\Controllers\TilesController;
@@ -75,9 +72,6 @@ Route::middleware('auth')->group(function () {
             ->middleware('verified')
             ->name('dashboard');
 
-        Route::resource('oblasts', OblastController::class)->only(['index', 'store', 'update', 'destroy']);
-        Route::resource('regions', RegionController::class)->only(['index', 'store', 'update', 'destroy']);
-        Route::resource('cities', CityController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::resource('categories', CategoryController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::post('categories/{category}/content', [CategoryContentController::class, 'upsert'])->name('categories.content.upsert');
         Route::get('masters/map', [MasterController::class, 'map'])->name('masters.map');

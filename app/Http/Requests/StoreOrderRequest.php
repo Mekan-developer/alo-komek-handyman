@@ -15,7 +15,6 @@ class StoreOrderRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'city_id' => ['required', 'integer', 'exists:cities,id'],
             'category_id' => ['required', 'integer', 'exists:categories,id'],
             'client_id' => ['nullable', 'integer', 'exists:clients,id'],
             'client_name' => ['required', 'string', 'max:255'],

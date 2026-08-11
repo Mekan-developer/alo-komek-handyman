@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Jobs\ConvertOrderPhotoJob;
 use App\Models\Category;
-use App\Models\City;
 use App\Models\Order;
 use App\Models\OrderPhoto;
 use App\Models\User;
@@ -27,11 +26,9 @@ class ConvertOrderPhotoJobTest extends TestCase
         $user = User::factory()->create();
         $this->actingAs($user);
 
-        $city = City::factory()->create();
         $category = Category::factory()->create();
 
         $this->post(route('orders.store'), [
-            'city_id' => $city->id,
             'category_id' => $category->id,
             'client_name' => 'Test Client',
             'client_phone' => '+99361000001',
@@ -61,9 +58,7 @@ class ConvertOrderPhotoJobTest extends TestCase
         Storage::disk('public')->put($relativePath, file_get_contents($jpegPath));
         unlink($jpegPath);
 
-        $city = City::factory()->create();
         $order = Order::factory()->create([
-            'city_id' => $city->id,
             'status' => OrderStatus::Pending,
         ]);
 
@@ -87,9 +82,7 @@ class ConvertOrderPhotoJobTest extends TestCase
     {
         Storage::fake('public');
 
-        $city = City::factory()->create();
         $order = Order::factory()->create([
-            'city_id' => $city->id,
             'status' => OrderStatus::Pending,
         ]);
 

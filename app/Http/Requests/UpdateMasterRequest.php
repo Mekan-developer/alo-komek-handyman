@@ -18,7 +18,6 @@ class UpdateMasterRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'city_id' => ['required', 'integer', 'exists:cities,id'],
             'name' => ['required', 'string', 'max:255'],
             'phone' => ['required', 'string', 'max:20', Rule::unique('masters', 'phone')->ignore($this->route('master'))],
             'payment_model' => ['required', Rule::enum(PaymentModel::class)],

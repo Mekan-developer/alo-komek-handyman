@@ -5,7 +5,6 @@ import { useI18n } from 'vue-i18n'
 import Modal from '@/Components/Modal.vue'
 import InputError from '@/Components/InputError.vue'
 import PhoneInput from '@/Components/PhoneInput.vue'
-import OblastCitySelect from '@/Components/OblastCitySelect.vue'
 import CategoryPicker from '@/Components/CategoryPicker.vue'
 import { loadMapStyle, suppressBlankIconWarnings } from '@/utils/loadMapStyle'
 import 'leaflet/dist/leaflet.css'
@@ -16,7 +15,6 @@ const page = usePage()
 
 const props = defineProps({
     show: { type: Boolean, required: true },
-    oblasts: { type: Array, default: () => [] },
     categories: { type: Array, default: () => [] },
     clients: { type: Array, default: () => [] },
 })
@@ -29,7 +27,6 @@ const form = useForm({
     client_id: null,
     client_name: '',
     client_phone: '',
-    city_id: null,
     category_id: null,
     description: '',
     client_address: '',
@@ -62,7 +59,6 @@ function selectClient(client) {
     form.client_id = client.id
     form.client_name = client.name ?? ''
     form.client_phone = client.phone ?? ''
-    if (client.city_id) { form.city_id = client.city_id }
     clientSearch.value = ''
     showClientDropdown.value = false
 }
@@ -360,18 +356,6 @@ const labelClass = 'block text-sm font-medium text-gray-700 dark:text-slate-300'
                                     ← {{ t('orders.create.back_to_search') }}
                                 </button>
                             </div>
-                        </div>
-
-                        <!-- City (велаят + город в один ряд) -->
-                        <div class="space-y-1 sm:col-span-2">
-                            <OblastCitySelect
-                                v-model="form.city_id"
-                                :oblasts="oblasts"
-                                :has-error="!!form.errors.city_id"
-                                horizontal
-                                required
-                            />
-                            <InputError :message="form.errors.city_id" />
                         </div>
 
                         <!-- Address -->

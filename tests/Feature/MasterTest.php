@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\Category;
-use App\Models\City;
 use App\Models\Master;
 use App\Models\MasterLocation;
 use App\Models\OrderReview;
@@ -26,10 +25,9 @@ class MasterTest extends TestCase
         return $user;
     }
 
-    private function validPayload(City $city): array
+    private function validPayload(): array
     {
         return [
-            'city_id' => $city->id,
             'name' => 'Иван Иванов',
             'phone' => '+99362123456',
             'payment_model' => PaymentModel::Percentage->value,
@@ -100,7 +98,7 @@ class MasterTest extends TestCase
 
         $this->get(route('masters.map'))
             ->assertOk()
-            ->assertInertia(fn ($page) => $page->component('Masters/Map')->has('masters')->has('cityIds'));
+            ->assertInertia(fn ($page) => $page->component('Masters/Map')->has('masters'));
     }
 
     public function test_map_includes_masters_with_null_access_expires_at(): void
@@ -147,9 +145,8 @@ class MasterTest extends TestCase
     public function test_user_can_create_a_master(): void
     {
         $this->actingAsAdmin();
-        $city = City::factory()->create();
 
-        $this->post(route('masters.store'), $this->validPayload($city))
+        $this->post(route('masters.store'), $this->validPayload())
             ->assertRedirect(route('masters.index'));
 
         $this->assertDatabaseHas('masters', ['name' => 'Иван Иванов', 'phone' => '+99362123456']);
@@ -158,10 +155,9 @@ class MasterTest extends TestCase
     public function test_creating_master_syncs_categories(): void
     {
         $this->actingAsAdmin();
-        $city = City::factory()->create();
         $categories = Category::factory()->count(2)->create();
 
-        $payload = array_merge($this->validPayload($city), [
+        $payload = array_merge($this->validPayload(), [
             'category_ids' => $categories->pluck('id')->toArray(),
         ]);
 
@@ -174,8 +170,7 @@ class MasterTest extends TestCase
     public function test_store_fails_when_name_is_missing(): void
     {
         $this->actingAsAdmin();
-        $city = City::factory()->create();
-        $payload = $this->validPayload($city);
+        $payload = $this->validPayload();
         $payload['name'] = '';
 
         $this->post(route('masters.store'), $payload)
@@ -185,28 +180,16 @@ class MasterTest extends TestCase
     public function test_store_fails_when_phone_is_duplicate(): void
     {
         $this->actingAsAdmin();
-        $city = City::factory()->create();
         Master::factory()->create(['phone' => '+99362123456']);
 
-        $this->post(route('masters.store'), $this->validPayload($city))
+        $this->post(route('masters.store'), $this->validPayload())
             ->assertSessionHasErrors('phone');
-    }
-
-    public function test_store_fails_when_city_does_not_exist(): void
-    {
-        $this->actingAsAdmin();
-        $payload = $this->validPayload(City::factory()->make(['id' => 9999]));
-        $payload['city_id'] = 9999;
-
-        $this->post(route('masters.store'), $payload)
-            ->assertSessionHasErrors('city_id');
     }
 
     public function test_store_fails_with_invalid_payment_model(): void
     {
         $this->actingAsAdmin();
-        $city = City::factory()->create();
-        $payload = $this->validPayload($city);
+        $payload = $this->validPayload();
         $payload['payment_model'] = 'not_a_real_model';
 
         $this->post(route('masters.store'), $payload)
@@ -218,9 +201,8 @@ class MasterTest extends TestCase
     public function test_creating_salary_percentage_master_stores_both_values(): void
     {
         $this->actingAsAdmin();
-        $city = City::factory()->create();
 
-        $payload = array_merge($this->validPayload($city), [
+        $payload = array_merge($this->validPayload(), [
             'payment_model' => PaymentModel::SalaryPercentage->value,
             'payment_value' => 35,
             'monthly_salary' => 1500,
@@ -239,9 +221,8 @@ class MasterTest extends TestCase
     public function test_salary_percentage_requires_monthly_salary(): void
     {
         $this->actingAsAdmin();
-        $city = City::factory()->create();
 
-        $payload = array_merge($this->validPayload($city), [
+        $payload = array_merge($this->validPayload(), [
             'payment_model' => PaymentModel::SalaryPercentage->value,
             'payment_value' => 35,
             'monthly_salary' => null,
@@ -254,9 +235,8 @@ class MasterTest extends TestCase
     public function test_percentage_cannot_exceed_100(): void
     {
         $this->actingAsAdmin();
-        $city = City::factory()->create();
 
-        $payload = array_merge($this->validPayload($city), [
+        $payload = array_merge($this->validPayload(), [
             'payment_model' => PaymentModel::Percentage->value,
             'payment_value' => 150,
         ]);
@@ -268,9 +248,8 @@ class MasterTest extends TestCase
     public function test_salary_requires_monthly_salary_but_not_payment_value(): void
     {
         $this->actingAsAdmin();
-        $city = City::factory()->create();
 
-        $payload = array_merge($this->validPayload($city), [
+        $payload = array_merge($this->validPayload(), [
             'payment_model' => PaymentModel::Salary->value,
             'payment_value' => null,
             'monthly_salary' => 1500,
@@ -292,9 +271,8 @@ class MasterTest extends TestCase
     {
         $this->actingAsAdmin();
         $master = Master::factory()->create();
-        $newCity = City::factory()->create();
 
-        $payload = array_merge($this->validPayload($newCity), ['name' => 'Новое имя']);
+        $payload = array_merge($this->validPayload(), ['name' => 'Новое имя']);
 
         $this->post(route('masters.update', $master), $payload)
             ->assertRedirect(route('masters.index'));
@@ -306,9 +284,8 @@ class MasterTest extends TestCase
     {
         $this->actingAsAdmin();
         $master = Master::factory()->create(['phone' => '+99362999999']);
-        $city = City::factory()->create();
 
-        $payload = array_merge($this->validPayload($city), ['phone' => '+99362999999']);
+        $payload = array_merge($this->validPayload(), ['phone' => '+99362999999']);
 
         $this->post(route('masters.update', $master), $payload)
             ->assertRedirect(route('masters.index'));
@@ -319,9 +296,8 @@ class MasterTest extends TestCase
         $this->actingAsAdmin();
         Master::factory()->create(['phone' => '+99362111111']);
         $master = Master::factory()->create(['phone' => '+99362222222']);
-        $city = City::factory()->create();
 
-        $payload = array_merge($this->validPayload($city), ['phone' => '+99362111111']);
+        $payload = array_merge($this->validPayload(), ['phone' => '+99362111111']);
 
         $this->post(route('masters.update', $master), $payload)
             ->assertSessionHasErrors('phone');
@@ -330,13 +306,12 @@ class MasterTest extends TestCase
     public function test_updating_master_syncs_categories(): void
     {
         $this->actingAsAdmin();
-        $city = City::factory()->create();
-        $master = Master::factory()->create(['city_id' => $city->id]);
+        $master = Master::factory()->create();
         $categories = Category::factory()->count(3)->create();
         $master->categories()->sync($categories->pluck('id'));
 
         $newCategories = Category::factory()->count(1)->create();
-        $payload = array_merge($this->validPayload($city), [
+        $payload = array_merge($this->validPayload(), [
             'phone' => $master->phone,
             'category_ids' => $newCategories->pluck('id')->toArray(),
         ]);
@@ -354,9 +329,8 @@ class MasterTest extends TestCase
     {
         Storage::fake('public');
         $this->actingAsAdmin();
-        $city = City::factory()->create();
 
-        $payload = array_merge($this->validPayload($city), [
+        $payload = array_merge($this->validPayload(), [
             'photo' => UploadedFile::fake()->image('master.jpg', 600, 800),
         ]);
 
@@ -377,9 +351,8 @@ class MasterTest extends TestCase
     {
         Storage::fake('public');
         $this->actingAsAdmin();
-        $city = City::factory()->create();
 
-        $this->post(route('masters.store'), $this->validPayload($city))->assertRedirect();
+        $this->post(route('masters.store'), $this->validPayload())->assertRedirect();
 
         $this->assertNull(Master::where('phone', '+99362123456')->firstOrFail()->photo);
     }
@@ -388,9 +361,8 @@ class MasterTest extends TestCase
     {
         Storage::fake('public');
         $this->actingAsAdmin();
-        $city = City::factory()->create();
 
-        $payload = array_merge($this->validPayload($city), [
+        $payload = array_merge($this->validPayload(), [
             'photo' => UploadedFile::fake()->create('document.pdf', 100, 'application/pdf'),
         ]);
 
@@ -401,11 +373,10 @@ class MasterTest extends TestCase
     {
         Storage::fake('public');
         $this->actingAsAdmin();
-        $city = City::factory()->create();
-        $master = Master::factory()->create(['city_id' => $city->id, 'photo' => 'masters/old.webp']);
+        $master = Master::factory()->create(['photo' => 'masters/old.webp']);
         Storage::disk('public')->put('masters/old.webp', 'dummy');
 
-        $payload = array_merge($this->validPayload($city), [
+        $payload = array_merge($this->validPayload(), [
             'phone' => $master->phone,
             'photo' => UploadedFile::fake()->image('new.jpg', 600, 800),
         ]);
@@ -422,11 +393,10 @@ class MasterTest extends TestCase
     {
         Storage::fake('public');
         $this->actingAsAdmin();
-        $city = City::factory()->create();
-        $master = Master::factory()->create(['city_id' => $city->id, 'photo' => 'masters/keep.webp']);
+        $master = Master::factory()->create(['photo' => 'masters/keep.webp']);
         Storage::disk('public')->put('masters/keep.webp', 'dummy');
 
-        $payload = array_merge($this->validPayload($city), ['phone' => $master->phone]);
+        $payload = array_merge($this->validPayload(), ['phone' => $master->phone]);
 
         $this->post(route('masters.update', $master), $payload)->assertRedirect();
 

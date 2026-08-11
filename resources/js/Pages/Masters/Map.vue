@@ -12,7 +12,6 @@ const page = usePage()
 
 const props = defineProps({
     masters: Array,
-    cityIds: { type: Array, default: () => [] },
 })
 
 const mapContainer = ref(null)
@@ -25,6 +24,9 @@ const trajectoryLayers = {}
 const activeTrajectories = ref(new Set())
 const lastUpdateAt = ref({})
 const subscribedChannels = []
+
+// Сервис работает только по Ашхабаду — один канал на всех мастеров.
+const MASTERS_MAP_CHANNEL = 'masters-map'
 
 const TM_CENTER = [37.95, 58.38]
 
@@ -82,7 +84,7 @@ onMounted(async () => {
 
     window.__showTrajectory = (masterId) => toggleTrajectory(masterId)
 
-    subscribeToCityChannels()
+    subscribeToLocationUpdates()
 })
 
 onBeforeUnmount(() => {
@@ -226,18 +228,15 @@ function toggleFullscreen() {
     setTimeout(() => map.invalidateSize(), 200)
 }
 
-function subscribeToCityChannels() {
-    if (!window.Echo || !props.cityIds?.length) { return }
+function subscribeToLocationUpdates() {
+    if (!window.Echo) { return }
 
-    props.cityIds.forEach((cityId) => {
-        const channelName = `masters-map.${cityId}`
-        subscribedChannels.push(channelName)
+    subscribedChannels.push(MASTERS_MAP_CHANNEL)
 
-        window.Echo.channel(channelName)
-            .listen('.master.location.updated', (payload) => {
-                handleLocationUpdate(payload)
-            })
-    })
+    window.Echo.channel(MASTERS_MAP_CHANNEL)
+        .listen('.master.location.updated', (payload) => {
+            handleLocationUpdate(payload)
+        })
 }
 
 function handleLocationUpdate(payload) {
@@ -276,8 +275,7 @@ function addOrUpdateMarker(masterId, master, lat, lng, animated = false) {
     const popupHtml = `
         <div style="min-width:180px;">
             <div style="font-weight:600;font-size:13px;margin-bottom:4px;">${escapeHtml(master.name)}</div>
-            <div style="color:#6b7280;font-size:12px;">${escapeHtml(master.phone)}</div>
-            <div style="color:#6b7280;font-size:12px;margin-bottom:8px;">${escapeHtml(master.city?.name ?? '')}</div>
+            <div style="color:#6b7280;font-size:12px;margin-bottom:8px;">${escapeHtml(master.phone)}</div>
             <button
                 onclick="window.__showTrajectory(${master.id})"
                 style="background:#2563eb;color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;width:100%"

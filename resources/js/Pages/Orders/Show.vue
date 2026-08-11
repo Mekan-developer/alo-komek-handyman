@@ -19,7 +19,6 @@ const page = usePage()
 
 const props = defineProps({
     order: { type: Object, required: true },
-    oblasts: { type: Array, default: () => [] },
     categories: { type: Array, default: () => [] },
     eligibleMasters: { type: Array, default: () => [] },
     statuses: { type: Array, default: () => [] },
@@ -50,6 +49,9 @@ const MAP_FILTERS = {
     black: 'invert(1) grayscale(1) brightness(0.85) contrast(1.1)',
 }
 const MAP_MODE_STORAGE_KEY = 'masters-map-mode'
+
+// Сервис работает только по Ашхабаду — один канал на всех мастеров.
+const MASTERS_MAP_CHANNEL = 'masters-map'
 const currentMode = ref('auto')
 
 const mapContainer = ref(null)
@@ -171,8 +173,8 @@ onMounted(async () => {
         router.post(route('orders.assign', props.order.id), { master_id: masterId })
     }
 
-    if (isTracking.value && window.Echo && props.order.city?.id) {
-        window.Echo.channel(`masters-map.${props.order.city.id}`)
+    if (isTracking.value && window.Echo) {
+        window.Echo.channel(MASTERS_MAP_CHANNEL)
             .listen('.master.location.updated', (payload) => {
                 if (payload.master_id !== props.order.master.id) { return }
 
@@ -199,9 +201,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
     delete window.__assignFromMap
-    if (props.order.city?.id) {
-        window.Echo?.leave(`masters-map.${props.order.city.id}`)
-    }
+    window.Echo?.leave(MASTERS_MAP_CHANNEL)
     themeObserver?.disconnect()
     if (map) {
         map.remove()
@@ -453,10 +453,6 @@ const sortedEligibleMasters = computed(() => {
                         <div class="rounded-xl bg-white shadow-sm dark:bg-slate-800">
                             <div class="space-y-2 px-4 py-3 text-sm">
                                 <div class="flex items-center justify-between gap-2">
-                                    <span class="text-gray-500 dark:text-slate-400">{{ t('orders.fields.city') }}</span>
-                                    <span class="font-medium text-gray-700 dark:text-slate-300">{{ order.city?.name }}</span>
-                                </div>
-                                <div class="flex items-center justify-between gap-2">
                                     <span class="text-gray-500 dark:text-slate-400">{{ t('orders.fields.category') }}</span>
                                     <span class="truncate font-medium text-gray-700 dark:text-slate-300">{{ order.category?.name }}</span>
                                 </div>
@@ -679,7 +675,6 @@ const sortedEligibleMasters = computed(() => {
         <EditOrderModal
             :show="showEditModal"
             :order="order"
-            :oblasts="oblasts"
             :categories="categories"
             @close="showEditModal = false"
         />

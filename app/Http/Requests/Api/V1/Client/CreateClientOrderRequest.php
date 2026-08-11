@@ -15,7 +15,6 @@ class CreateClientOrderRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'city_id' => ['required', 'integer', 'exists:cities,id'],
             'category_id' => ['required', 'integer', 'exists:categories,id'],
             'description' => ['required', 'string', 'min:5', 'max:2000'],
             'client_phone' => ['required', 'string', 'min:6', 'max:20'],

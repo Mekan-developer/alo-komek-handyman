@@ -2,7 +2,6 @@
 
 namespace Database\Factories;
 
-use App\Models\City;
 use App\Models\Client;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -15,7 +14,6 @@ class ClientFactory extends Factory
     public function definition(): array
     {
         return [
-            'city_id' => City::factory(),
             'name' => fake()->name(),
             'phone' => fake()->unique()->numerify('+99361#######'),
             'is_blocked' => false,

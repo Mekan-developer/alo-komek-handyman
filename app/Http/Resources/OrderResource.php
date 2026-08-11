@@ -25,14 +25,9 @@ class OrderResource extends JsonResource
 
             'final_price' => $this->final_price,
 
-            'city_id' => $this->city_id,
             'category_id' => $this->category_id,
             'master_id' => $this->master_id,
 
-            'city' => $this->whenLoaded('city', fn () => [
-                'id' => $this->city->id,
-                'name' => $this->city->name,
-            ]),
             'category' => $this->whenLoaded('category', fn () => [
                 'id' => $this->category->id,
                 'name' => $this->category->name,

@@ -54,7 +54,7 @@ class ClientOrderController extends Controller
 
         $order = $action->handle($client, $data, $photos);
 
-        return (new ClientOrderResource($order->load(['city', 'category', 'photos'])))
+        return (new ClientOrderResource($order->load(['category', 'photos'])))
             ->response()
             ->setStatusCode(201);
     }
@@ -73,7 +73,7 @@ class ClientOrderController extends Controller
 
         $updated = $action->handle($order, $data, $photos, $removePhotoIds);
 
-        return (new ClientOrderResource($updated->load(['city', 'category', 'master', 'photos'])))->response();
+        return (new ClientOrderResource($updated->load(['category', 'master', 'photos'])))->response();
     }
 
     public function cancel(CancelClientOrderRequest $request, int $id, CancelClientOrderAction $action): JsonResponse
@@ -85,7 +85,7 @@ class ClientOrderController extends Controller
 
         $cancelled = $action->handle($order, $request->validated('reason'));
 
-        return (new ClientOrderResource($cancelled->load(['city', 'category', 'master', 'photos'])))->response();
+        return (new ClientOrderResource($cancelled->load(['category', 'master', 'photos'])))->response();
     }
 
     public function storeReview(CreateOrderReviewRequest $request, int $id, CreateOrderReviewAction $action): JsonResponse

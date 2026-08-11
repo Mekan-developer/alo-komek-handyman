@@ -107,7 +107,7 @@ class MasterLocationApiTest extends TestCase
         });
     }
 
-    public function test_event_broadcasts_on_correct_city_channel(): void
+    public function test_event_broadcasts_on_the_single_masters_map_channel(): void
     {
         $master = Master::factory()->create();
         $location = $master->locations()->create([
@@ -120,7 +120,7 @@ class MasterLocationApiTest extends TestCase
         $channels = $event->broadcastOn();
 
         $this->assertCount(1, $channels);
-        $this->assertEquals('masters-map.'.$master->city_id, $channels[0]->name);
+        $this->assertEquals('masters-map', $channels[0]->name);
     }
 
     public function test_event_broadcast_payload_shape(): void

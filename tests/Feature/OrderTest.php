@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\Category;
-use App\Models\City;
 use App\Models\Client;
 use App\Models\Master;
 use App\Models\Order;
@@ -26,10 +25,9 @@ class OrderTest extends TestCase
         return $user;
     }
 
-    private function validPayload(City $city, Category $category): array
+    private function validPayload(Category $category): array
     {
         return [
-            'city_id' => $city->id,
             'category_id' => $category->id,
             'client_name' => 'Aman Jumayev',
             'client_phone' => '+99362111222',
@@ -129,16 +127,14 @@ class OrderTest extends TestCase
     public function test_eligible_masters_excludes_current_master_and_stays_a_list(): void
     {
         $this->actingAsAdmin();
-        $city = City::factory()->create();
         $category = Category::factory()->create();
 
-        $masters = Master::factory()->count(3)->create(['city_id' => $city->id]);
+        $masters = Master::factory()->count(3)->create();
         $masters->each(fn (Master $m) => $m->categories()->sync([$category->id]));
 
         // Assigned master sits in the middle of the eligible set, so filtering it out
         // leaves non-sequential collection keys — must still serialize as a JSON array.
         $order = Order::factory()->forMaster($masters[1])->assigned()->create([
-            'city_id' => $city->id,
             'category_id' => $category->id,
         ]);
 
@@ -158,10 +154,9 @@ class OrderTest extends TestCase
     public function test_admin_can_create_order(): void
     {
         $this->actingAsAdmin();
-        $city = City::factory()->create();
         $category = Category::factory()->create();
 
-        $this->post(route('orders.store'), $this->validPayload($city, $category))
+        $this->post(route('orders.store'), $this->validPayload($category))
             ->assertRedirect(route('orders.index'));
 
         $this->assertDatabaseHas('orders', [
@@ -173,11 +168,10 @@ class OrderTest extends TestCase
     public function test_admin_can_create_order_for_existing_client(): void
     {
         $this->actingAsAdmin();
-        $city = City::factory()->create();
         $category = Category::factory()->create();
         $client = Client::factory()->create();
 
-        $payload = array_merge($this->validPayload($city, $category), [
+        $payload = array_merge($this->validPayload($category), [
             'client_id' => $client->id,
         ]);
 
@@ -194,10 +188,9 @@ class OrderTest extends TestCase
     public function test_creating_order_for_unknown_phone_creates_client(): void
     {
         $this->actingAsAdmin();
-        $city = City::factory()->create();
         $category = Category::factory()->create();
 
-        $this->post(route('orders.store'), $this->validPayload($city, $category))
+        $this->post(route('orders.store'), $this->validPayload($category))
             ->assertRedirect();
 
         $this->assertDatabaseHas('clients', [
@@ -216,10 +209,9 @@ class OrderTest extends TestCase
     {
         Storage::fake('public');
         $this->actingAsAdmin();
-        $city = City::factory()->create();
         $category = Category::factory()->create();
 
-        $payload = array_merge($this->validPayload($city, $category), [
+        $payload = array_merge($this->validPayload($category), [
             'photos' => [
                 UploadedFile::fake()->image('a.jpg'),
                 UploadedFile::fake()->image('b.jpg'),
@@ -236,17 +228,16 @@ class OrderTest extends TestCase
     {
         $this->actingAsAdmin();
         $this->post(route('orders.store'), [])
-            ->assertSessionHasErrors(['city_id', 'category_id', 'client_name', 'client_phone', 'description', 'client_lat', 'client_lng']);
+            ->assertSessionHasErrors(['category_id', 'client_name', 'client_phone', 'description', 'client_lat', 'client_lng']);
     }
 
     public function test_store_rejects_more_than_4_photos(): void
     {
         Storage::fake('public');
         $this->actingAsAdmin();
-        $city = City::factory()->create();
         $category = Category::factory()->create();
 
-        $payload = array_merge($this->validPayload($city, $category), [
+        $payload = array_merge($this->validPayload($category), [
             'photos' => array_fill(0, 5, UploadedFile::fake()->image('p.jpg')),
         ]);
 
@@ -258,11 +249,10 @@ class OrderTest extends TestCase
     public function test_admin_can_assign_eligible_master(): void
     {
         $this->actingAsAdmin();
-        $city = City::factory()->create();
         $category = Category::factory()->create();
-        $master = Master::factory()->create(['city_id' => $city->id]);
+        $master = Master::factory()->create();
         $master->categories()->sync([$category->id]);
-        $order = Order::factory()->create(['city_id' => $city->id, 'category_id' => $category->id]);
+        $order = Order::factory()->create(['category_id' => $category->id]);
 
         $this->post(route('orders.assign', $order), ['master_id' => $master->id])
             ->assertRedirect(route('orders.show', $order));
@@ -277,14 +267,12 @@ class OrderTest extends TestCase
     public function test_admin_can_reassign_a_different_master_with_a_reason(): void
     {
         $this->actingAsAdmin();
-        $city = City::factory()->create();
         $category = Category::factory()->create();
-        $firstMaster = Master::factory()->create(['city_id' => $city->id]);
-        $secondMaster = Master::factory()->create(['city_id' => $city->id]);
+        $firstMaster = Master::factory()->create();
+        $secondMaster = Master::factory()->create();
         $firstMaster->categories()->sync([$category->id]);
         $secondMaster->categories()->sync([$category->id]);
         $order = Order::factory()->forMaster($firstMaster)->assigned()->create([
-            'city_id' => $city->id,
             'category_id' => $category->id,
         ]);
 
@@ -301,11 +289,10 @@ class OrderTest extends TestCase
     public function test_first_time_assignment_ignores_change_reason(): void
     {
         $this->actingAsAdmin();
-        $city = City::factory()->create();
         $category = Category::factory()->create();
-        $master = Master::factory()->create(['city_id' => $city->id]);
+        $master = Master::factory()->create();
         $master->categories()->sync([$category->id]);
-        $order = Order::factory()->create(['city_id' => $city->id, 'category_id' => $category->id]);
+        $order = Order::factory()->create(['category_id' => $category->id]);
 
         $this->post(route('orders.assign', $order), [
             'master_id' => $master->id,
@@ -318,11 +305,10 @@ class OrderTest extends TestCase
     public function test_assigning_inactive_master_fails(): void
     {
         $this->actingAsAdmin();
-        $city = City::factory()->create();
         $category = Category::factory()->create();
-        $master = Master::factory()->inactive()->create(['city_id' => $city->id]);
+        $master = Master::factory()->inactive()->create();
         $master->categories()->sync([$category->id]);
-        $order = Order::factory()->create(['city_id' => $city->id, 'category_id' => $category->id]);
+        $order = Order::factory()->create(['category_id' => $category->id]);
 
         $this->post(route('orders.assign', $order), ['master_id' => $master->id])
             ->assertRedirect();
@@ -330,31 +316,41 @@ class OrderTest extends TestCase
         $this->assertNull($order->fresh()->master_id);
     }
 
-    public function test_assigning_master_from_different_city_fails(): void
+    /**
+     * Regression: masters used to be filtered by the order's city. The service now
+     * covers Ashgabat only, so category match is the sole eligibility rule.
+     */
+    public function test_eligible_masters_are_selected_by_category_only(): void
     {
         $this->actingAsAdmin();
-        $cityA = City::factory()->create();
-        $cityB = City::factory()->create();
-        $category = Category::factory()->create();
-        $master = Master::factory()->create(['city_id' => $cityB->id]);
-        $master->categories()->sync([$category->id]);
-        $order = Order::factory()->create(['city_id' => $cityA->id, 'category_id' => $category->id]);
+        $orderCategory = Category::factory()->create();
+        $otherCategory = Category::factory()->create();
 
-        $this->post(route('orders.assign', $order), ['master_id' => $master->id])
-            ->assertRedirect();
+        $matching = Master::factory()->create();
+        $matching->categories()->sync([$orderCategory->id]);
 
-        $this->assertNull($order->fresh()->master_id);
+        $nonMatching = Master::factory()->create();
+        $nonMatching->categories()->sync([$otherCategory->id]);
+
+        $order = Order::factory()->create(['category_id' => $orderCategory->id]);
+
+        $this->get(route('orders.show', $order))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Orders/Show')
+                ->has('eligibleMasters', 1)
+                ->where('eligibleMasters.0.id', $matching->id)
+            );
     }
 
     public function test_assigning_master_without_matching_category_fails(): void
     {
         $this->actingAsAdmin();
-        $city = City::factory()->create();
         $orderCategory = Category::factory()->create();
         $masterCategory = Category::factory()->create();
-        $master = Master::factory()->create(['city_id' => $city->id]);
+        $master = Master::factory()->create();
         $master->categories()->sync([$masterCategory->id]);
-        $order = Order::factory()->create(['city_id' => $city->id, 'category_id' => $orderCategory->id]);
+        $order = Order::factory()->create(['category_id' => $orderCategory->id]);
 
         $this->post(route('orders.assign', $order), ['master_id' => $master->id])
             ->assertRedirect();
@@ -495,12 +491,10 @@ class OrderTest extends TestCase
     public function test_admin_can_update_pending_order(): void
     {
         $this->actingAsAdmin();
-        $city = City::factory()->create();
         $category = Category::factory()->create();
         $order = Order::factory()->create(['status' => 'pending']);
 
         $this->put(route('orders.update', $order), [
-            'city_id' => $city->id,
             'category_id' => $category->id,
             'client_name' => 'Обновлённое имя',
             'client_phone' => '+99362999888',
@@ -513,19 +507,16 @@ class OrderTest extends TestCase
         $this->assertDatabaseHas('orders', [
             'id' => $order->id,
             'client_name' => 'Обновлённое имя',
-            'city_id' => $city->id,
         ]);
     }
 
     public function test_update_fails_on_assigned_order(): void
     {
         $this->actingAsAdmin();
-        $city = City::factory()->create();
         $category = Category::factory()->create();
         $order = Order::factory()->assigned()->create();
 
         $this->put(route('orders.update', $order), [
-            'city_id' => $city->id,
             'category_id' => $category->id,
             'client_name' => 'Test',
             'client_phone' => '+99362000000',
@@ -543,7 +534,7 @@ class OrderTest extends TestCase
         $order = Order::factory()->create(['status' => 'pending']);
 
         $this->put(route('orders.update', $order), [])
-            ->assertSessionHasErrors(['city_id', 'category_id', 'client_name', 'client_phone', 'description', 'client_lat', 'client_lng']);
+            ->assertSessionHasErrors(['category_id', 'client_name', 'client_phone', 'description', 'client_lat', 'client_lng']);
     }
 
     // ── Destroy ───────────────────────────────────────────────────────────────

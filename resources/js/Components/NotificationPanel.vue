@@ -199,8 +199,8 @@ defineExpose({ prepend, fetchNotifications })
                             <p class="mt-0.5 text-sm text-gray-600 dark:text-slate-400">
                                 {{ n.data.client_name }} · {{ n.data.category }}
                             </p>
-                            <p v-if="n.data.city" class="mt-0.5 text-xs text-gray-400 dark:text-slate-500">
-                                {{ n.data.city }}<span v-if="n.data.address"> · {{ n.data.address }}</span>
+                            <p v-if="n.data.address" class="mt-0.5 text-xs text-gray-400 dark:text-slate-500">
+                                {{ n.data.address }}
                             </p>
                         </button>
 

@@ -17,7 +17,6 @@ class Order extends Model
 
     /** @var array<int, string> */
     protected $fillable = [
-        'city_id',
         'category_id',
         'master_id',
         'client_id',
@@ -49,11 +48,6 @@ class Order extends Model
             'completed_at' => 'datetime',
             'cancelled_at' => 'datetime',
         ];
-    }
-
-    public function city(): BelongsTo
-    {
-        return $this->belongsTo(City::class);
     }
 
     public function category(): BelongsTo

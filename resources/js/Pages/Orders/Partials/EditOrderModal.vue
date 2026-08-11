@@ -5,7 +5,6 @@ import { useI18n } from 'vue-i18n'
 import Modal from '@/Components/Modal.vue'
 import InputError from '@/Components/InputError.vue'
 import PhoneInput from '@/Components/PhoneInput.vue'
-import OblastCitySelect from '@/Components/OblastCitySelect.vue'
 import CategoryPicker from '@/Components/CategoryPicker.vue'
 
 const { t } = useI18n()
@@ -13,14 +12,12 @@ const { t } = useI18n()
 const props = defineProps({
     show: { type: Boolean, required: true },
     order: { type: Object, required: true },
-    oblasts: { type: Array, default: () => [] },
     categories: { type: Array, default: () => [] },
 })
 
 const emit = defineEmits(['close'])
 
 const form = useForm({
-    city_id: null,
     category_id: null,
     client_name: '',
     client_phone: '',
@@ -32,7 +29,6 @@ const form = useForm({
 
 watch(() => props.show, (val) => {
     if (val) {
-        form.city_id = props.order.city?.id ?? null
         form.category_id = props.order.category?.id ?? null
         form.client_name = props.order.client_name ?? ''
         form.client_phone = props.order.client_phone ?? ''
@@ -76,18 +72,6 @@ const labelClass = 'block text-sm font-medium text-gray-700 dark:text-slate-300'
         <form @submit.prevent="submit" class="flex flex-1 flex-col overflow-hidden">
             <div class="flex-1 overflow-y-auto">
             <div class="grid grid-cols-1 gap-4 px-6 py-5 sm:grid-cols-2">
-
-                <!-- City (велаят + город в один ряд) -->
-                <div class="space-y-1 sm:col-span-2">
-                    <OblastCitySelect
-                        v-model="form.city_id"
-                        :oblasts="oblasts"
-                        :has-error="!!form.errors.city_id"
-                        horizontal
-                        required
-                    />
-                    <InputError :message="form.errors.city_id" />
-                </div>
 
                 <!-- Client Name -->
                 <div class="space-y-1">

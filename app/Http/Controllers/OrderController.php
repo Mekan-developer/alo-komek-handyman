@@ -21,7 +21,6 @@ use App\OrderStatus;
 use App\Repositories\CategoryRepository;
 use App\Repositories\ClientRepository;
 use App\Repositories\MasterRepository;
-use App\Repositories\OblastRepository;
 use App\Repositories\OrderRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -40,11 +39,10 @@ class OrderController extends Controller
 
     public function index(Request $request): Response
     {
-        $filters = $request->only(['status', 'city_id', 'search', 'date_from', 'date_to']);
+        $filters = $request->only(['status', 'search', 'date_from', 'date_to']);
 
         return Inertia::render('Orders/Index', [
             'orders' => OrderResource::collection($this->repository->paginate($filters)),
-            'oblasts' => app(OblastRepository::class)->allWithCities(),
             'categories' => app(CategoryRepository::class)->treeForSelect(),
             'clients' => app(ClientRepository::class)->allForSelect(),
             'statuses' => collect(OrderStatus::cases())->map(fn ($s) => [
@@ -65,11 +63,10 @@ class OrderController extends Controller
 
         return Inertia::render('Orders/Show', [
             'order' => (new OrderResource($order))->resolve(),
-            'oblasts' => $isPending ? app(OblastRepository::class)->allWithCities() : collect(),
             'categories' => $isPending ? app(CategoryRepository::class)->treeForSelect() : [],
             'eligibleMasters' => $isAssignable
                 ? $this->masterRepository
-                    ->eligibleForOrder($order->city_id, $order->category_id)
+                    ->eligibleForOrder($order->category_id)
                     ->filter(fn ($m) => $m->id !== $order->master_id)
                     ->map(fn ($m) => [
                         'id' => $m->id,

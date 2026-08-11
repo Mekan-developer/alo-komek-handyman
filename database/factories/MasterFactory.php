@@ -2,7 +2,6 @@
 
 namespace Database\Factories;
 
-use App\Models\City;
 use App\Models\Master;
 use App\PaymentModel;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -18,7 +17,6 @@ class MasterFactory extends Factory
     public function definition(): array
     {
         return [
-            'city_id' => City::factory(),
             'name' => fake()->name(),
             'phone' => fake()->unique()->numerify('+99362#######'),
             'payment_model' => PaymentModel::Percentage,

@@ -5,7 +5,6 @@ namespace App\Models;
 use App\PaymentModel;
 use Database\Factories\MasterFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -19,7 +18,6 @@ class Master extends Authenticatable
 
     /** @var array<int, string> */
     protected $fillable = [
-        'city_id',
         'name',
         'phone',
         'payment_model',
@@ -43,11 +41,6 @@ class Master extends Authenticatable
             'is_active' => 'boolean',
             'is_available' => 'boolean',
         ];
-    }
-
-    public function city(): BelongsTo
-    {
-        return $this->belongsTo(City::class);
     }
 
     public function categories(): BelongsToMany

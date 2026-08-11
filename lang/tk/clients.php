@@ -9,7 +9,6 @@ return [
     'cancel' => 'Ýatyr',
     'actions' => 'Hereketler',
     'empty' => 'Heniz müşderi ýok',
-    'select_city' => 'Şäher saýlaň',
 
     'active' => 'Işjeň',
     'blocked' => 'Petiklenen',
@@ -21,17 +20,12 @@ return [
     'unblock_confirm' => 'Müşderini açmak isleýärsiňizmi?',
 
     'filters' => [
-        'all_oblasts' => 'Ähli welaýatlar',
-        'all_cities' => 'Ähli şäherler',
-        'by_oblast' => 'Welaýat boýunça',
-        'by_city' => 'Şäher boýunça',
         'reset' => 'Arassala',
     ],
 
     'fields' => [
         'name' => 'Ady',
         'phone' => 'Telefon',
-        'city' => 'Şäher',
         'orders_count' => 'Sargytlar',
         'status' => 'Ýagdaý',
     ],

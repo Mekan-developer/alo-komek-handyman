@@ -132,7 +132,6 @@ function submitPayout() {
                         <thead class="bg-gray-50 dark:bg-slate-700/50">
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">{{ t('payments.fields.master') }}</th>
-                                <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">{{ t('payments.fields.city') }}</th>
                                 <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">{{ t('payments.fields.model') }}</th>
                                 <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">{{ t('payments.fields.balance') }}</th>
                                 <th v-if="canPayout" class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">{{ t('payments.fields.action') }}</th>
@@ -145,7 +144,6 @@ function submitPayout() {
                                 class="hover:bg-gray-50 dark:hover:bg-slate-700/40"
                             >
                                 <td class="px-6 py-4 text-sm font-medium text-gray-900 dark:text-slate-200">{{ master.name }}</td>
-                                <td class="px-6 py-4 text-sm text-gray-500 dark:text-slate-400">{{ master.city?.name ?? '—' }}</td>
                                 <td class="px-6 py-4 text-sm text-gray-500 dark:text-slate-400">{{ modelLabel(master.payment_model) }}</td>
                                 <td class="px-6 py-4 text-right text-sm font-semibold text-emerald-600 dark:text-emerald-400">
                                     {{ money(master.balance) }} {{ t('payments.currency') }}

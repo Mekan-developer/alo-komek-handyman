@@ -1,9 +1,6 @@
 <?php
 
 return [
-    'oblast' => 'Область',
-    'region' => 'Район',
-    'city' => 'Город',
     'category' => 'Категория',
     'master' => 'Мастер',
     'client' => 'Клиент',

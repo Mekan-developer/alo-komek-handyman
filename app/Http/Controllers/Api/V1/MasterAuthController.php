@@ -31,7 +31,7 @@ class MasterAuthController extends Controller
 
         return response()->json([
             'token' => $token->plainTextToken,
-            'master' => new MasterProfileResource($master->load('city', 'categories')),
+            'master' => new MasterProfileResource($master->load('categories')),
         ]);
     }
 

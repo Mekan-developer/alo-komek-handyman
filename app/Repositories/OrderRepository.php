@@ -13,9 +13,8 @@ class OrderRepository
     /** @param array<string, mixed> $filters */
     public function paginate(array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
-        return Order::with(['city', 'category', 'master'])
+        return Order::with(['category', 'master'])
             ->when($filters['status'] ?? null, fn ($q, $status) => $q->where('status', $status))
-            ->when($filters['city_id'] ?? null, fn ($q, $cityId) => $q->where('city_id', $cityId))
             ->when($filters['master_id'] ?? null, fn ($q, $masterId) => $q->where('master_id', $masterId))
             ->when($filters['search'] ?? null, fn ($q, $search) => $q->where(
                 fn ($sub) => $sub->where('client_name', 'like', "%{$search}%")
@@ -30,7 +29,7 @@ class OrderRepository
 
     public function forClient(Client $client, ?string $status = null): LengthAwarePaginator
     {
-        return Order::with(['category', 'city', 'master.latestLocation', 'review'])
+        return Order::with(['category', 'master.latestLocation', 'review'])
             ->where('client_id', $client->id)
             ->when($status, fn ($q) => $q->where('status', $status))
             ->latest()
@@ -40,7 +39,7 @@ class OrderRepository
 
     public function findForClientOrFail(int $orderId, Client $client): Order
     {
-        return Order::with(['category', 'city', 'master.latestLocation', 'photos', 'tasks', 'review'])
+        return Order::with(['category', 'master.latestLocation', 'photos', 'tasks', 'review'])
             ->where('client_id', $client->id)
             ->findOrFail($orderId);
     }
@@ -66,7 +65,6 @@ class OrderRepository
     public function findOrFail(int $id): Order
     {
         return Order::with([
-            'city',
             'category',
             'master.latestLocation',
             'photos',

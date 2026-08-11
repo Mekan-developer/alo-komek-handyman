@@ -49,7 +49,6 @@ class CreateOrderForClientAction
             ?? $this->clients->create([
                 'name' => $data['client_name'],
                 'phone' => $data['client_phone'],
-                'city_id' => $data['city_id'],
             ]);
     }
 }

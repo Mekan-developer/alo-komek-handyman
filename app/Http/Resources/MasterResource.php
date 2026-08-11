@@ -19,11 +19,6 @@ class MasterResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'phone' => $this->phone,
-            'city_id' => $this->city_id,
-            'city' => $this->whenLoaded('city', fn () => [
-                'id' => $this->city->id,
-                'name' => $this->city->name,
-            ]),
             'payment_model' => $this->payment_model->value,
             'payment_value' => $this->payment_value,
             'monthly_salary' => $this->monthly_salary,

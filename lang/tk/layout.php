@@ -3,9 +3,6 @@
 return [
     'nav' => [
         'dashboard' => 'Baş sahypa',
-        'oblasts' => 'Welaýatlar',
-        'regions' => 'Etraplar',
-        'cities' => 'Şäherler',
         'categories' => 'Kategoriyalar',
         'masters' => 'Ussatlar',
         'clients' => 'Müşderiler',
@@ -37,14 +34,6 @@ return [
         'next' => 'Soňky',
     ],
     'selected' => 'saýlandy',
-    'select' => [
-        'oblast' => 'Welaýat saýlaň',
-        'city' => 'Şäher saýlaň',
-    ],
-    'labels' => [
-        'oblast' => 'Welaýat',
-        'city' => 'Şäher',
-    ],
     'services' => [
         'queue' => 'Nobat hyzmaty',
         'reverb' => 'Reverb serwer',

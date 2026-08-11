@@ -26,7 +26,6 @@ class NewOrderNotification extends Notification implements ShouldQueue
             'order_id' => $this->order->id,
             'client_name' => $this->order->client_name,
             'category' => $this->order->category?->name,
-            'city' => $this->order->city?->name,
             'address' => $this->order->client_address,
         ];
     }

@@ -2,7 +2,6 @@
 import { useI18n } from 'vue-i18n'
 import Modal from '@/Components/Modal.vue'
 import PhoneInput from '@/Components/PhoneInput.vue'
-import OblastCitySelect from '@/Components/OblastCitySelect.vue'
 
 const { t } = useI18n()
 
@@ -10,7 +9,6 @@ defineProps({
     show: { type: Boolean, required: true },
     form: { type: Object, required: true },
     editing: { type: Object, default: null },
-    oblasts: { type: Array, default: () => [] },
 })
 
 const emit = defineEmits(['close', 'submit'])
@@ -63,17 +61,6 @@ const emit = defineEmits(['close', 'submit'])
                         :has-error="!!form.errors.phone"
                     />
                     <p v-if="form.errors.phone" class="mt-1.5 text-xs text-red-500">{{ form.errors.phone }}</p>
-                </div>
-
-                <!-- Oblast → City (cascading) -->
-                <div>
-                    <OblastCitySelect
-                        v-model="form.city_id"
-                        :oblasts="oblasts"
-                        :has-error="!!form.errors.city_id"
-                        required
-                    />
-                    <p v-if="form.errors.city_id" class="mt-1.5 text-xs text-red-500">{{ form.errors.city_id }}</p>
                 </div>
             </div>
 

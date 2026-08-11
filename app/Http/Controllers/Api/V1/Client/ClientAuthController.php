@@ -32,7 +32,7 @@ class ClientAuthController extends Controller
         return response()->json([
             'token' => $result['token']->plainTextToken,
             'is_new' => $result['is_new'],
-            'client' => new ClientProfileResource($result['client']->load('city')),
+            'client' => new ClientProfileResource($result['client']),
         ]);
     }
 
@@ -44,7 +44,7 @@ class ClientAuthController extends Controller
         );
 
         return response()->json([
-            'client' => new ClientProfileResource($client->load('city')),
+            'client' => new ClientProfileResource($client),
         ]);
     }
 

@@ -18,7 +18,7 @@ class ClientProfileController extends Controller
         /** @var Client $client */
         $client = $request->user();
 
-        return new ClientProfileResource($client->load('city'));
+        return new ClientProfileResource($client);
     }
 
     public function update(UpdateClientProfileRequest $request): ClientProfileResource
@@ -28,6 +28,6 @@ class ClientProfileController extends Controller
 
         $updated = $this->repository->update($client, $request->validated());
 
-        return new ClientProfileResource($updated->load('city'));
+        return new ClientProfileResource($updated);
     }
 }

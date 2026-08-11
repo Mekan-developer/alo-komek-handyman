@@ -21,10 +21,6 @@ class ClientOrderResource extends JsonResource
             'client_lng' => $this->client_lng,
             'final_price' => $this->final_price,
 
-            'city' => $this->whenLoaded('city', fn () => [
-                'id' => $this->city->id,
-                'name' => $this->city->name,
-            ]),
             'category' => $this->whenLoaded('category', fn () => [
                 'id' => $this->category->id,
                 'name' => $this->category->name,

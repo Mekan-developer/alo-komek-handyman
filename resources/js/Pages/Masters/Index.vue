@@ -6,14 +6,12 @@ import AdminLayout from '@/Layouts/AdminLayout.vue'
 import MasterFormModal from '@/Pages/Masters/Partials/MasterFormModal.vue'
 import ConfirmModal from '@/Components/ConfirmModal.vue'
 import Pagination from '@/Components/Pagination.vue'
-import CityFilterSelect from '@/Components/CityFilterSelect.vue'
 import { formatPhone } from '@/utils/formatPhone'
 
 const { t } = useI18n()
 
 const props = defineProps({
     masters: Object,
-    oblasts: Array,
     categories: Array,
     paymentModels: Array,
     filters: { type: Object, default: () => ({}) },
@@ -24,7 +22,6 @@ const showModal = ref(false)
 const editingMaster = ref(null)
 
 const form = useForm({
-    city_id: null,
     name: '',
     phone: '',
     payment_model: null,
@@ -45,7 +42,6 @@ function openCreate() {
 
 function openEdit(master) {
     editingMaster.value = master
-    form.city_id = master.city_id
     form.name = master.name
     form.phone = master.phone
     form.payment_model = master.payment_model
@@ -113,14 +109,12 @@ function confirmResetBalance() {
 
 // ── Filters ────────────────────────────────────────────────────────────────────
 const search = ref(props.filters.search ?? '')
-const cityFilter = ref(props.filters.city_id ? Number(props.filters.city_id) : null)
 
 const activeFilters = computed(() => ({
     ...(search.value ? { search: search.value } : {}),
-    ...(cityFilter.value ? { city_id: cityFilter.value } : {}),
 }))
 
-const hasActiveFilters = computed(() => Boolean(search.value || cityFilter.value))
+const hasActiveFilters = computed(() => Boolean(search.value))
 
 function applyFilters() {
     router.get(route('masters.index'), activeFilters.value, {
@@ -130,10 +124,7 @@ function applyFilters() {
 
 function resetFilters() {
     search.value = ''
-    cityFilter.value = null
 }
-
-watch(cityFilter, applyFilters)
 
 let searchTimer = null
 watch(search, () => {
@@ -189,13 +180,6 @@ const paginationMeta = computed(() => props.masters?.meta ?? null)
                         class="w-64 rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
                     />
                 </div>
-                <CityFilterSelect
-                    v-model="cityFilter"
-                    :oblasts="oblasts"
-                    :all-oblasts-label="t('masters.filters.all_oblasts')"
-                    :all-cities-label="t('masters.filters.all_cities')"
-                    select-class="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-                />
                 <button
                     v-if="hasActiveFilters"
                     @click="resetFilters"
@@ -214,7 +198,6 @@ const paginationMeta = computed(() => props.masters?.meta ?? null)
                                 <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">#</th>
                                 <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">{{ t('masters.name') }}</th>
                                 <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">{{ t('masters.phone') }}</th>
-                                <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">{{ t('masters.city') }}</th>
                                 <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">{{ t('masters.rating') }}</th>
                                 <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">{{ t('masters.payment_model') }}</th>
                                 <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">{{ t('masters.status') }}</th>
@@ -225,7 +208,7 @@ const paginationMeta = computed(() => props.masters?.meta ?? null)
                         </thead>
                         <tbody class="divide-y divide-gray-100 dark:divide-slate-700">
                             <tr v-if="masterList.length === 0">
-                                <td colspan="10" class="px-6 py-12 text-center text-sm text-gray-400 dark:text-slate-500">
+                                <td colspan="9" class="px-6 py-12 text-center text-sm text-gray-400 dark:text-slate-500">
                                     {{ t('masters.empty') }}
                                 </td>
                             </tr>
@@ -270,9 +253,6 @@ const paginationMeta = computed(() => props.masters?.meta ?? null)
                                 </td>
                                 <td class="px-6 py-4 text-sm whitespace-nowrap text-gray-500 dark:text-slate-400">
                                     {{ formatPhone(master.phone) }}
-                                </td>
-                                <td class="px-6 py-4 text-sm text-gray-500 dark:text-slate-400">
-                                    {{ master.city?.name ?? '—' }}
                                 </td>
                                 <td class="px-6 py-4 text-sm">
                                     <div v-if="master.reviews_count > 0" class="flex items-center gap-1">
@@ -376,7 +356,6 @@ const paginationMeta = computed(() => props.masters?.meta ?? null)
             :show="showModal"
             :form="form"
             :editing="editingMaster"
-            :oblasts="oblasts"
             :categories="categories"
             :payment-models="paymentModels"
             @close="closeModal"

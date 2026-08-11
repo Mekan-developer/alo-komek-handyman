@@ -16,7 +16,6 @@ class UpdateClientProfileRequest extends FormRequest
     {
         return [
             'name' => ['sometimes', 'string', 'max:255'],
-            'city_id' => ['sometimes', 'integer', 'exists:cities,id'],
         ];
     }
 }

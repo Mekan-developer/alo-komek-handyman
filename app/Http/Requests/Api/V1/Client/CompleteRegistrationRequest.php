@@ -16,7 +16,6 @@ class CompleteRegistrationRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'city_id' => ['required', 'integer', 'exists:cities,id'],
         ];
     }
 }
