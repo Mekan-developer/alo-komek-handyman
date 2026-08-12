@@ -23,24 +23,26 @@ return new class extends Migration
             $this->purgeNonAshgabatRecords();
         }
 
-        // dropForeign must accompany dropColumn: on SQLite it is what makes the
-        // builder rebuild the table instead of issuing an ALTER that trips over
-        // the lingering foreign key definition.
+        // The foreign key goes first: InnoDB backs the constraint with whatever
+        // index starts with `city_id`, so dropping the index while the key still
+        // exists fails with error 1553. dropForeign must also accompany
+        // dropColumn: on SQLite it is what makes the builder rebuild the table
+        // instead of issuing an ALTER that trips over the lingering foreign key.
         Schema::table('orders', function (Blueprint $table) {
-            $table->dropIndex(['city_id', 'status']);
             $table->dropForeign(['city_id']);
+            $table->dropIndex(['city_id', 'status']);
             $table->dropColumn('city_id');
         });
 
         Schema::table('masters', function (Blueprint $table) {
-            $table->dropIndex(['city_id']);
             $table->dropForeign(['city_id']);
+            $table->dropIndex(['city_id']);
             $table->dropColumn('city_id');
         });
 
         Schema::table('clients', function (Blueprint $table) {
-            $table->dropIndex(['city_id']);
             $table->dropForeign(['city_id']);
+            $table->dropIndex(['city_id']);
             $table->dropColumn('city_id');
         });
 
