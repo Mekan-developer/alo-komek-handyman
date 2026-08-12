@@ -19,7 +19,6 @@ return [
 
     'fields' => [
         'master' => 'Мастер',
-        'city' => 'Город',
         'amount' => 'Сумма',
         'balance' => 'Баланс',
         'model' => 'Модель оплаты',

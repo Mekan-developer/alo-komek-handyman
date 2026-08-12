@@ -3,7 +3,6 @@
 namespace Database\Factories;
 
 use App\Models\Category;
-use App\Models\City;
 use App\Models\Master;
 use App\Models\Order;
 use App\OrderStatus;
@@ -18,7 +17,6 @@ class OrderFactory extends Factory
     public function definition(): array
     {
         return [
-            'city_id' => fn () => City::query()->inRandomOrder()->value('id') ?? City::factory(),
             'category_id' => fn () => Category::query()
                 ->whereNotNull('parent_id')
                 ->inRandomOrder()
@@ -35,10 +33,10 @@ class OrderFactory extends Factory
         ];
     }
 
-    public function forCity(City $city, float $lat, float $lng): static
+    /** Place the order around the given coordinates — the service covers Ashgabat only. */
+    public function around(float $lat, float $lng): static
     {
         return $this->state([
-            'city_id' => $city->id,
             'client_lat' => $lat + fake()->randomFloat(4, -0.05, 0.05),
             'client_lng' => $lng + fake()->randomFloat(4, -0.05, 0.05),
         ]);
@@ -51,10 +49,7 @@ class OrderFactory extends Factory
 
     public function forMaster(Master $master): static
     {
-        return $this->state([
-            'master_id' => $master->id,
-            'city_id' => $master->city_id,
-        ]);
+        return $this->state(['master_id' => $master->id]);
     }
 
     public function assigned(): static

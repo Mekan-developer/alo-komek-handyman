@@ -15,7 +15,6 @@ class UpdateClientOrderRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'city_id' => ['sometimes', 'integer', 'exists:cities,id'],
             'category_id' => ['sometimes', 'integer', 'exists:categories,id'],
             'description' => ['sometimes', 'string', 'min:5', 'max:2000'],
             'client_phone' => ['sometimes', 'string', 'min:6', 'max:20'],

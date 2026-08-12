@@ -14,11 +14,6 @@ class ClientProfileResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'phone' => $this->phone,
-            'city_id' => $this->city_id,
-            'city' => $this->whenLoaded('city', fn () => $this->city ? [
-                'id' => $this->city->id,
-                'name' => $this->city->name,
-            ] : null),
             'created_at' => $this->created_at?->toDateTimeString(),
         ];
     }

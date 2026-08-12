@@ -5,13 +5,31 @@ namespace App\Events;
 use App\Models\MasterLocation;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class MasterLocationUpdated implements ShouldBroadcastNow
+/**
+ * Вещается через очередь, а не синхронно: мастер присылает координаты каждые
+ * несколько секунд, и HTTP-запрос мобильного приложения не должен ждать
+ * публикации в Reverb.
+ */
+class MasterLocationUpdated implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
+
+    /**
+     * Отдельная очередь: тяжёлая конвертация фото на `default` не должна
+     * задерживать трекинг на карте.
+     * Воркер обязан слушать обе: `php artisan queue:work --queue=broadcasts,default`.
+     */
+    public string $broadcastQueue = 'broadcasts';
+
+    /**
+     * Повторять бессмысленно — к моменту retry координата уже устарела,
+     * а следом придёт свежая.
+     */
+    public int $tries = 1;
 
     public function __construct(public MasterLocation $location) {}
 
@@ -19,7 +37,7 @@ class MasterLocationUpdated implements ShouldBroadcastNow
     public function broadcastOn(): array
     {
         return [
-            new Channel('masters-map.'.$this->location->master->city_id),
+            new Channel('masters-map'),
         ];
     }
 

@@ -8,10 +8,10 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 class MasterRepository
 {
-    /** @param array{search?: string, city_id?: int|string} $filters */
+    /** @param array{search?: string} $filters */
     public function paginate(int $perPage = 15, array $filters = []): LengthAwarePaginator
     {
-        return Master::with(['city', 'categories'])
+        return Master::with(['categories'])
             ->withAvg('reviews', 'rating')
             ->withCount('reviews')
             ->when($filters['search'] ?? null, function ($q, $search) {
@@ -21,22 +21,20 @@ class MasterRepository
                     ->orWhere('phone', 'like', "%{$escaped}%")
                 );
             })
-            ->when($filters['city_id'] ?? null, fn ($q, $id) => $q->where('city_id', $id))
             ->latest()
             ->paginate($perPage)
             ->withQueryString();
     }
 
     /** All active masters with latest location — for map view. */
-    public function forMap(?int $cityId = null): Collection
+    public function forMap(): Collection
     {
-        return Master::with(['city', 'latestLocation'])
+        return Master::with(['latestLocation'])
             ->where('is_active', true)
             ->where(function ($q) {
                 $q->whereNull('access_expires_at')
                     ->orWhere('access_expires_at', '>', now());
             })
-            ->when($cityId, fn ($q, $id) => $q->where('city_id', $id))
             ->get();
     }
 
@@ -99,8 +97,7 @@ class MasterRepository
     /** Masters with a positive outstanding balance — awaiting payout. */
     public function withOutstandingBalance(): Collection
     {
-        return Master::with('city')
-            ->where('balance', '>', 0)
+        return Master::where('balance', '>', 0)
             ->orderByDesc('balance')
             ->get();
     }
@@ -116,11 +113,10 @@ class MasterRepository
         return Master::where('balance', '>', 0)->count();
     }
 
-    /** Active masters in given city, optionally filtered by category — for order assignment dropdown. */
-    public function eligibleForOrder(int $cityId, ?int $categoryId = null): Collection
+    /** Active masters, optionally filtered by category — for order assignment dropdown. */
+    public function eligibleForOrder(?int $categoryId = null): Collection
     {
         return Master::with(['categories', 'latestLocation'])
-            ->where('city_id', $cityId)
             ->where('is_active', true)
             ->where(function ($q) {
                 $q->whereNull('access_expires_at')

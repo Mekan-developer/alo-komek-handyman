@@ -1,5 +1,5 @@
 ﻿<script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useForm, router } from '@inertiajs/vue3'
 import { useI18n } from 'vue-i18n'
 import { Head } from '@inertiajs/vue3'
@@ -13,55 +13,13 @@ const { t } = useI18n()
 
 const props = defineProps({
     clients: { type: Object, default: null },
-    oblasts: { type: Array, default: () => [] },
     filters: { type: Object, default: () => ({}) },
 })
-
-// ── Filters ───────────────────────────────────────────────────────────────────
-const selectedOblastId = ref(props.filters.oblast_id ? Number(props.filters.oblast_id) : null)
-const selectedCityId = ref(props.filters.city_id ? Number(props.filters.city_id) : null)
-
-const selectedOblast = computed(() =>
-    props.oblasts.find((o) => o.id === selectedOblastId.value) ?? null,
-)
-
-const showCityFilter = computed(() =>
-    selectedOblast.value !== null && selectedOblast.value.cities.length > 1,
-)
-
-const oblastCities = computed(() => selectedOblast.value?.cities ?? [])
-
-function applyFilters() {
-    router.get(
-        route('clients.index'),
-        {
-            ...(selectedOblastId.value ? { oblast_id: selectedOblastId.value } : {}),
-            ...(selectedCityId.value ? { city_id: selectedCityId.value } : {}),
-        },
-        { preserveScroll: true, preserveState: true },
-    )
-}
-
-function onOblastChange() {
-    selectedCityId.value = null
-    applyFilters()
-}
-
-function onCityChange() {
-    applyFilters()
-}
-
-function resetFilters() {
-    selectedOblastId.value = null
-    selectedCityId.value = null
-    router.get(route('clients.index'), {}, { preserveScroll: true, preserveState: true })
-}
 
 const showModal = ref(false)
 const editingClient = ref(null)
 
 const form = useForm({
-    city_id: null,
     name: '',
     phone: '',
 })
@@ -75,7 +33,6 @@ function openCreate() {
 
 function openEdit(client) {
     editingClient.value = client
-    form.city_id = client.city_id
     form.name = client.name
     form.phone = client.phone
     form.clearErrors()
@@ -131,13 +88,34 @@ function confirmToggleBlock() {
     })
 }
 
-const clientList = computed(() => props.clients?.data ?? [])
-const paginationMeta = computed(() => props.clients?.meta ?? null)
+// ── Filters ────────────────────────────────────────────────────────────────────
+const search = ref(props.filters.search ?? '')
 
 const activeFilters = computed(() => ({
-    ...(selectedOblastId.value ? { oblast_id: selectedOblastId.value } : {}),
-    ...(selectedCityId.value ? { city_id: selectedCityId.value } : {}),
+    ...(search.value ? { search: search.value } : {}),
 }))
+
+const hasActiveFilters = computed(() => Boolean(search.value))
+
+function applyFilters() {
+    router.get(route('clients.index'), activeFilters.value, {
+        preserveState: true, preserveScroll: true, replace: true,
+    })
+}
+
+function resetFilters() {
+    search.value = ''
+}
+
+let searchTimer = null
+watch(search, () => {
+    clearTimeout(searchTimer)
+    searchTimer = setTimeout(applyFilters, 350)
+})
+
+// ── Pagination ────────────────────────────────────────────────────────────────
+const clientList = computed(() => props.clients?.data ?? [])
+const paginationMeta = computed(() => props.clients?.meta ?? null)
 </script>
 
 <template>
@@ -162,40 +140,19 @@ const activeFilters = computed(() => ({
 
             <!-- Filters -->
             <div class="flex flex-wrap items-center gap-3">
-                <select
-                    v-model="selectedOblastId"
-                    @change="onOblastChange"
-                    class="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-                >
-                    <option :value="null">{{ t('clients.filters.all_oblasts') }}</option>
-                    <option v-for="oblast in oblasts" :key="oblast.id" :value="oblast.id">
-                        {{ oblast.name }}
-                    </option>
-                </select>
-
-                <Transition
-                    enter-active-class="transition-all duration-200"
-                    enter-from-class="opacity-0 -translate-x-2"
-                    enter-to-class="opacity-100 translate-x-0"
-                    leave-active-class="transition-all duration-150"
-                    leave-from-class="opacity-100 translate-x-0"
-                    leave-to-class="opacity-0 -translate-x-2"
-                >
-                    <select
-                        v-if="showCityFilter"
-                        v-model="selectedCityId"
-                        @change="onCityChange"
-                        class="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-                    >
-                        <option :value="null">{{ t('clients.filters.all_cities') }}</option>
-                        <option v-for="city in oblastCities" :key="city.id" :value="city.id">
-                            {{ city.name }}
-                        </option>
-                    </select>
-                </Transition>
-
+                <div class="relative">
+                    <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 dark:text-slate-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                    </svg>
+                    <input
+                        v-model="search"
+                        type="search"
+                        :placeholder="t('clients.search')"
+                        class="w-64 rounded-lg border border-gray-200 bg-white py-2 pl-9 pr-3 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                    />
+                </div>
                 <button
-                    v-if="selectedOblastId"
+                    v-if="hasActiveFilters"
                     @click="resetFilters"
                     class="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-500 shadow-sm hover:bg-gray-50 hover:text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200 transition-colors"
                 >
@@ -211,7 +168,6 @@ const activeFilters = computed(() => ({
                                 <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">#</th>
                                 <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">{{ t('clients.fields.name') }}</th>
                                 <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">{{ t('clients.fields.phone') }}</th>
-                                <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">{{ t('clients.fields.city') }}</th>
                                 <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">{{ t('clients.fields.orders_count') }}</th>
                                 <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">{{ t('clients.fields.status') }}</th>
                                 <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">{{ t('clients.actions') }}</th>
@@ -219,8 +175,8 @@ const activeFilters = computed(() => ({
                         </thead>
                         <tbody class="divide-y divide-gray-100 dark:divide-slate-700">
                             <tr v-if="clientList.length === 0">
-                                <td colspan="7" class="px-6 py-12 text-center text-sm text-gray-400 dark:text-slate-500">
-                                    {{ t('clients.empty') }}
+                                <td colspan="6" class="px-6 py-12 text-center text-sm text-gray-400 dark:text-slate-500">
+                                    {{ hasActiveFilters ? t('clients.not_found') : t('clients.empty') }}
                                 </td>
                             </tr>
                             <tr
@@ -237,9 +193,6 @@ const activeFilters = computed(() => ({
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-500 dark:text-slate-400">
                                     {{ formatPhone(client.phone) }}
-                                </td>
-                                <td class="px-6 py-4 text-sm text-gray-500 dark:text-slate-400">
-                                    {{ client.city?.name ?? '—' }}
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-500 dark:text-slate-400">
                                     {{ client.orders_count }}
@@ -311,7 +264,6 @@ const activeFilters = computed(() => ({
             :show="showModal"
             :form="form"
             :editing="editingClient"
-            :oblasts="oblasts"
             @close="closeModal"
             @submit="submit"
         />

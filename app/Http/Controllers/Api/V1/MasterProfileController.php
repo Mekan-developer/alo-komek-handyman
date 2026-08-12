@@ -11,7 +11,7 @@ class MasterProfileController extends Controller
     public function show(Request $request): MasterProfileResource
     {
         return new MasterProfileResource(
-            $request->user()->load('city', 'categories')
+            $request->user()->load('categories')
         );
     }
 }

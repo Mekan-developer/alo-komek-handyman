@@ -19,11 +19,6 @@ class OrderException extends ApiException
         return new self((string) __('orders.errors.master_not_assigned'));
     }
 
-    public static function cityMismatch(): self
-    {
-        return new self((string) __('orders.errors.city_mismatch'));
-    }
-
     public static function categoryMismatch(): self
     {
         return new self((string) __('orders.errors.category_mismatch'));

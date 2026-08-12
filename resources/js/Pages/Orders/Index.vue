@@ -7,14 +7,12 @@ import OrderStatusBadge from '@/Pages/Orders/Partials/OrderStatusBadge.vue'
 import CreateOrderModal from '@/Pages/Orders/Partials/CreateOrderModal.vue'
 import ConfirmModal from '@/Components/ConfirmModal.vue'
 import Pagination from '@/Components/Pagination.vue'
-import CityFilterSelect from '@/Components/CityFilterSelect.vue'
 import { formatPhone } from '@/utils/formatPhone'
 
 const { t } = useI18n()
 
 const props = defineProps({
     orders: Object,
-    oblasts: { type: Array, default: () => [] },
     categories: Array,
     clients: Array,
     statuses: Array,
@@ -24,19 +22,17 @@ const props = defineProps({
 const showCreate = ref(false)
 
 const statusFilter = ref(props.filters?.status ?? '')
-const cityFilter = ref(props.filters?.city_id ? Number(props.filters.city_id) : null)
 const search = ref(props.filters?.search ?? '')
 const dateFrom = ref(props.filters?.date_from ?? '')
 const dateTo = ref(props.filters?.date_to ?? '')
 
 const hasActiveFilters = computed(() =>
-    Boolean(statusFilter.value || cityFilter.value || search.value || dateFrom.value || dateTo.value)
+    Boolean(statusFilter.value || search.value || dateFrom.value || dateTo.value)
 )
 
 function applyFilters() {
     router.get(route('orders.index'), {
         status: statusFilter.value || undefined,
-        city_id: cityFilter.value || undefined,
         search: search.value || undefined,
         date_from: dateFrom.value || undefined,
         date_to: dateTo.value || undefined,
@@ -45,13 +41,12 @@ function applyFilters() {
 
 function resetFilters() {
     statusFilter.value = ''
-    cityFilter.value = null
     search.value = ''
     dateFrom.value = ''
     dateTo.value = ''
 }
 
-watch([statusFilter, cityFilter, dateFrom, dateTo], applyFilters)
+watch([statusFilter, dateFrom, dateTo], applyFilters)
 
 let searchTimer = null
 watch(search, () => {
@@ -64,7 +59,6 @@ const paginationMeta = computed(() => props.orders?.meta ?? null)
 
 const activeFilters = computed(() => ({
     status: statusFilter.value || undefined,
-    city_id: cityFilter.value || undefined,
     search: search.value || undefined,
     date_from: dateFrom.value || undefined,
     date_to: dateTo.value || undefined,
@@ -128,13 +122,6 @@ function confirmDelete() {
                     <option value="">{{ t('orders.filters.all_statuses') }}</option>
                     <option v-for="s in statuses" :key="s.value" :value="s.value">{{ s.label }}</option>
                 </select>
-                <CityFilterSelect
-                    v-model="cityFilter"
-                    :oblasts="oblasts"
-                    :all-oblasts-label="t('orders.filters.all_oblasts')"
-                    :all-cities-label="t('orders.filters.all_cities')"
-                    select-class="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-700 dark:text-white"
-                />
 
                 <!-- Date range -->
                 <div class="flex flex-col">
@@ -178,7 +165,6 @@ function confirmDelete() {
                                 <!-- <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">№</th> -->
                                 <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">id(#)</th>
                                 <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">{{ t('orders.fields.client_name') }}</th>
-                                <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">{{ t('orders.fields.city') }}</th>
                                 <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">{{ t('orders.fields.category') }}</th>
                                 <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">{{ t('orders.fields.master') }}</th>
                                 <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">{{ t('orders.fields.status') }}</th>
@@ -189,7 +175,7 @@ function confirmDelete() {
                         </thead>
                         <tbody class="divide-y divide-gray-100 dark:divide-slate-700">
                             <tr v-if="orderList.length === 0">
-                                <td colspan="9" class="px-6 py-12 text-center text-sm text-gray-400 dark:text-slate-500">
+                                <td colspan="8" class="px-6 py-12 text-center text-sm text-gray-400 dark:text-slate-500">
                                     {{ t('orders.empty') }}
                                 </td>
                             </tr>
@@ -205,7 +191,6 @@ function confirmDelete() {
                                     <div class="text-sm font-medium text-gray-900 dark:text-slate-200">{{ order.client_name }}</div>
                                     <div class="text-xs text-gray-400">{{ formatPhone(order.client_phone) }}</div>
                                 </td>
-                                <td class="px-6 py-4 text-sm text-gray-500 dark:text-slate-400">{{ order.city?.name ?? '—' }}</td>
                                 <td class="px-6 py-4 text-sm text-gray-500 dark:text-slate-400">{{ order.category?.name ?? '—' }}</td>
                                 <td class="px-6 py-4 text-sm">
                                     <span v-if="order.master" class="text-gray-700 dark:text-slate-300">{{ order.master.name }}</span>
@@ -256,7 +241,6 @@ function confirmDelete() {
 
         <CreateOrderModal
             :show="showCreate"
-            :oblasts="oblasts"
             :categories="categories"
             :clients="clients"
             @close="showCreate = false"

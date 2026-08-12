@@ -5,8 +5,10 @@ namespace Tests\Feature\Api\V1;
 use App\Events\MasterLocationUpdated;
 use App\Models\Master;
 use App\Models\Order;
+use Illuminate\Broadcasting\BroadcastEvent;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class MasterLocationApiTest extends TestCase
@@ -107,7 +109,22 @@ class MasterLocationApiTest extends TestCase
         });
     }
 
-    public function test_event_broadcasts_on_correct_city_channel(): void
+    public function test_location_broadcast_is_queued_and_does_not_block_the_request(): void
+    {
+        Queue::fake();
+        $master = Master::factory()->create();
+
+        $this->postJson(route('api.v1.master.location.store', $master->id), [
+            'latitude' => 37.95,
+            'longitude' => 58.38,
+        ])->assertCreated();
+
+        Queue::assertPushedOn('broadcasts', BroadcastEvent::class, function (BroadcastEvent $job): bool {
+            return $job->event instanceof MasterLocationUpdated && $job->tries === 1;
+        });
+    }
+
+    public function test_event_broadcasts_on_the_single_masters_map_channel(): void
     {
         $master = Master::factory()->create();
         $location = $master->locations()->create([
@@ -120,7 +137,7 @@ class MasterLocationApiTest extends TestCase
         $channels = $event->broadcastOn();
 
         $this->assertCount(1, $channels);
-        $this->assertEquals('masters-map.'.$master->city_id, $channels[0]->name);
+        $this->assertEquals('masters-map', $channels[0]->name);
     }
 
     public function test_event_broadcast_payload_shape(): void

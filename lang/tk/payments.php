@@ -19,7 +19,6 @@ return [
 
     'fields' => [
         'master' => 'Usta',
-        'city' => 'Şäher',
         'amount' => 'Möçber',
         'balance' => 'Balans',
         'model' => 'Töleg modeli',

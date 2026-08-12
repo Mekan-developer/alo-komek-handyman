@@ -14,7 +14,6 @@ use App\Http\Traits\WithNotification;
 use App\PaymentModel;
 use App\Repositories\CategoryRepository;
 use App\Repositories\MasterRepository;
-use App\Repositories\OblastRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -29,11 +28,10 @@ class MasterController extends Controller
 
     public function index(Request $request): Response
     {
-        $filters = $request->only(['search', 'city_id']);
+        $filters = $request->only(['search']);
 
         return Inertia::render('Masters/Index', [
             'masters' => MasterResource::collection($this->repository->paginate(15, $filters)),
-            'oblasts' => app(OblastRepository::class)->allWithCities(),
             'categories' => app(CategoryRepository::class)->treeForSelect(),
             'paymentModels' => collect(PaymentModel::cases())
                 ->reject(fn ($m) => $m === PaymentModel::FixedPerJob)
@@ -48,11 +46,8 @@ class MasterController extends Controller
 
     public function map(): Response
     {
-        $masters = $this->repository->forMap();
-
         return Inertia::render('Masters/Map', [
-            'masters' => MasterResource::collection($masters)->resolve(),
-            'cityIds' => $masters->pluck('city_id')->unique()->values(),
+            'masters' => MasterResource::collection($this->repository->forMap())->resolve(),
         ]);
     }
 

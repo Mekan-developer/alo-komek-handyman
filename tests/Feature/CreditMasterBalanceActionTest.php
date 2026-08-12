@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Actions\CreditMasterBalanceAction;
 use App\Models\Category;
-use App\Models\City;
 use App\Models\Master;
 use App\Models\Order;
 use App\OrderStatus;
@@ -18,12 +17,10 @@ class CreditMasterBalanceActionTest extends TestCase
 
     private function makeOrder(Master $master, ?float $finalPrice = 1000.0): Order
     {
-        $city = City::factory()->create();
         $category = Category::factory()->create();
 
         return Order::factory()->create([
             'master_id' => $master->id,
-            'city_id' => $city->id,
             'category_id' => $category->id,
             'status' => OrderStatus::InProgress,
             'final_price' => $finalPrice,
@@ -32,10 +29,8 @@ class CreditMasterBalanceActionTest extends TestCase
 
     private function makeMaster(PaymentModel $model, float $value, float $initialBalance = 0.0): Master
     {
-        $city = City::factory()->create();
 
         return Master::factory()->create([
-            'city_id' => $city->id,
             'payment_model' => $model,
             'payment_value' => $value,
             'balance' => $initialBalance,
@@ -105,11 +100,9 @@ class CreditMasterBalanceActionTest extends TestCase
 
     public function test_order_without_master_does_nothing(): void
     {
-        $city = City::factory()->create();
         $category = Category::factory()->create();
         $order = Order::factory()->create([
             'master_id' => null,
-            'city_id' => $city->id,
             'category_id' => $category->id,
             'status' => OrderStatus::InProgress,
         ]);

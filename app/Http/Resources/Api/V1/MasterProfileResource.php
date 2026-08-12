@@ -24,10 +24,6 @@ class MasterProfileResource extends JsonResource
             'is_active' => $this->is_active,
             'is_available' => $this->is_available,
             'access_expires_at' => $this->access_expires_at?->toDateString(),
-            'city' => $this->whenLoaded('city', fn () => [
-                'id' => $this->city->id,
-                'name' => $this->city->name,
-            ]),
             'categories' => $this->whenLoaded('categories', fn () => $this->categories->map(fn ($c) => [
                 'id' => $c->id,
                 'name' => $c->name,

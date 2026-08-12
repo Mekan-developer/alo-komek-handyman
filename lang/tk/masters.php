@@ -14,8 +14,6 @@ return [
     'photo_hint' => '3×4 format, JPG/PNG, 5 MB çenli',
     'phone' => 'Telefon',
     'phone_placeholder' => '+99361XXXXXXX',
-    'city' => 'Şäher',
-    'city_placeholder' => 'Şäheri saýlaň',
     'rating' => 'Reýting',
     'categories' => 'Kategoriyalar',
     'categories_placeholder' => 'Kategoriyalary saýlaň',
@@ -42,8 +40,6 @@ return [
     'delete_confirm' => 'Bu ussady öçürmek isleýärsiňizmi?',
     'search' => 'Ady ýa-da telefon boýunça gözle…',
     'filters' => [
-        'all_cities' => 'Ähli şäherler',
-        'all_oblasts' => 'Ähli welaýatlar',
         'reset' => 'Arassala',
     ],
     'empty' => 'Ussatlar tapylmady',

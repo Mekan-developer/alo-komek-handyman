@@ -35,7 +35,6 @@ class OrderCreated implements ShouldBroadcast
             'id' => $this->order->id,
             'client_name' => $this->order->client_name,
             'category' => $this->order->category?->name,
-            'city' => $this->order->city?->name,
         ];
     }
 }

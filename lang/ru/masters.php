@@ -14,8 +14,6 @@ return [
     'photo_hint' => 'Формат 3×4, JPG/PNG, до 5 МБ',
     'phone' => 'Телефон',
     'phone_placeholder' => '+99361XXXXXXX',
-    'city' => 'Город',
-    'city_placeholder' => 'Выберите город',
     'rating' => 'Рейтинг',
     'categories' => 'Категории',
     'categories_placeholder' => 'Выберите категории',
@@ -42,8 +40,6 @@ return [
     'delete_confirm' => 'Вы уверены, что хотите удалить этого мастера?',
     'search' => 'Поиск по имени или телефону…',
     'filters' => [
-        'all_cities' => 'Все города',
-        'all_oblasts' => 'Все велаяты',
         'reset' => 'Сбросить',
     ],
     'empty' => 'Мастера не найдены',

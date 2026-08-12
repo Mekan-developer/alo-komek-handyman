@@ -23,7 +23,6 @@ class CreateClientOrderAction
     {
         return DB::transaction(function () use ($client, $data, $photos) {
             $order = $this->repository->create([
-                'city_id' => $data['city_id'],
                 'category_id' => $data['category_id'],
                 'client_id' => $client->id,
                 'client_name' => $client->name ?? $client->phone,
@@ -47,7 +46,7 @@ class CreateClientOrderAction
                 ConvertOrderPhotoJob::dispatch($record->id);
             }
 
-            $order->load(['city', 'category', 'photos']);
+            $order->load(['category', 'photos']);
 
             OrderCreated::dispatch($order);
 

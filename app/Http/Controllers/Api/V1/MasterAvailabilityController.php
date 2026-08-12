@@ -17,6 +17,6 @@ class MasterAvailabilityController extends Controller
 
         $action->handle($master, $request->boolean('is_available'));
 
-        return new MasterProfileResource($master->fresh()->load('city', 'categories'));
+        return new MasterProfileResource($master->fresh()->load('categories'));
     }
 }

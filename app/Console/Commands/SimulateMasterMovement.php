@@ -67,7 +67,7 @@ class SimulateMasterMovement extends Command
                 ]);
             }
 
-            $this->line("Step {$i}/{$steps} → broadcasted to {$masters->count()} master(s).");
+            $this->line("Step {$i}/{$steps} → location saved + broadcast queued for {$masters->count()} master(s).");
 
             if ($i < $steps) {
                 sleep($interval);

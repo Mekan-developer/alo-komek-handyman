@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Api\V1;
 
-use App\Models\City;
 use App\Models\Client;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\Cache;
@@ -26,7 +25,6 @@ class ApiExceptionHandlingTest extends TestCase
         // was not behind auth:sanctum, so $request->user() was null.
         $this->postJson(route('api.v1.client.auth.complete-registration'), [
             'name' => 'Мекан',
-            'city_id' => City::factory()->create()->id,
         ])
             ->assertStatus(401)
             ->assertExactJson(['message' => __('api.unauthenticated')]);
@@ -36,20 +34,16 @@ class ApiExceptionHandlingTest extends TestCase
     {
         $client = Client::factory()->create(['name' => null]);
         Sanctum::actingAs($client, ['*']);
-        $city = City::factory()->create();
 
         $this->postJson(route('api.v1.client.auth.complete-registration'), [
             'name' => 'Мекан',
-            'city_id' => $city->id,
         ])
             ->assertOk()
-            ->assertJsonPath('client.name', 'Мекан')
-            ->assertJsonPath('client.city_id', $city->id);
+            ->assertJsonPath('client.name', 'Мекан');
 
         $this->assertDatabaseHas('clients', [
             'id' => $client->id,
             'name' => 'Мекан',
-            'city_id' => $city->id,
         ]);
     }
 
@@ -59,7 +53,7 @@ class ApiExceptionHandlingTest extends TestCase
 
         $this->postJson(route('api.v1.client.auth.complete-registration'), [])
             ->assertStatus(422)
-            ->assertJsonValidationErrors(['name', 'city_id']);
+            ->assertJsonValidationErrors(['name']);
     }
 
     public function test_missing_record_returns_localized_404(): void

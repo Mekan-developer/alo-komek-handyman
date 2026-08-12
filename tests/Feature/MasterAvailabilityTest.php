@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\Category;
-use App\Models\City;
 use App\Models\Master;
 use App\Models\Order;
 use App\Models\User;
@@ -73,13 +72,12 @@ class MasterAvailabilityTest extends TestCase
     public function test_admin_cannot_assign_unavailable_master(): void
     {
         $this->actingAsAdmin();
-        $city = City::factory()->create();
         $category = Category::factory()->create();
 
-        $master = Master::factory()->unavailable()->create(['city_id' => $city->id]);
+        $master = Master::factory()->unavailable()->create();
         $master->categories()->sync([$category->id]);
 
-        $order = Order::factory()->create(['city_id' => $city->id, 'category_id' => $category->id]);
+        $order = Order::factory()->create(['category_id' => $category->id]);
 
         $this->post(route('orders.assign', $order), ['master_id' => $master->id])
             ->assertRedirect();
@@ -90,13 +88,12 @@ class MasterAvailabilityTest extends TestCase
     public function test_admin_can_assign_available_master(): void
     {
         $this->actingAsAdmin();
-        $city = City::factory()->create();
         $category = Category::factory()->create();
 
-        $master = Master::factory()->create(['city_id' => $city->id]);
+        $master = Master::factory()->create();
         $master->categories()->sync([$category->id]);
 
-        $order = Order::factory()->create(['city_id' => $city->id, 'category_id' => $category->id]);
+        $order = Order::factory()->create(['category_id' => $category->id]);
 
         $this->post(route('orders.assign', $order), ['master_id' => $master->id])
             ->assertRedirect(route('orders.show', $order));

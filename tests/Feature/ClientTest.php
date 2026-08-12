@@ -2,10 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\City;
 use App\Models\Client;
-use App\Models\Oblast;
-use App\Models\Region;
 use App\Models\User;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Tests\TestCase;
@@ -22,10 +19,9 @@ class ClientTest extends TestCase
         return $user;
     }
 
-    private function validPayload(City $city): array
+    private function validPayload(): array
     {
         return [
-            'city_id' => $city->id,
             'name' => 'Иван Иванов',
             'phone' => '+99361111222',
         ];
@@ -48,20 +44,84 @@ class ClientTest extends TestCase
             ->assertInertia(fn ($page) => $page->component('Clients/Index')->has('clients'));
     }
 
+    // ── Search ────────────────────────────────────────────────────────────────
+
+    public function test_clients_can_be_searched_by_name(): void
+    {
+        $this->actingAsAdmin();
+        Client::factory()->create(['name' => 'Иван Иванов', 'phone' => '+99361111222']);
+        Client::factory()->create(['name' => 'Пётр Петров', 'phone' => '+99362222333']);
+
+        $this->get(route('clients.index', ['search' => 'Иван']))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Clients/Index')
+                ->has('clients.data', 1)
+                ->where('clients.data.0.name', 'Иван Иванов')
+                ->where('filters.search', 'Иван')
+            );
+    }
+
+    public function test_clients_can_be_searched_by_phone(): void
+    {
+        $this->actingAsAdmin();
+        Client::factory()->create(['name' => 'Иван Иванов', 'phone' => '+99361111222']);
+        Client::factory()->create(['name' => 'Пётр Петров', 'phone' => '+99362222333']);
+
+        $this->get(route('clients.index', ['search' => '2222333']))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->has('clients.data', 1)
+                ->where('clients.data.0.phone', '+99362222333')
+            );
+    }
+
+    public function test_client_search_by_phone_ignores_formatting(): void
+    {
+        $this->actingAsAdmin();
+        Client::factory()->create(['name' => 'Иван Иванов', 'phone' => '+99361111222']);
+        Client::factory()->create(['name' => 'Пётр Петров', 'phone' => '+99362222333']);
+
+        $this->get(route('clients.index', ['search' => '+993 62 22-23-33']))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->has('clients.data', 1)
+                ->where('clients.data.0.phone', '+99362222333')
+            );
+    }
+
+    public function test_client_search_returns_empty_when_nothing_matches(): void
+    {
+        $this->actingAsAdmin();
+        Client::factory()->count(3)->create();
+
+        $this->get(route('clients.index', ['search' => 'несуществующий-клиент']))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->has('clients.data', 0));
+    }
+
+    public function test_clients_index_without_search_returns_all(): void
+    {
+        $this->actingAsAdmin();
+        Client::factory()->count(3)->create();
+
+        $this->get(route('clients.index'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->has('clients.data', 3));
+    }
+
     // ── Store ─────────────────────────────────────────────────────────────────
 
     public function test_admin_can_create_client(): void
     {
         $this->actingAsAdmin();
-        $city = City::factory()->create();
 
-        $this->post(route('clients.store'), $this->validPayload($city))
+        $this->post(route('clients.store'), $this->validPayload())
             ->assertRedirect(route('clients.index'));
 
         $this->assertDatabaseHas('clients', [
             'name' => 'Иван Иванов',
             'phone' => '+99361111222',
-            'city_id' => $city->id,
             'is_blocked' => false,
         ]);
     }
@@ -69,10 +129,9 @@ class ClientTest extends TestCase
     public function test_store_requires_unique_phone(): void
     {
         $this->actingAsAdmin();
-        $city = City::factory()->create();
-        Client::factory()->create(['phone' => '+99361111222', 'city_id' => $city->id]);
+        Client::factory()->create(['phone' => '+99361111222']);
 
-        $this->post(route('clients.store'), $this->validPayload($city))
+        $this->post(route('clients.store'), $this->validPayload())
             ->assertSessionHasErrors('phone');
     }
 
@@ -81,7 +140,7 @@ class ClientTest extends TestCase
         $this->actingAsAdmin();
 
         $this->post(route('clients.store'), [])
-            ->assertSessionHasErrors(['city_id', 'name', 'phone']);
+            ->assertSessionHasErrors(['name', 'phone']);
     }
 
     // ── Update ────────────────────────────────────────────────────────────────
@@ -90,10 +149,8 @@ class ClientTest extends TestCase
     {
         $this->actingAsAdmin();
         $client = Client::factory()->create();
-        $newCity = City::factory()->create();
 
         $this->put(route('clients.update', $client->id), [
-            'city_id' => $newCity->id,
             'name' => 'Обновлённое имя',
             'phone' => $client->phone,
         ])->assertRedirect(route('clients.index'));
@@ -101,7 +158,6 @@ class ClientTest extends TestCase
         $this->assertDatabaseHas('clients', [
             'id' => $client->id,
             'name' => 'Обновлённое имя',
-            'city_id' => $newCity->id,
         ]);
     }
 
@@ -111,7 +167,6 @@ class ClientTest extends TestCase
         $client = Client::factory()->create(['phone' => '+99361111222']);
 
         $this->put(route('clients.update', $client->id), [
-            'city_id' => $client->city_id,
             'name' => $client->name,
             'phone' => '+99361111222',
         ])->assertRedirect(route('clients.index'));
@@ -156,26 +211,24 @@ class ClientTest extends TestCase
 
     // ── Mobile API catalog ────────────────────────────────────────────────────
 
-    public function test_oblasts_catalog_returns_active_only(): void
+    /**
+     * The service covers Ashgabat only, so the geography directories were removed
+     * from the mobile API entirely.
+     *
+     * @dataProvider removedGeographyEndpoints
+     */
+    public function test_geography_catalog_endpoints_are_gone(string $endpoint): void
     {
-        Oblast::factory()->create(['is_active' => true, 'name' => 'Ahal']);
-        Oblast::factory()->create(['is_active' => false, 'name' => 'Balkan']);
-
-        $this->getJson('/api/v1/client/oblasts')
-            ->assertOk()
-            ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.name', 'Ahal');
+        $this->getJson($endpoint)->assertNotFound();
     }
 
-    public function test_regions_catalog_returns_active_only(): void
+    /** @return array<string, array{string}> */
+    public static function removedGeographyEndpoints(): array
     {
-        $oblast = Oblast::factory()->create(['is_active' => true]);
-        Region::factory()->create(['is_active' => true, 'oblast_id' => $oblast->id, 'name' => 'Baharly']);
-        Region::factory()->create(['is_active' => false, 'oblast_id' => $oblast->id, 'name' => 'Kaka']);
-
-        $this->getJson('/api/v1/client/regions')
-            ->assertOk()
-            ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.name', 'Baharly');
+        return [
+            'oblasts' => ['/api/v1/client/oblasts'],
+            'regions' => ['/api/v1/client/regions'],
+            'cities' => ['/api/v1/client/cities'],
+        ];
     }
 }

@@ -21,7 +21,6 @@ headers {
 
 body:json {
   {
-    "city_id": {{city_id}},
     "category_id": {{category_id}},
     "description": "Уточнение — течёт из-под смесителя, а не из трубы.",
     "client_phone": "{{client_phone}}",
@@ -39,7 +38,6 @@ docs {
   actually changed. Delete the rest, don't just leave them with old values
   if you want a true partial update.
 
-  - `city_id` — must exist in `cities`
   - `category_id` — must exist in `categories`
   - `description` — 5..2000 chars
   - `client_phone` — 6..20 chars

@@ -8,21 +8,20 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 class ClientRepository
 {
-    /**
-     * @param  array{oblast_id?: int|string, city_id?: int|string}  $filters
-     */
+    /** @param array{search?: string} $filters */
     public function paginate(int $perPage = 20, array $filters = []): LengthAwarePaginator
     {
-        return Client::with('city')
-            ->withCount('orders')
-            ->when(
-                ! empty($filters['city_id']),
-                fn ($q) => $q->where('city_id', $filters['city_id'])
-            )
-            ->when(
-                ! empty($filters['oblast_id']) && empty($filters['city_id']),
-                fn ($q) => $q->whereHas('city', fn ($cq) => $cq->where('oblast_id', $filters['oblast_id']))
-            )
+        return Client::withCount('orders')
+            ->when($filters['search'] ?? null, function ($q, $search) {
+                $escaped = addcslashes($search, '%_\\');
+                $digits = preg_replace('/\D/', '', $search);
+
+                $q->where(function ($sub) use ($escaped, $digits) {
+                    $sub->where('name', 'like', "%{$escaped}%");
+
+                    $sub->orWhere('phone', 'like', '%'.($digits !== '' ? $digits : $escaped).'%');
+                });
+            })
             ->latest()
             ->paginate($perPage)
             ->withQueryString();
@@ -37,7 +36,7 @@ class ClientRepository
     {
         return Client::where('is_blocked', false)
             ->orderBy('name')
-            ->get(['id', 'name', 'phone', 'city_id']);
+            ->get(['id', 'name', 'phone']);
     }
 
     public function findOrFail(int $id): Client

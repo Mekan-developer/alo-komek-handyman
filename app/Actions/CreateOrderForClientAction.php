@@ -31,7 +31,7 @@ class CreateOrderForClientAction
             $client = $this->resolveClient($data);
 
             $data['client_id'] = $client->id;
-            $data['client_name'] = $client->name ?? $data['client_name'];
+            $data['client_name'] = $client->name ?: ($data['client_name'] ?? null) ?: $client->phone;
             $data['client_phone'] = $client->phone;
 
             return $this->createOrder->handle($data, $photos);
@@ -49,7 +49,6 @@ class CreateOrderForClientAction
             ?? $this->clients->create([
                 'name' => $data['client_name'],
                 'phone' => $data['client_phone'],
-                'city_id' => $data['city_id'],
             ]);
     }
 }

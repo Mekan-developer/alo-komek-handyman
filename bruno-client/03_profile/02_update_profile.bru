@@ -21,16 +21,15 @@ headers {
 
 body:json {
   {
-    "name": "Merdan Annagurdow",
-    "city_id": {{city_id}}
+    "name": "Merdan Annagurdow"
   }
 }
 
 docs {
   # Update Client Profile
 
-  Both fields are optional (`sometimes`). Send only what needs to change.
-  Required before the client can create orders (name + city_id must be set).
+  `name` is optional (`sometimes`) — send it only when it needs to change.
+  It must be set before the client can create orders.
 
   **Response 200:**
   ```json
@@ -38,12 +37,11 @@ docs {
     "data": {
       "id": 1,
       "name": "Merdan Annagurdow",
-      "phone": "+99361111222",
-      "city": { "id": 1, "name": "Ашхабад" }
+      "phone": "+99361111222"
     }
   }
   ```
 
   **Errors:**
-  - `422` — validation error (e.g. city_id not found)
+  - `422` — validation error
 }
