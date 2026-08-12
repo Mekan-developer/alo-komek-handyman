@@ -1,11 +1,12 @@
 <?php
 
-namespace App\Http\Resources\Api\V1;
+namespace App\Http\Resources\Api\V1\Client;
 
+use App\Http\Resources\Api\V1\TaskPhotoResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class MasterTaskResource extends JsonResource
+class ClientTaskResource extends JsonResource
 {
     /**
      * Transform the resource into an array.

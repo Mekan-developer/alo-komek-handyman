@@ -2,11 +2,16 @@
 
 namespace App\Models;
 
+use Database\Factories\OrderTaskPhotoFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class OrderTaskPhoto extends Model
 {
+    /** @use HasFactory<OrderTaskPhotoFactory> */
+    use HasFactory;
+
     public const STATUS_PENDING = 'pending';
 
     public const STATUS_CONVERTING = 'converting';

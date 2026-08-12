@@ -24,8 +24,6 @@ class CreateOrderTaskAction
         return $order->tasks()->create([
             'title' => $data['title'],
             'description' => $data['description'] ?? null,
-            'before_status' => OrderTask::STATUS_PENDING,
-            'after_status' => OrderTask::STATUS_PENDING,
         ]);
     }
 }

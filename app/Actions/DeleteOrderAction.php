@@ -12,16 +12,15 @@ class DeleteOrderAction
 
     public function handle(Order $order): void
     {
+        $order->loadMissing(['photos', 'tasks.photos']);
+
         foreach ($order->photos as $photo) {
             Storage::disk('public')->delete($photo->path);
         }
 
         foreach ($order->tasks as $task) {
-            if ($task->before_photo_path) {
-                Storage::disk('public')->delete($task->before_photo_path);
-            }
-            if ($task->after_photo_path) {
-                Storage::disk('public')->delete($task->after_photo_path);
+            foreach ($task->photos as $photo) {
+                Storage::disk('public')->delete($photo->path);
             }
         }
 

@@ -19,12 +19,11 @@ class ClientOrderResource extends JsonResource
             'client_address' => $this->client_address,
             'client_lat' => $this->client_lat,
             'client_lng' => $this->client_lng,
-            'final_price' => $this->final_price,
+            'final_price' => $this->final_price !== null ? (float) $this->final_price : null,
+            'discount_percent' => (float) $this->discount_percent,
+            'tasks_total' => $this->whenLoaded('tasks', fn () => $this->tasksTotal()),
+            'discount_amount' => $this->whenLoaded('tasks', fn () => $this->discountAmount()),
 
-            'city' => $this->whenLoaded('city', fn () => [
-                'id' => $this->city->id,
-                'name' => $this->city->name,
-            ]),
             'category' => $this->whenLoaded('category', fn () => [
                 'id' => $this->category->id,
                 'name' => $this->category->name,
@@ -42,15 +41,7 @@ class ClientOrderResource extends JsonResource
                 'status' => $p->status,
             ])),
 
-            'tasks' => $this->whenLoaded('tasks', fn () => $this->tasks->map(fn ($t) => [
-                'id' => $t->id,
-                'title' => $t->title,
-                'description' => $t->description,
-                'before_photo_url' => $t->before_photo_path ? asset('storage/'.$t->before_photo_path) : null,
-                'after_photo_url' => $t->after_photo_path ? asset('storage/'.$t->after_photo_path) : null,
-                'before_status' => $t->before_status,
-                'after_status' => $t->after_status,
-            ])),
+            'tasks' => $this->whenLoaded('tasks', fn () => ClientTaskResource::collection($this->tasks)),
 
             'review' => $this->whenLoaded('review', fn () => $this->review ? [
                 'id' => $this->review->id,
