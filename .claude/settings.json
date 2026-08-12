@@ -6,7 +6,9 @@
       "Bash(node -e \"require\\('playwright'\\)\")",
       "Bash(node -e \"const p = require\\(require\\('path'\\).join\\(process.execPath, '../../node_modules/playwright'\\)\\); console.log\\('found'\\)\")",
       "Read(//c/Users/User/AppData/Roaming/npm/node_modules/**)",
-      "Bash(cd /tmp)"
+      "Bash(cd /tmp)",
+      "PowerShell(php artisan test --compact tests/Feature/PendingOtpTest.php)",
+      "Bash(npm run *)"
     ]
   }
 }

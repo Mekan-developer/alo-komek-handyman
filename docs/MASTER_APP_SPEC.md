@@ -123,7 +123,7 @@ Use the **`pusher_channels_flutter`** package (Pusher SDK is fully compatible wi
 | `private-master.{masterId}` | After login | `.order.assigned` | `{ order_id, client_name, address, lat, lng }` *(planned)* |
 | `private-order.{orderId}` | When viewing an active order | `.order.status.changed` | `{ status, by }` *(planned)* |
 
-> The masters-map channel `masters-map.{cityId}` is for the **admin panel only**; the master app should NOT subscribe to it.
+> The `masters-map` channel is for the **admin panel only**; the master app should NOT subscribe to it.
 
 ### Authorization for private channels
 
@@ -193,11 +193,19 @@ curl -X POST http://localhost:8000/api/v1/master/1/location \
 For realtime testing on the admin map, the backend includes:
 
 ```bash
+# Reverb + queue worker must both be running (location broadcasts are queued)
+php artisan reverb:start
+php artisan queue:work --queue=broadcasts,default --sleep=1
+
 # Simulate one master moving for 2 minutes
 php artisan master:simulate-movement 1 --interval=3 --steps=40
 ```
 
 Watch the admin map (`/masters/map`) — the marker animates smoothly to each new position.
+
+> The location endpoint never depends on Reverb: it writes to the DB and queues the broadcast, so it
+> returns `201` even when the WebSocket server is down. The app must not treat a missing realtime
+> echo as a failed request.
 
 ---
 
