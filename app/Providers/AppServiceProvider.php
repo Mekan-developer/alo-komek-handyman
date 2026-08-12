@@ -2,8 +2,13 @@
 
 namespace App\Providers;
 
+use App\Broadcasting\ResilientBroadcaster;
 use App\Models\Master;
+use App\Models\OrderTask;
 use App\Observers\MasterObserver;
+use App\Observers\OrderTaskObserver;
+use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Vite;
@@ -21,8 +26,30 @@ class AppServiceProvider extends ServiceProvider
         Vite::prefetch(concurrency: 3);
 
         Master::observe(MasterObserver::class);
+        OrderTask::observe(OrderTaskObserver::class);
 
+        $this->registerResilientBroadcaster();
         $this->registerQueueHeartbeat();
+    }
+
+    /**
+     * Регистрирует broadcast-драйвер `resilient` — обёртку над реальным
+     * соединением, которая не даёт упавшему Reverb уронить запрос.
+     *
+     * Оборачиваемое соединение задаётся ключом `connection` в
+     * `config/broadcasting.php`.
+     */
+    private function registerResilientBroadcaster(): void
+    {
+        Broadcast::extend('resilient', function (Application $app, array $config): ResilientBroadcaster {
+            $connection = $config['connection'] ?? 'reverb';
+
+            return new ResilientBroadcaster(
+                Broadcast::connection($connection),
+                $connection,
+                (int) ($config['unavailable_cooldown'] ?? 30),
+            );
+        });
     }
 
     /**

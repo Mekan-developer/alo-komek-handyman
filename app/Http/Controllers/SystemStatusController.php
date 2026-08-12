@@ -30,10 +30,12 @@ class SystemStatusController extends Controller
 
     private function checkWebSocket(): string
     {
+        $connection = $this->websocketConnectionName();
+
         try {
-            $scheme = config('broadcasting.connections.reverb.options.scheme', 'http');
-            $host = config('broadcasting.connections.reverb.options.host', '127.0.0.1');
-            $port = config('broadcasting.connections.reverb.options.port', 8081);
+            $scheme = config("broadcasting.connections.{$connection}.options.scheme", 'http');
+            $host = config("broadcasting.connections.{$connection}.options.host", '127.0.0.1');
+            $port = config("broadcasting.connections.{$connection}.options.port", 8081);
 
             Http::timeout(2)->get("{$scheme}://{$host}:{$port}/");
 
@@ -41,6 +43,23 @@ class SystemStatusController extends Controller
         } catch (\Exception) {
             return 'error';
         }
+    }
+
+    /**
+     * Имя соединения, у которого лежат host/port WebSocket-сервера.
+     *
+     * Дефолтный драйвер `resilient` — обёртка (App\Broadcasting\ResilientBroadcaster),
+     * поэтому пингуем то соединение, которое он проксирует.
+     */
+    private function websocketConnectionName(): string
+    {
+        $connection = (string) config('broadcasting.default');
+
+        if (config("broadcasting.connections.{$connection}.driver") === 'resilient') {
+            return (string) config("broadcasting.connections.{$connection}.connection", 'reverb');
+        }
+
+        return $connection;
     }
 
     /** @return array{status: string, clients: int, last_sent: string|null} */

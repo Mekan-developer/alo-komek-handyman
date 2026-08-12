@@ -43,6 +43,19 @@ return [
 
     'connections' => [
 
+        /*
+         * Отказоустойчивая обёртка (см. App\Broadcasting\ResilientBroadcaster):
+         * делегирует вещание указанному соединению, но при недоступности
+         * WebSocket-сервера только пишет warning в лог вместо исключения.
+         */
+        'resilient' => [
+            'driver' => 'resilient',
+            'connection' => env('BROADCAST_RESILIENT_CONNECTION', 'reverb'),
+            // Сколько секунд после провала не пытаться вещать снова,
+            // чтобы запросы не ждали connect timeout впустую.
+            'unavailable_cooldown' => env('BROADCAST_UNAVAILABLE_COOLDOWN', 30),
+        ],
+
         'reverb' => [
             'driver' => 'reverb',
             'key' => env('REVERB_APP_KEY'),
@@ -56,6 +69,10 @@ return [
             ],
             'client_options' => [
                 // Guzzle client options: https://docs.guzzlephp.org/en/stable/request-options.html
+                // Дефолты Laravel (connect_timeout 10s / timeout 30s) слишком велики:
+                // при выключенном Reverb каждый запрос с событием висел бы на них.
+                'connect_timeout' => env('REVERB_CONNECT_TIMEOUT', 2),
+                'timeout' => env('REVERB_TIMEOUT', 5),
             ],
         ],
 
