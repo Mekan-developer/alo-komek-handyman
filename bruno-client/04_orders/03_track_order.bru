@@ -21,13 +21,21 @@ headers {
 docs {
   # Track Order (show)
 
-  Returns full order with city, category, assigned master (when set),
+  Returns full order with category, assigned master (when set),
   photos and tasks (before/after WebP). Use this endpoint for
   real-time status tracking on the client mobile app.
 
   When order status is `assigned` or `in_progress`, `master.location` contains
   the master's latest GPS ping (`lat`, `lng`, `recorded_at`). For all other
   statuses `master.location` is `null`.
+
+  У каждой подзадачи есть `price` (цену выставляет админ, `null` пока не
+  выставлена). Разбивка по заказу:
+
+  - `tasks_total` — сумма цен подзадач до скидки
+  - `discount_percent` — скидка в процентах (`0`, если скидки нет)
+  - `discount_amount` — сумма скидки в манатах
+  - `final_price` = `tasks_total` − `discount_amount` — сколько платит клиент
 
   **Response 200:**
   ```json
@@ -38,6 +46,10 @@ docs {
       "category": "Сантехника",
       "description": "Кран в ванной течёт",
       "address": "ул. Атамырата Ниязова, д. 42",
+      "final_price": "270.00",
+      "discount_percent": 10,
+      "tasks_total": 300,
+      "discount_amount": 30,
       "master": {
         "id": 11,
         "name": "Aydogdy Ussadow",
@@ -51,11 +63,25 @@ docs {
       "photos": [
         { "id": 1, "url": "https://...", "status": "done" }
       ],
-      "tasks": [],
+      "tasks": [
+        {
+          "id": 7,
+          "title": "Замена смесителя",
+          "description": "Старый смеситель протекает",
+          "price": 300,
+          "before_photos": [
+            { "id": 1, "url": "https://...", "status": "done" }
+          ],
+          "after_photos": []
+        }
+      ],
       "created_at": "2026-05-16T10:00:00+05:00"
     }
   }
   ```
+
+  Фото задач приходят массивами (до 2 штук на тип), в том же формате, что и в мастерском API.
+  Поля `before_photo_url` / `after_photo_url` / `before_status` / `after_status` удалены.
 
   **Errors:**
   - `403` — order does not belong to this client

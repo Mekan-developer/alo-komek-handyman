@@ -13,24 +13,21 @@ class OrderTask extends Model
     /** @use HasFactory<OrderTaskFactory> */
     use HasFactory;
 
-    public const STATUS_PENDING = 'pending';
-
-    public const STATUS_CONVERTING = 'converting';
-
-    public const STATUS_DONE = 'done';
-
-    public const STATUS_FAILED = 'failed';
-
     /** @var array<int, string> */
     protected $fillable = [
         'order_id',
         'title',
         'description',
-        'before_photo_path',
-        'after_photo_path',
-        'before_status',
-        'after_status',
+        'price',
     ];
+
+    /** @return array<string, string> */
+    protected function casts(): array
+    {
+        return [
+            'price' => 'decimal:2',
+        ];
+    }
 
     public function order(): BelongsTo
     {

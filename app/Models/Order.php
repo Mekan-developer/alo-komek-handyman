@@ -17,7 +17,6 @@ class Order extends Model
 
     /** @var array<int, string> */
     protected $fillable = [
-        'city_id',
         'category_id',
         'master_id',
         'client_id',
@@ -29,6 +28,7 @@ class Order extends Model
         'client_lat',
         'client_lng',
         'final_price',
+        'discount_percent',
         'assigned_at',
         'started_at',
         'completed_at',
@@ -44,6 +44,7 @@ class Order extends Model
             'client_lat' => 'decimal:7',
             'client_lng' => 'decimal:7',
             'final_price' => 'decimal:2',
+            'discount_percent' => 'decimal:2',
             'assigned_at' => 'datetime',
             'started_at' => 'datetime',
             'completed_at' => 'datetime',
@@ -51,9 +52,31 @@ class Order extends Model
         ];
     }
 
-    public function city(): BelongsTo
+    /**
+     * Sum of the priced tasks, before the discount.
+     *
+     * Reads the already loaded `tasks` relation — guard calls with `relationLoaded()`.
+     */
+    public function tasksTotal(): ?float
     {
-        return $this->belongsTo(City::class);
+        $priced = $this->tasks->whereNotNull('price');
+
+        return $priced->isEmpty() ? null : round((float) $priced->sum('price'), 2);
+    }
+
+    /**
+     * Money taken off the given subtotal by the current discount percentage.
+     */
+    public function discountAmountFor(float $subtotal): float
+    {
+        return round($subtotal * (float) $this->discount_percent / 100, 2);
+    }
+
+    public function discountAmount(): float
+    {
+        $subtotal = $this->tasksTotal();
+
+        return $subtotal === null ? 0.0 : $this->discountAmountFor($subtotal);
     }
 
     public function category(): BelongsTo

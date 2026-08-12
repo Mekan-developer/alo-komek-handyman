@@ -24,15 +24,13 @@ class OrderResource extends JsonResource
             'client_lng' => $this->client_lng,
 
             'final_price' => $this->final_price,
+            'discount_percent' => (float) $this->discount_percent,
+            'tasks_total' => $this->whenLoaded('tasks', fn () => $this->tasksTotal()),
+            'discount_amount' => $this->whenLoaded('tasks', fn () => $this->discountAmount()),
 
-            'city_id' => $this->city_id,
             'category_id' => $this->category_id,
             'master_id' => $this->master_id,
 
-            'city' => $this->whenLoaded('city', fn () => [
-                'id' => $this->city->id,
-                'name' => $this->city->name,
-            ]),
             'category' => $this->whenLoaded('category', fn () => [
                 'id' => $this->category->id,
                 'name' => $this->category->name,
@@ -59,6 +57,8 @@ class OrderResource extends JsonResource
             'tasks' => $this->whenLoaded('tasks', fn () => $this->tasks->map(fn ($t) => [
                 'id' => $t->id,
                 'title' => $t->title,
+                'description' => $t->description,
+                'price' => $t->price,
                 'before_photos' => $t->relationLoaded('beforePhotos')
                     ? $t->beforePhotos->map(fn ($p) => ['id' => $p->id, 'url' => asset('storage/'.$p->path), 'status' => $p->status])
                     : [],

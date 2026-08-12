@@ -5,6 +5,7 @@ namespace App\Repositories;
 use App\Models\Client;
 use App\Models\Master;
 use App\Models\Order;
+use App\Models\OrderTask;
 use App\OrderStatus;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -13,9 +14,8 @@ class OrderRepository
     /** @param array<string, mixed> $filters */
     public function paginate(array $filters = [], int $perPage = 15): LengthAwarePaginator
     {
-        return Order::with(['city', 'category', 'master'])
+        return Order::with(['category', 'master'])
             ->when($filters['status'] ?? null, fn ($q, $status) => $q->where('status', $status))
-            ->when($filters['city_id'] ?? null, fn ($q, $cityId) => $q->where('city_id', $cityId))
             ->when($filters['master_id'] ?? null, fn ($q, $masterId) => $q->where('master_id', $masterId))
             ->when($filters['search'] ?? null, fn ($q, $search) => $q->where(
                 fn ($sub) => $sub->where('client_name', 'like', "%{$search}%")
@@ -30,7 +30,7 @@ class OrderRepository
 
     public function forClient(Client $client, ?string $status = null): LengthAwarePaginator
     {
-        return Order::with(['category', 'city', 'master.latestLocation', 'review'])
+        return Order::with(['category', 'master.latestLocation', 'review'])
             ->where('client_id', $client->id)
             ->when($status, fn ($q) => $q->where('status', $status))
             ->latest()
@@ -40,7 +40,14 @@ class OrderRepository
 
     public function findForClientOrFail(int $orderId, Client $client): Order
     {
-        return Order::with(['category', 'city', 'master.latestLocation', 'photos', 'tasks', 'review'])
+        return Order::with([
+            'category',
+            'master.latestLocation',
+            'photos',
+            'tasks.beforePhotos',
+            'tasks.afterPhotos',
+            'review',
+        ])
             ->where('client_id', $client->id)
             ->findOrFail($orderId);
     }
@@ -66,7 +73,6 @@ class OrderRepository
     public function findOrFail(int $id): Order
     {
         return Order::with([
-            'city',
             'category',
             'master.latestLocation',
             'photos',
@@ -104,6 +110,51 @@ class OrderRepository
         ]);
 
         return $order->fresh();
+    }
+
+    /**
+     * Recalculate the order total from its task prices, minus the order discount.
+     *
+     * Tasks without a price are ignored; when no task is priced the order total
+     * is reset to null so the "completed without price" guards keep working.
+     */
+    public function syncFinalPriceFromTasks(Order $order): Order
+    {
+        $subtotal = $this->tasksSubtotal($order);
+
+        // Decimal casts go through brick/math, which deprecates float input — pass strings.
+        $order->update([
+            'final_price' => $subtotal === null
+                ? null
+                : number_format($subtotal - $order->discountAmountFor($subtotal), 2, '.', ''),
+        ]);
+
+        return $order->fresh();
+    }
+
+    /**
+     * Sum of the priced tasks straight from the database, before the discount.
+     */
+    public function tasksSubtotal(Order $order): ?float
+    {
+        $prices = OrderTask::where('order_id', $order->id)
+            ->whereNotNull('price')
+            ->pluck('price');
+
+        return $prices->isEmpty() ? null : round((float) $prices->sum(), 2);
+    }
+
+    public function findTaskForOrderOrFail(int $orderId, int $taskId): OrderTask
+    {
+        return OrderTask::where('order_id', $orderId)->findOrFail($taskId);
+    }
+
+    /** @param array<string, mixed> $data */
+    public function updateTask(OrderTask $task, array $data): OrderTask
+    {
+        $task->update($data);
+
+        return $task->fresh();
     }
 
     public function changeStatus(Order $order, OrderStatus $status): Order

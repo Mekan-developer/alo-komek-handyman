@@ -17,10 +17,13 @@ class OrderTaskFactory extends Factory
         return [
             'order_id' => Order::factory(),
             'title' => fake()->sentence(3),
-            'before_photo_path' => null,
-            'after_photo_path' => null,
-            'before_status' => OrderTask::STATUS_PENDING,
-            'after_status' => OrderTask::STATUS_PENDING,
+            'price' => null,
         ];
+    }
+
+    /** @return Factory<OrderTask> */
+    public function priced(float $price): Factory
+    {
+        return $this->state(fn () => ['price' => $price]);
     }
 }

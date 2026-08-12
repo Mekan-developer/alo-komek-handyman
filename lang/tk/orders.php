@@ -22,10 +22,11 @@ return [
         'client_lat' => 'Giňlik',
         'client_lng' => 'Uzynlyk',
         'location' => 'Ýerleşiş',
-        'city' => 'Şäher',
         'category' => 'Kategoriýa',
         'master' => 'Usta',
         'status' => 'Ýagdaý',
+        'tasks_total' => 'Işleriň jemi',
+        'discount' => 'Arzanladyş',
         'final_price' => 'Jemi baha',
         'created_at' => 'Döredildi',
         'assigned_at' => 'Bellenildi',
@@ -36,6 +37,7 @@ return [
         'cancel_reason' => 'Ýatyrylan sebäbi',
         'photos' => 'Meseläniň suratlary',
         'tasks' => 'Edilen işler',
+        'task_price' => 'Bahasy',
         'before' => 'Öň',
         'after' => 'Soň',
     ],
@@ -43,9 +45,12 @@ return [
     'actions' => [
         'assign_master' => 'Ussa belle',
         'change_master' => 'Ussany çalyş',
-        'set_price' => 'Bahany goý',
         'edit' => 'Redaktirle',
         'change_status' => 'Ýagdaýy üýtget',
+        'set_price' => 'Bahany görkez',
+        'edit_price' => 'Bahany üýtget',
+        'add_discount' => 'Arzanladyş goş',
+        'edit_discount' => 'Arzanladyşy üýtget',
         'view_on_map' => 'Kartada görkez',
         'call_master' => 'Ussa jaň et',
         'call_client' => 'Müşderä jaň et',
@@ -53,6 +58,8 @@ return [
 
     'no_master' => 'Bellenilmedi',
     'no_price' => 'Kesgitlenilmedi',
+    'price_from_tasks' => 'Işleriň jemi, arzanladyş aýrylan',
+    'no_discount' => 'Arzanladyşsyz',
     'no_reason' => 'Sebäbi görkezilmedi',
 
     'statuses' => [
@@ -66,10 +73,7 @@ return [
     'filters' => [
         'all' => 'Hemmesi',
         'all_statuses' => 'Hemme ýagdaýlar',
-        'all_cities' => 'Hemme şäherler',
-        'all_oblasts' => 'Hemme welaýatlar',
         'by_status' => 'Ýagdaý boýunça',
-        'by_city' => 'Şäher boýunça',
         'search_placeholder' => 'Ady ýa-da telefony boýunça gözleg',
         'date_from' => 'Senesi (başlangyç)',
         'date_to' => 'Senesi (ahyr)',
@@ -78,15 +82,14 @@ return [
 
     'modals' => [
         'assign_title' => 'Sargyda ussa belle',
-        'price_title' => 'Jemi bahany goý',
         'price_placeholder' => 'Bahany giriziň',
+        'discount_placeholder' => 'Arzanladyş %',
         'edit_title' => 'Sargydy redaktirle',
         'create_title' => 'Müşderiden täze sargyt',
-        'select_city' => 'Şäheri saýlaň',
         'select_category' => 'Kategoriýany saýlaň',
         'status_title' => 'Sargydyň ýagdaýyny üýtget',
         'cancel_reason' => 'Ýatyrylan sebäbi',
-        'no_eligible_masters' => 'Bu şäher we kategoriýa üçin elýeterli ussa ýok',
+        'no_eligible_masters' => 'Bu kategoriýa üçin elýeterli ussa ýok',
         'complete_no_price_warning' => 'Jemi baha görkezilmedi. Göterimli tölegli ussa 0 hasaplanar. Dogry hasaplama üçin bahany giriziň.',
         'change_reason_label' => 'Ussany çalyşmagyň sebäbi',
         'change_reason_placeholder' => 'Mysal üçin: usta elýeterli däl, ýalňyşyp bellenildi…',
@@ -115,7 +118,8 @@ return [
 
     'notifications' => [
         'master_assigned' => 'Usta üstünlikli bellenildi',
-        'price_set' => 'Baha goýuldy',
+        'task_price_set' => 'Işiň bahasy täzelendi',
+        'discount_set' => 'Arzanladyş täzelendi',
         'status_updated' => 'Ýagdaý täzelendi',
         'completed_without_price' => 'Sargyt tamamlandy, ýöne jemi baha görkezilmedi — ussa 0 hasaplandy',
         'new_order' => ':client müşderisinden täze sargyt — :category',
@@ -125,7 +129,6 @@ return [
 
     'errors' => [
         'master_inactive' => 'Usta işjeň däl ýa-da girişiň möhleti gutardy',
-        'city_mismatch' => 'Ussanyň şäheri sargydyň şäheri bilen gabat gelmeýär',
         'category_mismatch' => 'Ussa bu kategoriýada işlemeýär',
         'already_final' => 'Sargyt eýýäm jemleýji ýagdaýda',
         'invalid_transition' => 'Ýagdaý üýtgetmek mümkin däl',

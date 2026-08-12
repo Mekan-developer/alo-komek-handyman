@@ -25,6 +25,8 @@ class MasterOrderResource extends JsonResource
             'category' => $this->whenLoaded('category', fn () => $this->category->name),
             'description' => $this->description,
             'final_price' => $this->final_price ? (float) $this->final_price : null,
+            'discount_percent' => (float) $this->discount_percent,
+            'tasks_total' => $this->whenLoaded('tasks', fn () => $this->tasksTotal()),
             'photos' => $this->whenLoaded('photos', fn () => $this->photos->map(fn ($p) => [
                 'id' => $p->id,
                 'url' => $p->path ? asset('storage/'.$p->path) : null,

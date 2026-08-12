@@ -5,7 +5,6 @@ import { useI18n } from 'vue-i18n'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import OrderStatusBadge from '@/Pages/Orders/Partials/OrderStatusBadge.vue'
 import AssignMasterModal from '@/Pages/Orders/Partials/AssignMasterModal.vue'
-import SetPriceModal from '@/Pages/Orders/Partials/SetPriceModal.vue'
 import ChangeStatusModal from '@/Pages/Orders/Partials/ChangeStatusModal.vue'
 import EditOrderModal from '@/Pages/Orders/Partials/EditOrderModal.vue'
 import ImageLightbox from '@/Components/ImageLightbox.vue'
@@ -19,14 +18,12 @@ const page = usePage()
 
 const props = defineProps({
     order: { type: Object, required: true },
-    oblasts: { type: Array, default: () => [] },
     categories: { type: Array, default: () => [] },
     eligibleMasters: { type: Array, default: () => [] },
     statuses: { type: Array, default: () => [] },
 })
 
 const showAssignModal = ref(false)
-const showPriceModal = ref(false)
 const showStatusModal = ref(false)
 const showEditModal = ref(false)
 
@@ -41,6 +38,86 @@ function taskPhoto(task, type) {
     return photos?.[0] ?? null
 }
 
+// ── Цены подзадач ─────────────────────────────────────────────────────────
+// Итоговая стоимость заказа = сумма цен подзадач, пересчитывается на бэкенде.
+
+const isPriceEditable = computed(() =>
+    !!props.order.master && !['completed', 'cancelled'].includes(props.order.status)
+)
+
+const editingTaskId = ref(null)
+const taskPriceInput = ref('')
+const savingTaskPrice = ref(false)
+
+function startEditingTaskPrice(task) {
+    editingTaskId.value = task.id
+    taskPriceInput.value = task.price ?? ''
+}
+
+function cancelEditingTaskPrice() {
+    editingTaskId.value = null
+    taskPriceInput.value = ''
+}
+
+function saveTaskPrice(task) {
+    const raw = String(taskPriceInput.value).trim()
+
+    router.post(
+        route('orders.tasks.set-price', { order: props.order.id, task: task.id }),
+        { price: raw === '' ? null : Number(raw) },
+        {
+            preserveScroll: true,
+            onStart: () => (savingTaskPrice.value = true),
+            onFinish: () => {
+                savingTaskPrice.value = false
+                cancelEditingTaskPrice()
+            },
+        }
+    )
+}
+
+// ── Скидка на заказ ───────────────────────────────────────────────────────
+// Процент снимается с суммы по задачам, итоговая цена пересчитывается на бэкенде.
+
+const isDiscountEditable = computed(() => !['completed', 'cancelled'].includes(props.order.status))
+
+const hasDiscount = computed(() => Number(props.order.discount_percent) > 0)
+
+const editingDiscount = ref(false)
+const discountInput = ref('')
+const savingDiscount = ref(false)
+
+function formatMoney(value) {
+    return value === null || value === undefined ? null : Number(value).toFixed(2)
+}
+
+function startEditingDiscount() {
+    editingDiscount.value = true
+    discountInput.value = hasDiscount.value ? Number(props.order.discount_percent) : ''
+}
+
+function cancelEditingDiscount() {
+    editingDiscount.value = false
+    discountInput.value = ''
+}
+
+function saveDiscount() {
+    const raw = String(discountInput.value).trim()
+
+    router.post(
+        route('orders.set-discount', { order: props.order.id }),
+        { discount_percent: raw === '' ? null : Number(raw) },
+        {
+            preserveScroll: true,
+            onStart: () => (savingDiscount.value = true),
+            onFinish: () => {
+                savingDiscount.value = false
+                cancelEditingDiscount()
+            },
+        }
+    )
+}
+
 const MAP_MODES = ['auto', 'light', 'grayscale', 'black'] //'dark', 'white',
 const MAP_FILTERS = {
     light: '',
@@ -50,6 +127,9 @@ const MAP_FILTERS = {
     black: 'invert(1) grayscale(1) brightness(0.85) contrast(1.1)',
 }
 const MAP_MODE_STORAGE_KEY = 'masters-map-mode'
+
+// Сервис работает только по Ашхабаду — один канал на всех мастеров.
+const MASTERS_MAP_CHANNEL = 'masters-map'
 const currentMode = ref('auto')
 
 const mapContainer = ref(null)
@@ -171,8 +251,8 @@ onMounted(async () => {
         router.post(route('orders.assign', props.order.id), { master_id: masterId })
     }
 
-    if (isTracking.value && window.Echo && props.order.city?.id) {
-        window.Echo.channel(`masters-map.${props.order.city.id}`)
+    if (isTracking.value && window.Echo) {
+        window.Echo.channel(MASTERS_MAP_CHANNEL)
             .listen('.master.location.updated', (payload) => {
                 if (payload.master_id !== props.order.master.id) { return }
 
@@ -199,9 +279,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
     delete window.__assignFromMap
-    if (props.order.city?.id) {
-        window.Echo?.leave(`masters-map.${props.order.city.id}`)
-    }
+    window.Echo?.leave(MASTERS_MAP_CHANNEL)
     themeObserver?.disconnect()
     if (map) {
         map.remove()
@@ -384,6 +462,26 @@ const sortedEligibleMasters = computed(() => {
                 </div>
 
                 <div class="flex items-center gap-2">
+                    <!-- Итоговая сумма — всегда на виду рядом с действиями -->
+                    <div
+                        class="mr-1 hidden items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 sm:flex dark:border-slate-700 dark:bg-slate-900"
+                        :title="t('orders.price_from_tasks')"
+                    >
+                        <span class="text-[11px] font-semibold uppercase tracking-wide text-gray-400 dark:text-slate-500">
+                            {{ t('orders.fields.final_price') }}
+                        </span>
+                        <span v-if="order.final_price" class="font-mono text-sm font-semibold text-green-600 dark:text-green-400">
+                            {{ formatMoney(order.final_price) }}
+                        </span>
+                        <span v-else class="text-sm text-gray-300 dark:text-slate-600">{{ t('orders.no_price') }}</span>
+                        <span
+                            v-if="hasDiscount"
+                            class="rounded bg-amber-100 px-1.5 py-0.5 font-mono text-[11px] font-semibold text-amber-700 dark:bg-amber-900/40 dark:text-amber-300"
+                        >
+                            −{{ Number(order.discount_percent) }}%
+                        </span>
+                    </div>
+
                     <button
                         v-if="order.status === 'pending'"
                         @click="showEditModal = true"
@@ -404,14 +502,6 @@ const sortedEligibleMasters = computed(() => {
                             <path stroke-linecap="round" stroke-linejoin="round" d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z" />
                         </svg>
                         {{ order.master ? t('orders.actions.change_master') : t('orders.actions.assign_master') }}
-                    </button>
-
-                    <button
-                        v-if="order.master && !['completed', 'cancelled'].includes(order.status)"
-                        @click="showPriceModal = true"
-                        class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
-                    >
-                        {{ t('orders.actions.set_price') }}
                     </button>
 
                     <button
@@ -453,10 +543,6 @@ const sortedEligibleMasters = computed(() => {
                         <div class="rounded-xl bg-white shadow-sm dark:bg-slate-800">
                             <div class="space-y-2 px-4 py-3 text-sm">
                                 <div class="flex items-center justify-between gap-2">
-                                    <span class="text-gray-500 dark:text-slate-400">{{ t('orders.fields.city') }}</span>
-                                    <span class="font-medium text-gray-700 dark:text-slate-300">{{ order.city?.name }}</span>
-                                </div>
-                                <div class="flex items-center justify-between gap-2">
                                     <span class="text-gray-500 dark:text-slate-400">{{ t('orders.fields.category') }}</span>
                                     <span class="truncate font-medium text-gray-700 dark:text-slate-300">{{ order.category?.name }}</span>
                                 </div>
@@ -464,8 +550,89 @@ const sortedEligibleMasters = computed(() => {
                                     <span class="text-gray-500 dark:text-slate-400">{{ t('orders.fields.created_at') }}</span>
                                     <span class="text-xs font-medium text-gray-700 dark:text-slate-300">{{ order.created_at }}</span>
                                 </div>
+                                <div class="flex items-center justify-between gap-2 border-t border-gray-100 pt-2 dark:border-slate-700">
+                                    <span class="text-gray-500 dark:text-slate-400">{{ t('orders.fields.tasks_total') }}</span>
+                                    <span v-if="order.tasks_total" class="font-mono text-gray-700 dark:text-slate-300">
+                                        {{ formatMoney(order.tasks_total) }}
+                                    </span>
+                                    <span v-else class="text-gray-300 dark:text-slate-600">{{ t('orders.no_price') }}</span>
+                                </div>
+
                                 <div class="flex items-center justify-between gap-2">
-                                    <span class="text-gray-500 dark:text-slate-400">{{ t('orders.fields.final_price') }}</span>
+                                    <span class="text-gray-500 dark:text-slate-400">{{ t('orders.fields.discount') }}</span>
+
+                                    <div v-if="editingDiscount" class="flex items-center gap-1">
+                                        <div class="relative">
+                                            <input
+                                                v-model="discountInput"
+                                                type="number"
+                                                min="0"
+                                                max="100"
+                                                step="0.01"
+                                                :placeholder="t('orders.modals.discount_placeholder')"
+                                                class="w-20 rounded-md border-gray-300 py-1 pr-5 text-right font-mono text-xs dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"
+                                                @keyup.enter="saveDiscount"
+                                                @keyup.esc="cancelEditingDiscount"
+                                            />
+                                            <span class="pointer-events-none absolute inset-y-0 right-2 flex items-center text-xs text-gray-400">%</span>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            :disabled="savingDiscount"
+                                            class="rounded-md bg-green-600 px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-green-700 disabled:opacity-50"
+                                            @click="saveDiscount"
+                                        >
+                                            {{ savingDiscount ? '...' : t('layout.actions.save') }}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            class="rounded-md px-2 py-1 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-slate-700"
+                                            @click="cancelEditingDiscount"
+                                        >
+                                            {{ t('layout.actions.cancel') }}
+                                        </button>
+                                    </div>
+
+                                    <button
+                                        v-else-if="isDiscountEditable"
+                                        type="button"
+                                        :title="hasDiscount ? t('orders.actions.edit_discount') : t('orders.actions.add_discount')"
+                                        class="group inline-flex items-center gap-1.5 rounded-md border border-dashed border-gray-300 px-2 py-1 font-mono text-xs font-semibold transition-colors hover:border-blue-500 hover:bg-blue-50 dark:border-slate-600 dark:hover:border-blue-400 dark:hover:bg-blue-500/10"
+                                        :class="hasDiscount ? 'text-amber-600 dark:text-amber-400' : 'text-blue-600 dark:text-blue-400'"
+                                        @click="startEditingDiscount"
+                                    >
+                                        <template v-if="hasDiscount">
+                                            <span>
+                                                −{{ Number(order.discount_percent) }}%
+                                                <span v-if="order.discount_amount">({{ formatMoney(order.discount_amount) }})</span>
+                                            </span>
+                                        </template>
+                                        <span v-else class="font-sans">{{ t('orders.actions.add_discount') }}</span>
+                                        <svg class="h-3 w-3 shrink-0 opacity-60 transition-opacity group-hover:opacity-100" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
+                                        </svg>
+                                    </button>
+
+                                    <span
+                                        v-else
+                                        class="font-mono text-xs font-semibold"
+                                        :class="hasDiscount ? 'text-amber-600 dark:text-amber-400' : 'text-gray-300 dark:text-slate-600'"
+                                    >
+                                        <template v-if="hasDiscount">
+                                            −{{ Number(order.discount_percent) }}%
+                                            <span v-if="order.discount_amount">({{ formatMoney(order.discount_amount) }})</span>
+                                        </template>
+                                        <template v-else>{{ t('orders.no_discount') }}</template>
+                                    </span>
+                                </div>
+
+                                <div class="flex items-start justify-between gap-2 border-t border-gray-100 pt-2 dark:border-slate-700">
+                                    <span class="text-gray-500 dark:text-slate-400">
+                                        {{ t('orders.fields.final_price') }}
+                                        <span class="block text-xs text-gray-400 dark:text-slate-500">
+                                            {{ t('orders.price_from_tasks') }}
+                                        </span>
+                                    </span>
                                     <span v-if="order.final_price" class="font-mono font-semibold text-green-600 dark:text-green-400">
                                         {{ order.final_price }}
                                     </span>
@@ -591,8 +758,71 @@ const sortedEligibleMasters = computed(() => {
                                     :key="task.id"
                                     class="rounded-lg border border-gray-200 p-3 dark:border-slate-700"
                                 >
-                                    <p class="mb-2 text-xs font-medium text-gray-900 dark:text-slate-200">{{ task.title }}</p>
-                                    <div class="grid grid-cols-2 gap-2">
+                                    <p class="text-xs font-medium text-gray-900 dark:text-slate-200">{{ task.title }}</p>
+                                    <p
+                                        v-if="task.description"
+                                        class="mt-1 whitespace-pre-line text-xs leading-relaxed text-gray-500 dark:text-slate-400"
+                                    >
+                                        {{ task.description }}
+                                    </p>
+
+                                    <!-- Price -->
+                                    <div class="mt-2 flex items-center justify-between gap-2 border-t border-gray-100 pt-2 dark:border-slate-700">
+                                        <span class="text-xs text-gray-400 dark:text-slate-500">{{ t('orders.fields.task_price') }}</span>
+
+                                        <div v-if="editingTaskId === task.id" class="flex items-center gap-1">
+                                            <input
+                                                v-model="taskPriceInput"
+                                                type="number"
+                                                min="0"
+                                                step="0.01"
+                                                :placeholder="t('orders.modals.price_placeholder')"
+                                                class="w-24 rounded-md border-gray-300 py-1 text-right font-mono text-xs dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"
+                                                @keyup.enter="saveTaskPrice(task)"
+                                                @keyup.esc="cancelEditingTaskPrice"
+                                            />
+                                            <button
+                                                type="button"
+                                                :disabled="savingTaskPrice"
+                                                class="rounded-md bg-green-600 px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-green-700 disabled:opacity-50"
+                                                @click="saveTaskPrice(task)"
+                                            >
+                                                {{ savingTaskPrice ? '...' : t('layout.actions.save') }}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                class="rounded-md px-2 py-1 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-slate-700"
+                                                @click="cancelEditingTaskPrice"
+                                            >
+                                                {{ t('layout.actions.cancel') }}
+                                            </button>
+                                        </div>
+
+                                        <button
+                                            v-else-if="isPriceEditable"
+                                            type="button"
+                                            :title="task.price ? t('orders.actions.edit_price') : t('orders.actions.set_price')"
+                                            class="group inline-flex items-center gap-1.5 rounded-md border border-dashed border-gray-300 px-2 py-1 font-mono text-xs font-semibold transition-colors hover:border-blue-500 hover:bg-blue-50 dark:border-slate-600 dark:hover:border-blue-400 dark:hover:bg-blue-500/10"
+                                            :class="task.price ? 'text-green-600 dark:text-green-400' : 'text-blue-600 dark:text-blue-400'"
+                                            @click="startEditingTaskPrice(task)"
+                                        >
+                                            <span v-if="task.price">{{ task.price }}</span>
+                                            <span v-else class="font-sans">{{ t('orders.actions.set_price') }}</span>
+                                            <svg class="h-3 w-3 shrink-0 opacity-60 transition-opacity group-hover:opacity-100" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
+                                            </svg>
+                                        </button>
+
+                                        <span
+                                            v-else
+                                            class="font-mono text-xs font-semibold"
+                                            :class="task.price ? 'text-green-600 dark:text-green-400' : 'text-gray-300 dark:text-slate-600'"
+                                        >
+                                            {{ task.price ?? t('orders.no_price') }}
+                                        </span>
+                                    </div>
+
+                                    <div class="mt-2 grid grid-cols-2 gap-2">
                                         <!-- Before -->
                                         <div>
                                             <p class="mb-1 text-xs text-gray-400">{{ t('orders.fields.before') }}</p>
@@ -679,7 +909,6 @@ const sortedEligibleMasters = computed(() => {
         <EditOrderModal
             :show="showEditModal"
             :order="order"
-            :oblasts="oblasts"
             :categories="categories"
             @close="showEditModal = false"
         />
@@ -689,12 +918,6 @@ const sortedEligibleMasters = computed(() => {
             :masters="sortedEligibleMasters"
             :is-reassign="!!order.master"
             @close="showAssignModal = false"
-        />
-        <SetPriceModal
-            :show="showPriceModal"
-            :order-id="order.id"
-            :current-price="order.final_price"
-            @close="showPriceModal = false"
         />
         <ChangeStatusModal
             :show="showStatusModal"

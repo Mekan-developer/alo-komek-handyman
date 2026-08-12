@@ -36,14 +36,42 @@ docs {
       "longitude": 58.38,
       "category": "Сантехника",
       "description": "Сломался кран на кухне",
+      "final_price": 405.22,
+      "discount_percent": 10,
+      "tasks_total": 450.25,
       "photos": [
         { "id": 1, "url": "https://...", "status": "done" }
       ],
-      "tasks": [],
+      "tasks": [
+        {
+          "id": 7,
+          "title": "Замена смесителя",
+          "description": "Старый смеситель протекает",
+          "price": 300,
+          "before_photos": [],
+          "after_photos": []
+        },
+        {
+          "id": 8,
+          "title": "Прочистка сифона",
+          "description": null,
+          "price": 150.25,
+          "before_photos": [],
+          "after_photos": []
+        }
+      ],
       "created_at": "2026-05-16T10:00:00+05:00"
     }
   }
   ```
+
+  Цены подзадач (`price`) выставляет админ — из мобильного приложения они
+  доступны только на чтение.
+
+  - `tasks_total` — сумма цен подзадач до скидки (`null`, пока ни одна цена не проставлена)
+  - `discount_percent` — скидка на заказ в процентах (`0`, если скидки нет)
+  - `final_price` = `tasks_total` − скидка; `null`, пока ни одной цены не проставлено.
+    Именно от него считается начисление мастеру при завершении заявки.
 
   **Errors:**
   - `403` — order does not belong to this master

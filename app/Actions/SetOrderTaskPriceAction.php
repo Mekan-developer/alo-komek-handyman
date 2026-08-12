@@ -4,13 +4,20 @@ namespace App\Actions;
 
 use App\Exceptions\OrderException;
 use App\Models\Order;
+use App\Models\OrderTask;
+use App\Observers\OrderTaskObserver;
 use App\Repositories\OrderRepository;
 
-class SetOrderFinalPriceAction
+class SetOrderTaskPriceAction
 {
     public function __construct(private readonly OrderRepository $repository) {}
 
-    public function handle(Order $order, float $finalPrice): Order
+    /**
+     * Set (or clear) the price of a single task.
+     *
+     * The order total is recalculated by {@see OrderTaskObserver}.
+     */
+    public function handle(Order $order, OrderTask $task, ?float $price): OrderTask
     {
         if ($order->status->isFinal()) {
             throw OrderException::alreadyFinal();
@@ -20,6 +27,6 @@ class SetOrderFinalPriceAction
             throw OrderException::masterNotAssigned();
         }
 
-        return $this->repository->update($order, ['final_price' => $finalPrice]);
+        return $this->repository->updateTask($task, ['price' => $price]);
     }
 }

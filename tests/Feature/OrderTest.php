@@ -3,10 +3,11 @@
 namespace Tests\Feature;
 
 use App\Models\Category;
-use App\Models\City;
 use App\Models\Client;
 use App\Models\Master;
 use App\Models\Order;
+use App\Models\OrderTask;
+use App\Models\OrderTaskPhoto;
 use App\Models\User;
 use App\OrderStatus;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
@@ -26,10 +27,9 @@ class OrderTest extends TestCase
         return $user;
     }
 
-    private function validPayload(City $city, Category $category): array
+    private function validPayload(Category $category): array
     {
         return [
-            'city_id' => $city->id,
             'category_id' => $category->id,
             'client_name' => 'Aman Jumayev',
             'client_phone' => '+99362111222',
@@ -120,6 +120,23 @@ class OrderTest extends TestCase
                 ->has('eligibleMasters'));
     }
 
+    public function test_show_includes_task_description(): void
+    {
+        $this->actingAsAdmin();
+        $order = Order::factory()->inProgress()->create();
+        OrderTask::factory()->create([
+            'order_id' => $order->id,
+            'title' => 'Замена смесителя',
+            'description' => 'Старый смеситель протекает, поставить новый.',
+        ]);
+
+        $this->get(route('orders.show', $order))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('order.tasks.0.title', 'Замена смесителя')
+                ->where('order.tasks.0.description', 'Старый смеситель протекает, поставить новый.'));
+    }
+
     public function test_show_returns_404_for_unknown_order(): void
     {
         $this->actingAsAdmin();
@@ -129,16 +146,14 @@ class OrderTest extends TestCase
     public function test_eligible_masters_excludes_current_master_and_stays_a_list(): void
     {
         $this->actingAsAdmin();
-        $city = City::factory()->create();
         $category = Category::factory()->create();
 
-        $masters = Master::factory()->count(3)->create(['city_id' => $city->id]);
+        $masters = Master::factory()->count(3)->create();
         $masters->each(fn (Master $m) => $m->categories()->sync([$category->id]));
 
         // Assigned master sits in the middle of the eligible set, so filtering it out
         // leaves non-sequential collection keys — must still serialize as a JSON array.
         $order = Order::factory()->forMaster($masters[1])->assigned()->create([
-            'city_id' => $city->id,
             'category_id' => $category->id,
         ]);
 
@@ -158,10 +173,9 @@ class OrderTest extends TestCase
     public function test_admin_can_create_order(): void
     {
         $this->actingAsAdmin();
-        $city = City::factory()->create();
         $category = Category::factory()->create();
 
-        $this->post(route('orders.store'), $this->validPayload($city, $category))
+        $this->post(route('orders.store'), $this->validPayload($category))
             ->assertRedirect(route('orders.index'));
 
         $this->assertDatabaseHas('orders', [
@@ -173,11 +187,10 @@ class OrderTest extends TestCase
     public function test_admin_can_create_order_for_existing_client(): void
     {
         $this->actingAsAdmin();
-        $city = City::factory()->create();
         $category = Category::factory()->create();
         $client = Client::factory()->create();
 
-        $payload = array_merge($this->validPayload($city, $category), [
+        $payload = array_merge($this->validPayload($category), [
             'client_id' => $client->id,
         ]);
 
@@ -191,13 +204,57 @@ class OrderTest extends TestCase
         ]);
     }
 
+    public function test_existing_client_makes_name_and_phone_optional(): void
+    {
+        $this->actingAsAdmin();
+        $category = Category::factory()->create();
+        $client = Client::factory()->create();
+
+        $payload = array_merge($this->validPayload($category), [
+            'client_id' => $client->id,
+            'client_name' => '',
+            'client_phone' => '',
+        ]);
+
+        $this->post(route('orders.store'), $payload)
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('orders.index'));
+
+        $this->assertDatabaseHas('orders', [
+            'client_id' => $client->id,
+            'client_name' => $client->name,
+            'client_phone' => $client->phone,
+        ]);
+    }
+
+    public function test_order_for_nameless_existing_client_falls_back_to_phone(): void
+    {
+        $this->actingAsAdmin();
+        $category = Category::factory()->create();
+        $client = Client::factory()->create(['name' => null]);
+
+        $payload = array_merge($this->validPayload($category), [
+            'client_id' => $client->id,
+            'client_name' => '',
+            'client_phone' => '',
+        ]);
+
+        $this->post(route('orders.store'), $payload)
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('orders.index'));
+
+        $this->assertDatabaseHas('orders', [
+            'client_id' => $client->id,
+            'client_name' => $client->phone,
+        ]);
+    }
+
     public function test_creating_order_for_unknown_phone_creates_client(): void
     {
         $this->actingAsAdmin();
-        $city = City::factory()->create();
         $category = Category::factory()->create();
 
-        $this->post(route('orders.store'), $this->validPayload($city, $category))
+        $this->post(route('orders.store'), $this->validPayload($category))
             ->assertRedirect();
 
         $this->assertDatabaseHas('clients', [
@@ -216,10 +273,9 @@ class OrderTest extends TestCase
     {
         Storage::fake('public');
         $this->actingAsAdmin();
-        $city = City::factory()->create();
         $category = Category::factory()->create();
 
-        $payload = array_merge($this->validPayload($city, $category), [
+        $payload = array_merge($this->validPayload($category), [
             'photos' => [
                 UploadedFile::fake()->image('a.jpg'),
                 UploadedFile::fake()->image('b.jpg'),
@@ -236,17 +292,16 @@ class OrderTest extends TestCase
     {
         $this->actingAsAdmin();
         $this->post(route('orders.store'), [])
-            ->assertSessionHasErrors(['city_id', 'category_id', 'client_name', 'client_phone', 'description', 'client_lat', 'client_lng']);
+            ->assertSessionHasErrors(['category_id', 'client_name', 'client_phone', 'description', 'client_lat', 'client_lng']);
     }
 
     public function test_store_rejects_more_than_4_photos(): void
     {
         Storage::fake('public');
         $this->actingAsAdmin();
-        $city = City::factory()->create();
         $category = Category::factory()->create();
 
-        $payload = array_merge($this->validPayload($city, $category), [
+        $payload = array_merge($this->validPayload($category), [
             'photos' => array_fill(0, 5, UploadedFile::fake()->image('p.jpg')),
         ]);
 
@@ -258,11 +313,10 @@ class OrderTest extends TestCase
     public function test_admin_can_assign_eligible_master(): void
     {
         $this->actingAsAdmin();
-        $city = City::factory()->create();
         $category = Category::factory()->create();
-        $master = Master::factory()->create(['city_id' => $city->id]);
+        $master = Master::factory()->create();
         $master->categories()->sync([$category->id]);
-        $order = Order::factory()->create(['city_id' => $city->id, 'category_id' => $category->id]);
+        $order = Order::factory()->create(['category_id' => $category->id]);
 
         $this->post(route('orders.assign', $order), ['master_id' => $master->id])
             ->assertRedirect(route('orders.show', $order));
@@ -277,14 +331,12 @@ class OrderTest extends TestCase
     public function test_admin_can_reassign_a_different_master_with_a_reason(): void
     {
         $this->actingAsAdmin();
-        $city = City::factory()->create();
         $category = Category::factory()->create();
-        $firstMaster = Master::factory()->create(['city_id' => $city->id]);
-        $secondMaster = Master::factory()->create(['city_id' => $city->id]);
+        $firstMaster = Master::factory()->create();
+        $secondMaster = Master::factory()->create();
         $firstMaster->categories()->sync([$category->id]);
         $secondMaster->categories()->sync([$category->id]);
         $order = Order::factory()->forMaster($firstMaster)->assigned()->create([
-            'city_id' => $city->id,
             'category_id' => $category->id,
         ]);
 
@@ -301,11 +353,10 @@ class OrderTest extends TestCase
     public function test_first_time_assignment_ignores_change_reason(): void
     {
         $this->actingAsAdmin();
-        $city = City::factory()->create();
         $category = Category::factory()->create();
-        $master = Master::factory()->create(['city_id' => $city->id]);
+        $master = Master::factory()->create();
         $master->categories()->sync([$category->id]);
-        $order = Order::factory()->create(['city_id' => $city->id, 'category_id' => $category->id]);
+        $order = Order::factory()->create(['category_id' => $category->id]);
 
         $this->post(route('orders.assign', $order), [
             'master_id' => $master->id,
@@ -318,11 +369,10 @@ class OrderTest extends TestCase
     public function test_assigning_inactive_master_fails(): void
     {
         $this->actingAsAdmin();
-        $city = City::factory()->create();
         $category = Category::factory()->create();
-        $master = Master::factory()->inactive()->create(['city_id' => $city->id]);
+        $master = Master::factory()->inactive()->create();
         $master->categories()->sync([$category->id]);
-        $order = Order::factory()->create(['city_id' => $city->id, 'category_id' => $category->id]);
+        $order = Order::factory()->create(['category_id' => $category->id]);
 
         $this->post(route('orders.assign', $order), ['master_id' => $master->id])
             ->assertRedirect();
@@ -330,31 +380,41 @@ class OrderTest extends TestCase
         $this->assertNull($order->fresh()->master_id);
     }
 
-    public function test_assigning_master_from_different_city_fails(): void
+    /**
+     * Regression: masters used to be filtered by the order's city. The service now
+     * covers Ashgabat only, so category match is the sole eligibility rule.
+     */
+    public function test_eligible_masters_are_selected_by_category_only(): void
     {
         $this->actingAsAdmin();
-        $cityA = City::factory()->create();
-        $cityB = City::factory()->create();
-        $category = Category::factory()->create();
-        $master = Master::factory()->create(['city_id' => $cityB->id]);
-        $master->categories()->sync([$category->id]);
-        $order = Order::factory()->create(['city_id' => $cityA->id, 'category_id' => $category->id]);
+        $orderCategory = Category::factory()->create();
+        $otherCategory = Category::factory()->create();
 
-        $this->post(route('orders.assign', $order), ['master_id' => $master->id])
-            ->assertRedirect();
+        $matching = Master::factory()->create();
+        $matching->categories()->sync([$orderCategory->id]);
 
-        $this->assertNull($order->fresh()->master_id);
+        $nonMatching = Master::factory()->create();
+        $nonMatching->categories()->sync([$otherCategory->id]);
+
+        $order = Order::factory()->create(['category_id' => $orderCategory->id]);
+
+        $this->get(route('orders.show', $order))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('Orders/Show')
+                ->has('eligibleMasters', 1)
+                ->where('eligibleMasters.0.id', $matching->id)
+            );
     }
 
     public function test_assigning_master_without_matching_category_fails(): void
     {
         $this->actingAsAdmin();
-        $city = City::factory()->create();
         $orderCategory = Category::factory()->create();
         $masterCategory = Category::factory()->create();
-        $master = Master::factory()->create(['city_id' => $city->id]);
+        $master = Master::factory()->create();
         $master->categories()->sync([$masterCategory->id]);
-        $order = Order::factory()->create(['city_id' => $city->id, 'category_id' => $orderCategory->id]);
+        $order = Order::factory()->create(['category_id' => $orderCategory->id]);
 
         $this->post(route('orders.assign', $order), ['master_id' => $master->id])
             ->assertRedirect();
@@ -362,40 +422,229 @@ class OrderTest extends TestCase
         $this->assertNull($order->fresh()->master_id);
     }
 
-    // ── Set final price ───────────────────────────────────────────────────────
+    // ── Task prices ───────────────────────────────────────────────────────────
 
-    public function test_admin_can_set_final_price(): void
+    private function taskPriceUrl(Order $order, OrderTask $task): string
+    {
+        return route('orders.tasks.set-price', ['order' => $order->id, 'task' => $task->id]);
+    }
+
+    public function test_admin_can_set_a_task_price(): void
     {
         $this->actingAsAdmin();
         $master = Master::factory()->create();
-        $order = Order::factory()->forMaster($master)->assigned()->create();
+        $order = Order::factory()->forMaster($master)->inProgress()->create();
+        $task = OrderTask::factory()->create(['order_id' => $order->id]);
 
-        $this->post(route('orders.set-price', $order), ['final_price' => 350.50])
+        $this->post($this->taskPriceUrl($order, $task), ['price' => 350.50])
             ->assertRedirect(route('orders.show', $order));
 
-        $this->assertEquals('350.50', $order->fresh()->final_price);
+        $this->assertEquals('350.50', $task->fresh()->price);
     }
 
-    public function test_setting_price_on_completed_order_fails(): void
+    public function test_order_total_is_the_sum_of_its_task_prices(): void
     {
         $this->actingAsAdmin();
-        $order = Order::factory()->completed()->create();
+        $master = Master::factory()->create();
+        $order = Order::factory()->forMaster($master)->inProgress()->create();
+        $first = OrderTask::factory()->create(['order_id' => $order->id]);
+        $second = OrderTask::factory()->create(['order_id' => $order->id]);
 
-        $this->post(route('orders.set-price', $order), ['final_price' => 100])
-            ->assertRedirect();
+        $this->post($this->taskPriceUrl($order, $first), ['price' => 300]);
+        $this->post($this->taskPriceUrl($order, $second), ['price' => 150.25]);
 
-        $this->assertEquals('completed', $order->fresh()->status->value);
+        $this->assertEquals('450.25', $order->fresh()->final_price);
     }
 
-    public function test_setting_price_without_a_master_fails(): void
+    public function test_unpriced_tasks_are_ignored_in_the_order_total(): void
+    {
+        $this->actingAsAdmin();
+        $master = Master::factory()->create();
+        $order = Order::factory()->forMaster($master)->inProgress()->create();
+        $priced = OrderTask::factory()->create(['order_id' => $order->id]);
+        OrderTask::factory()->create(['order_id' => $order->id]);
+
+        $this->post($this->taskPriceUrl($order, $priced), ['price' => 200]);
+
+        $this->assertEquals('200.00', $order->fresh()->final_price);
+    }
+
+    public function test_clearing_the_last_task_price_resets_the_order_total_to_null(): void
+    {
+        $this->actingAsAdmin();
+        $master = Master::factory()->create();
+        $order = Order::factory()->forMaster($master)->inProgress()->create();
+        $task = OrderTask::factory()->priced(300)->create(['order_id' => $order->id]);
+
+        $this->post($this->taskPriceUrl($order, $task), ['price' => null]);
+
+        $this->assertNull($task->fresh()->price);
+        $this->assertNull($order->fresh()->final_price);
+    }
+
+    public function test_deleting_a_priced_task_recalculates_the_order_total(): void
+    {
+        $master = Master::factory()->create();
+        $order = Order::factory()->forMaster($master)->inProgress()->create();
+        OrderTask::factory()->priced(300)->create(['order_id' => $order->id]);
+        $removed = OrderTask::factory()->priced(150)->create(['order_id' => $order->id]);
+
+        $removed->delete();
+
+        $this->assertEquals('300.00', $order->fresh()->final_price);
+    }
+
+    public function test_setting_a_task_price_on_a_completed_order_fails(): void
+    {
+        $this->actingAsAdmin();
+        $master = Master::factory()->create();
+        $order = Order::factory()->forMaster($master)->completed()->create();
+        $task = OrderTask::factory()->create(['order_id' => $order->id]);
+
+        $this->post($this->taskPriceUrl($order, $task), ['price' => 100])
+            ->assertRedirect();
+
+        $this->assertNull($task->fresh()->price);
+    }
+
+    public function test_setting_a_task_price_without_a_master_fails(): void
     {
         $this->actingAsAdmin();
         $order = Order::factory()->create();
+        $task = OrderTask::factory()->create(['order_id' => $order->id]);
 
-        $this->post(route('orders.set-price', $order), ['final_price' => 100])
+        $this->post($this->taskPriceUrl($order, $task), ['price' => 100])
             ->assertRedirect();
 
+        $this->assertNull($task->fresh()->price);
         $this->assertNull($order->fresh()->final_price);
+    }
+
+    // ── Order discount ────────────────────────────────────────────────────────
+
+    private function discountUrl(Order $order): string
+    {
+        return route('orders.set-discount', ['order' => $order->id]);
+    }
+
+    public function test_admin_can_apply_a_percentage_discount_to_the_order_total(): void
+    {
+        $this->actingAsAdmin();
+        $master = Master::factory()->create();
+        $order = Order::factory()->forMaster($master)->inProgress()->create();
+        OrderTask::factory()->priced(300)->create(['order_id' => $order->id]);
+        OrderTask::factory()->priced(200)->create(['order_id' => $order->id]);
+
+        $this->post($this->discountUrl($order), ['discount_percent' => 10])
+            ->assertRedirect(route('orders.show', $order));
+
+        $order->refresh();
+        $this->assertEquals('10.00', $order->discount_percent);
+        $this->assertEquals('450.00', $order->final_price);
+    }
+
+    public function test_discount_is_reapplied_when_a_task_price_changes(): void
+    {
+        $this->actingAsAdmin();
+        $master = Master::factory()->create();
+        $order = Order::factory()->forMaster($master)->inProgress()->create();
+        $task = OrderTask::factory()->priced(300)->create(['order_id' => $order->id]);
+
+        $this->post($this->discountUrl($order), ['discount_percent' => 25]);
+        $this->post($this->taskPriceUrl($order, $task), ['price' => 400]);
+
+        $this->assertEquals('300.00', $order->fresh()->final_price);
+    }
+
+    public function test_clearing_the_discount_restores_the_full_total(): void
+    {
+        $this->actingAsAdmin();
+        $master = Master::factory()->create();
+        $order = Order::factory()->forMaster($master)->inProgress()->create(['discount_percent' => 20]);
+        OrderTask::factory()->priced(500)->create(['order_id' => $order->id]);
+
+        $this->post($this->discountUrl($order), ['discount_percent' => null]);
+
+        $order->refresh();
+        $this->assertEquals('0.00', $order->discount_percent);
+        $this->assertEquals('500.00', $order->final_price);
+    }
+
+    public function test_discount_leaves_the_total_null_when_no_task_is_priced(): void
+    {
+        $this->actingAsAdmin();
+        $master = Master::factory()->create();
+        $order = Order::factory()->forMaster($master)->inProgress()->create();
+        OrderTask::factory()->create(['order_id' => $order->id]);
+
+        $this->post($this->discountUrl($order), ['discount_percent' => 15]);
+
+        $this->assertNull($order->fresh()->final_price);
+    }
+
+    public function test_setting_a_discount_on_a_completed_order_fails(): void
+    {
+        $this->actingAsAdmin();
+        $master = Master::factory()->create();
+        $order = Order::factory()->forMaster($master)->completed()->create();
+
+        $this->post($this->discountUrl($order), ['discount_percent' => 10])
+            ->assertRedirect();
+
+        $this->assertEquals('0.00', $order->fresh()->discount_percent);
+    }
+
+    public function test_discount_must_be_between_zero_and_one_hundred(): void
+    {
+        $this->actingAsAdmin();
+        $master = Master::factory()->create();
+        $order = Order::factory()->forMaster($master)->inProgress()->create();
+
+        $this->post($this->discountUrl($order), ['discount_percent' => 120])
+            ->assertSessionHasErrors('discount_percent');
+
+        $this->post($this->discountUrl($order), ['discount_percent' => -5])
+            ->assertSessionHasErrors('discount_percent');
+
+        $this->assertEquals('0.00', $order->fresh()->discount_percent);
+    }
+
+    public function test_master_is_credited_from_the_discounted_total(): void
+    {
+        $this->actingAsAdmin();
+        $master = Master::factory()->create(['payment_value' => 50, 'balance' => 0]);
+        $order = Order::factory()->forMaster($master)->inProgress()->create();
+        OrderTask::factory()->priced(1000)->create(['order_id' => $order->id]);
+
+        $this->post($this->discountUrl($order), ['discount_percent' => 20]);
+        $this->post(route('orders.update-status', $order), ['status' => 'completed']);
+
+        $this->assertEquals('800.00', $order->fresh()->final_price);
+        $this->assertEqualsWithDelta(400.0, (float) $master->fresh()->balance, 0.01);
+    }
+
+    public function test_task_price_must_not_be_negative(): void
+    {
+        $this->actingAsAdmin();
+        $master = Master::factory()->create();
+        $order = Order::factory()->forMaster($master)->inProgress()->create();
+        $task = OrderTask::factory()->create(['order_id' => $order->id]);
+
+        $this->post($this->taskPriceUrl($order, $task), ['price' => -5])
+            ->assertSessionHasErrors('price');
+
+        $this->assertNull($task->fresh()->price);
+    }
+
+    public function test_setting_a_price_for_a_task_of_another_order_returns_404(): void
+    {
+        $this->actingAsAdmin();
+        $master = Master::factory()->create();
+        $order = Order::factory()->forMaster($master)->inProgress()->create();
+        $foreignTask = OrderTask::factory()->create();
+
+        $this->post($this->taskPriceUrl($order, $foreignTask), ['price' => 100])
+            ->assertNotFound();
     }
 
     // ── Update status ─────────────────────────────────────────────────────────
@@ -495,12 +744,10 @@ class OrderTest extends TestCase
     public function test_admin_can_update_pending_order(): void
     {
         $this->actingAsAdmin();
-        $city = City::factory()->create();
         $category = Category::factory()->create();
         $order = Order::factory()->create(['status' => 'pending']);
 
         $this->put(route('orders.update', $order), [
-            'city_id' => $city->id,
             'category_id' => $category->id,
             'client_name' => 'Обновлённое имя',
             'client_phone' => '+99362999888',
@@ -513,19 +760,16 @@ class OrderTest extends TestCase
         $this->assertDatabaseHas('orders', [
             'id' => $order->id,
             'client_name' => 'Обновлённое имя',
-            'city_id' => $city->id,
         ]);
     }
 
     public function test_update_fails_on_assigned_order(): void
     {
         $this->actingAsAdmin();
-        $city = City::factory()->create();
         $category = Category::factory()->create();
         $order = Order::factory()->assigned()->create();
 
         $this->put(route('orders.update', $order), [
-            'city_id' => $city->id,
             'category_id' => $category->id,
             'client_name' => 'Test',
             'client_phone' => '+99362000000',
@@ -543,7 +787,7 @@ class OrderTest extends TestCase
         $order = Order::factory()->create(['status' => 'pending']);
 
         $this->put(route('orders.update', $order), [])
-            ->assertSessionHasErrors(['city_id', 'category_id', 'client_name', 'client_phone', 'description', 'client_lat', 'client_lng']);
+            ->assertSessionHasErrors(['category_id', 'client_name', 'client_phone', 'description', 'client_lat', 'client_lng']);
     }
 
     // ── Destroy ───────────────────────────────────────────────────────────────
@@ -557,5 +801,26 @@ class OrderTest extends TestCase
             ->assertRedirect(route('orders.index'));
 
         $this->assertModelMissing($order);
+    }
+
+    public function test_deleting_an_order_removes_the_task_photo_files(): void
+    {
+        Storage::fake('public');
+        $this->actingAsAdmin();
+
+        $order = Order::factory()->create();
+        $task = OrderTask::factory()->create(['order_id' => $order->id]);
+        $photo = OrderTaskPhoto::factory()->before()->create([
+            'order_task_id' => $task->id,
+            'path' => 'orders/1/tasks/1/before/one.webp',
+        ]);
+
+        Storage::disk('public')->put($photo->path, 'fake');
+
+        $this->delete(route('orders.destroy', $order))
+            ->assertRedirect(route('orders.index'));
+
+        Storage::disk('public')->assertMissing($photo->path);
+        $this->assertModelMissing($photo);
     }
 }

@@ -22,10 +22,11 @@ return [
         'client_lat' => 'Широта',
         'client_lng' => 'Долгота',
         'location' => 'Местоположение',
-        'city' => 'Город',
         'category' => 'Категория',
         'master' => 'Мастер',
         'status' => 'Статус',
+        'tasks_total' => 'Сумма по задачам',
+        'discount' => 'Скидка',
         'final_price' => 'Итоговая стоимость',
         'created_at' => 'Создана',
         'assigned_at' => 'Назначен',
@@ -36,6 +37,7 @@ return [
         'cancel_reason' => 'Причина отмены',
         'photos' => 'Фото проблемы',
         'tasks' => 'Выполненные задачи',
+        'task_price' => 'Стоимость',
         'before' => 'До',
         'after' => 'После',
     ],
@@ -43,9 +45,12 @@ return [
     'actions' => [
         'assign_master' => 'Назначить мастера',
         'change_master' => 'Сменить мастера',
-        'set_price' => 'Установить стоимость',
         'edit' => 'Редактировать',
         'change_status' => 'Изменить статус',
+        'set_price' => 'Указать цену',
+        'edit_price' => 'Изменить цену',
+        'add_discount' => 'Добавить скидку',
+        'edit_discount' => 'Изменить скидку',
         'view_on_map' => 'Показать на карте',
         'call_master' => 'Позвонить мастеру',
         'call_client' => 'Позвонить клиенту',
@@ -53,6 +58,8 @@ return [
 
     'no_master' => 'Не назначен',
     'no_price' => 'Не установлена',
+    'price_from_tasks' => 'Сумма по задачам минус скидка',
+    'no_discount' => 'Без скидки',
     'no_reason' => 'Причина не указана',
 
     'statuses' => [
@@ -66,10 +73,7 @@ return [
     'filters' => [
         'all' => 'Все',
         'all_statuses' => 'Все статусы',
-        'all_cities' => 'Все города',
-        'all_oblasts' => 'Все велаяты',
         'by_status' => 'По статусу',
-        'by_city' => 'По городу',
         'search_placeholder' => 'Поиск по имени или телефону',
         'date_from' => 'Дата с',
         'date_to' => 'Дата по',
@@ -78,15 +82,14 @@ return [
 
     'modals' => [
         'assign_title' => 'Назначить мастера на заявку',
-        'price_title' => 'Установить итоговую стоимость',
         'price_placeholder' => 'Введите стоимость',
+        'discount_placeholder' => '% скидки',
         'edit_title' => 'Редактировать заявку',
         'create_title' => 'Новая заявка от клиента',
-        'select_city' => 'Выберите город',
         'select_category' => 'Выберите категорию',
         'status_title' => 'Изменить статус заявки',
         'cancel_reason' => 'Причина отмены',
-        'no_eligible_masters' => 'Нет доступных мастеров для этого города и категории',
+        'no_eligible_masters' => 'Нет доступных мастеров для этой категории',
         'complete_no_price_warning' => 'Финальная цена не указана. Мастеру с процентной оплатой начислится 0. Укажите цену для корректного расчёта.',
         'change_reason_label' => 'Причина смены мастера',
         'change_reason_placeholder' => 'Например: мастер недоступен, ошиблись при назначении…',
@@ -115,7 +118,8 @@ return [
 
     'notifications' => [
         'master_assigned' => 'Мастер успешно назначен',
-        'price_set' => 'Стоимость установлена',
+        'task_price_set' => 'Стоимость задачи обновлена',
+        'discount_set' => 'Скидка обновлена',
         'status_updated' => 'Статус обновлён',
         'completed_without_price' => 'Заявка завершена, но финальная цена не указана — мастеру начислено 0',
         'new_order' => 'Новая заявка от :client — :category',
@@ -125,7 +129,6 @@ return [
 
     'errors' => [
         'master_inactive' => 'Мастер неактивен или его доступ истёк',
-        'city_mismatch' => 'Город мастера не совпадает с городом заявки',
         'category_mismatch' => 'У мастера нет этой категории',
         'already_final' => 'Заявка уже в финальном статусе',
         'invalid_transition' => 'Недопустимая смена статуса',

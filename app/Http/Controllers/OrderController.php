@@ -5,12 +5,14 @@ namespace App\Http\Controllers;
 use App\Actions\AssignMasterAction;
 use App\Actions\CreateOrderForClientAction;
 use App\Actions\DeleteOrderAction;
-use App\Actions\SetOrderFinalPriceAction;
+use App\Actions\SetOrderDiscountAction;
+use App\Actions\SetOrderTaskPriceAction;
 use App\Actions\UpdateOrderAction;
 use App\Actions\UpdateOrderStatusAction;
 use App\Exceptions\OrderException;
 use App\Http\Requests\AssignMasterToOrderRequest;
-use App\Http\Requests\SetOrderFinalPriceRequest;
+use App\Http\Requests\SetOrderDiscountRequest;
+use App\Http\Requests\SetOrderTaskPriceRequest;
 use App\Http\Requests\StoreOrderRequest;
 use App\Http\Requests\UpdateOrderRequest;
 use App\Http\Requests\UpdateOrderStatusRequest;
@@ -21,7 +23,6 @@ use App\OrderStatus;
 use App\Repositories\CategoryRepository;
 use App\Repositories\ClientRepository;
 use App\Repositories\MasterRepository;
-use App\Repositories\OblastRepository;
 use App\Repositories\OrderRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -40,11 +41,10 @@ class OrderController extends Controller
 
     public function index(Request $request): Response
     {
-        $filters = $request->only(['status', 'city_id', 'search', 'date_from', 'date_to']);
+        $filters = $request->only(['status', 'search', 'date_from', 'date_to']);
 
         return Inertia::render('Orders/Index', [
             'orders' => OrderResource::collection($this->repository->paginate($filters)),
-            'oblasts' => app(OblastRepository::class)->allWithCities(),
             'categories' => app(CategoryRepository::class)->treeForSelect(),
             'clients' => app(ClientRepository::class)->allForSelect(),
             'statuses' => collect(OrderStatus::cases())->map(fn ($s) => [
@@ -65,11 +65,10 @@ class OrderController extends Controller
 
         return Inertia::render('Orders/Show', [
             'order' => (new OrderResource($order))->resolve(),
-            'oblasts' => $isPending ? app(OblastRepository::class)->allWithCities() : collect(),
             'categories' => $isPending ? app(CategoryRepository::class)->treeForSelect() : [],
             'eligibleMasters' => $isAssignable
                 ? $this->masterRepository
-                    ->eligibleForOrder($order->city_id, $order->category_id)
+                    ->eligibleForOrder($order->category_id)
                     ->filter(fn ($m) => $m->id !== $order->master_id)
                     ->map(fn ($m) => [
                         'id' => $m->id,
@@ -141,13 +140,30 @@ class OrderController extends Controller
         return redirect()->route('orders.show', $order->id);
     }
 
-    public function setPrice(SetOrderFinalPriceRequest $request, int $id, SetOrderFinalPriceAction $action): RedirectResponse
+    public function setTaskPrice(SetOrderTaskPriceRequest $request, int $id, int $taskId, SetOrderTaskPriceAction $action): RedirectResponse
     {
         $order = $this->repository->findOrFail($id);
+        $task = $this->repository->findTaskForOrderOrFail($order->id, $taskId);
+        $price = $request->validated()['price'];
 
         try {
-            $action->handle($order, (float) $request->validated()['final_price']);
-            $this->notifySuccess('orders.notifications.price_set');
+            $action->handle($order, $task, $price !== null ? (float) $price : null);
+            $this->notifySuccess('orders.notifications.task_price_set');
+        } catch (OrderException $e) {
+            $this->notifyError($e->getMessage());
+        }
+
+        return redirect()->route('orders.show', $order->id);
+    }
+
+    public function setDiscount(SetOrderDiscountRequest $request, int $id, SetOrderDiscountAction $action): RedirectResponse
+    {
+        $order = $this->repository->findOrFail($id);
+        $percent = $request->validated()['discount_percent'];
+
+        try {
+            $action->handle($order, $percent !== null ? (float) $percent : 0.0);
+            $this->notifySuccess('orders.notifications.discount_set');
         } catch (OrderException $e) {
             $this->notifyError($e->getMessage());
         }
