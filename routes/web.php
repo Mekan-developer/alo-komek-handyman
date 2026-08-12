@@ -3,16 +3,14 @@
 use App\Http\Controllers\BannerController;
 use App\Http\Controllers\CategoryContentController;
 use App\Http\Controllers\CategoryController;
-use App\Http\Controllers\CityController;
 use App\Http\Controllers\ClientController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MasterController;
 use App\Http\Controllers\NotificationController;
-use App\Http\Controllers\OblastController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PendingOtpController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\RegionController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\SystemStatusController;
 use App\Http\Controllers\TilesController;
@@ -75,9 +73,10 @@ Route::middleware('auth')->group(function () {
             ->middleware('verified')
             ->name('dashboard');
 
-        Route::resource('oblasts', OblastController::class)->only(['index', 'store', 'update', 'destroy']);
-        Route::resource('regions', RegionController::class)->only(['index', 'store', 'update', 'destroy']);
-        Route::resource('cities', CityController::class)->only(['index', 'store', 'update', 'destroy']);
+        Route::get('pending-otps', [PendingOtpController::class, 'index'])->name('pending-otps.index');
+        Route::get('pending-otps/data', [PendingOtpController::class, 'data'])->name('pending-otps.data');
+        Route::delete('pending-otps/{id}', [PendingOtpController::class, 'destroy'])->name('pending-otps.destroy');
+
         Route::resource('categories', CategoryController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::post('categories/{category}/content', [CategoryContentController::class, 'upsert'])->name('categories.content.upsert');
         Route::get('masters/map', [MasterController::class, 'map'])->name('masters.map');
@@ -95,7 +94,8 @@ Route::middleware('auth')->group(function () {
 
         Route::resource('orders', OrderController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
         Route::post('orders/{order}/assign', [OrderController::class, 'assign'])->name('orders.assign');
-        Route::post('orders/{order}/price', [OrderController::class, 'setPrice'])->name('orders.set-price');
+        Route::post('orders/{order}/tasks/{task}/price', [OrderController::class, 'setTaskPrice'])->name('orders.tasks.set-price');
+        Route::post('orders/{order}/discount', [OrderController::class, 'setDiscount'])->name('orders.set-discount');
         Route::post('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.update-status');
         Route::get('orders/{order}/master-trajectory', [OrderController::class, 'masterTrajectoryForOrder'])->name('orders.master-trajectory');
 

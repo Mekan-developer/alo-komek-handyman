@@ -30,16 +30,37 @@ class MasterAuthTest extends TestCase
             && $request['phone_number'] === substr($master->phone, 4));
     }
 
-    public function test_otp_request_fails_when_sms_gateway_is_unreachable(): void
+    public function test_otp_falls_back_to_manual_delivery_when_sms_gateway_is_unreachable(): void
     {
         Http::fake(['*/emit-otp' => Http::response(['message' => 'No gateway client connected'], 503)]);
 
         $master = Master::factory()->create();
 
         $this->postJson(route('api.v1.master.auth.request-otp'), ['phone' => $master->phone])
-            ->assertStatus(503);
+            ->assertOk()
+            ->assertJsonPath('delivery', 'manual');
 
-        $this->assertNull(Cache::get("master_otp:{$master->phone}"));
+        $code = Cache::get("master_otp:{$master->phone}");
+
+        $this->assertNotNull($code);
+        $this->assertDatabaseHas('pending_otps', [
+            'phone' => $master->phone,
+            'code' => $code,
+            'recipient_type' => 'master',
+            'recipient_name' => $master->name,
+        ]);
+    }
+
+    public function test_inactive_master_gets_no_parked_code(): void
+    {
+        Http::fake(['*/emit-otp' => Http::response(['message' => 'No gateway client connected'], 503)]);
+
+        $master = Master::factory()->inactive()->create();
+
+        $this->postJson(route('api.v1.master.auth.request-otp'), ['phone' => $master->phone])
+            ->assertForbidden();
+
+        $this->assertDatabaseCount('pending_otps', 0);
     }
 
     public function test_inactive_master_cannot_request_otp(): void

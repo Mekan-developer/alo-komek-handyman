@@ -2,19 +2,23 @@
 
 namespace App\Actions;
 
-use App\Services\OtpGatewayService;
-use Illuminate\Support\Facades\Cache;
+use App\Enums\OtpDeliveryChannel;
+use App\Enums\OtpRecipientType;
+use App\Repositories\ClientRepository;
 
 class RequestClientOtpAction
 {
-    public function __construct(private readonly OtpGatewayService $gateway) {}
+    public function __construct(
+        private readonly DispatchOtpAction $dispatcher,
+        private readonly ClientRepository $clients,
+    ) {}
 
-    public function handle(string $phone): void
+    public function handle(string $phone): OtpDeliveryChannel
     {
-        $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-
-        $this->gateway->send($phone, $code);
-
-        Cache::put("client_otp:{$phone}", $code, now()->addMinutes((int) config('services.otp.ttl_minutes')));
+        return $this->dispatcher->handle(
+            $phone,
+            OtpRecipientType::Client,
+            $this->clients->findByPhone($phone)?->name,
+        );
     }
 }

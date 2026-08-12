@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Repositories\PendingOtpRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
@@ -43,7 +44,23 @@ class HandleInertiaRequests extends Middleware
             'unreadNotificationsCount' => $request->user()
                 ? $request->user()->unreadNotifications()->count()
                 : 0,
+            'pendingOtpCount' => $this->pendingOtpCount($request),
         ];
+    }
+
+    /**
+     * Sidebar badge for OTP codes waiting to be dictated by phone. Only staff
+     * who can open the section pay for the query.
+     */
+    private function pendingOtpCount(Request $request): int
+    {
+        $user = $request->user();
+
+        if ($user === null || $user->isOperator()) {
+            return 0;
+        }
+
+        return app(PendingOtpRepository::class)->countActive();
     }
 
     /**

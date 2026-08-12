@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { Head } from '@inertiajs/vue3'
 import OrderStatusBadge from '@/Pages/Orders/Partials/OrderStatusBadge.vue'
+import PendingOtpPanel from '@/Components/PendingOtpPanel.vue'
 
 const { t } = useI18n()
 
@@ -15,7 +16,6 @@ const props = defineProps({
             total_orders: 0,
             active_masters: 0,
             pending_orders: 0,
-            total_cities: 0,
             completed_orders: 0,
             in_progress_orders: 0,
         }),
@@ -45,13 +45,6 @@ const cards = [
         iconPath: 'M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z',
         iconBg: 'bg-amber-100 dark:bg-amber-900/40',
         iconColor: 'text-amber-600 dark:text-amber-400',
-    },
-    {
-        key: 'total_cities',
-        labelKey: 'dashboard.stats.total_cities',
-        iconPath: 'M15 10.5a3 3 0 11-6 0 3 3 0 016 0zM19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z',
-        iconBg: 'bg-sky-100 dark:bg-sky-900/40',
-        iconColor: 'text-sky-600 dark:text-sky-400',
     },
     {
         key: 'completed_orders',
@@ -93,6 +86,9 @@ const totalOrders = computed(() => props.stats.total_orders || 1)
 
     <AdminLayout :title="t('dashboard.title')">
         <div class="space-y-6">
+            <!-- OTP codes waiting for manual delivery (SMS gateway down) -->
+            <PendingOtpPanel />
+
             <!-- Stat cards -->
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 <div
@@ -171,7 +167,6 @@ const totalOrders = computed(() => props.stats.total_orders || 1)
                                     <th class="px-5 pb-2 text-left text-xs font-medium text-gray-400 dark:text-slate-500">{{ t('dashboard.table.id') }}</th>
                                     <th class="px-3 pb-2 text-left text-xs font-medium text-gray-400 dark:text-slate-500">{{ t('dashboard.table.client') }}</th>
                                     <th class="px-3 pb-2 text-left text-xs font-medium text-gray-400 dark:text-slate-500">{{ t('dashboard.table.category') }}</th>
-                                    <th class="px-3 pb-2 text-left text-xs font-medium text-gray-400 dark:text-slate-500">{{ t('dashboard.table.city') }}</th>
                                     <th class="px-3 pb-2 text-left text-xs font-medium text-gray-400 dark:text-slate-500">{{ t('dashboard.table.status') }}</th>
                                     <th class="px-5 pb-2 text-left text-xs font-medium text-gray-400 dark:text-slate-500">{{ t('dashboard.table.date') }}</th>
                                 </tr>
@@ -192,7 +187,6 @@ const totalOrders = computed(() => props.stats.total_orders || 1)
                                     </td>
                                     <td class="px-3 py-2.5 text-gray-700 dark:text-slate-300">{{ order.client_name }}</td>
                                     <td class="px-3 py-2.5 text-gray-600 dark:text-slate-400">{{ order.category }}</td>
-                                    <td class="px-3 py-2.5 text-gray-600 dark:text-slate-400">{{ order.city }}</td>
                                     <td class="px-3 py-2.5">
                                         <OrderStatusBadge
                                             :status="order.status"

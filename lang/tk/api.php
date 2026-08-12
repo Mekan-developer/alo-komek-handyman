@@ -12,6 +12,7 @@ return [
     'otp' => [
         'invalid' => 'Nädogry ýa-da möhleti gutaran tassyklama kody',
         'send_failed' => 'Tassyklama kody iberilmedi. Soňra synanyşyň',
+        'manual_delivery' => 'SMS wagtlaýyn elýeterli däl. Goldaw gullugyna jaň ediň — operator tassyklama kodyny aýdar',
     ],
 
     'master' => [

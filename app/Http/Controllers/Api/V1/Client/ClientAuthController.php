@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\Client;
 
 use App\Actions\RequestClientOtpAction;
 use App\Actions\VerifyClientOtpAction;
+use App\Enums\OtpDeliveryChannel;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Client\CompleteRegistrationRequest;
 use App\Http\Requests\Api\V1\Client\RequestOtpRequest;
@@ -17,9 +18,15 @@ class ClientAuthController extends Controller
 {
     public function requestOtp(RequestOtpRequest $request, RequestClientOtpAction $action): JsonResponse
     {
-        $action->handle($request->validated('phone'));
+        $channel = $action->handle($request->validated('phone'));
 
-        return response()->json(['message' => 'OTP sent.']);
+        return response()->json([
+            'message' => 'OTP sent.',
+            'delivery' => $channel->value,
+            'delivery_message' => $channel === OtpDeliveryChannel::Manual
+                ? __('api.otp.manual_delivery')
+                : null,
+        ]);
     }
 
     public function verifyOtp(VerifyOtpRequest $request, VerifyClientOtpAction $action): JsonResponse
@@ -32,7 +39,7 @@ class ClientAuthController extends Controller
         return response()->json([
             'token' => $result['token']->plainTextToken,
             'is_new' => $result['is_new'],
-            'client' => new ClientProfileResource($result['client']->load('city')),
+            'client' => new ClientProfileResource($result['client']),
         ]);
     }
 
@@ -44,7 +51,7 @@ class ClientAuthController extends Controller
         );
 
         return response()->json([
-            'client' => new ClientProfileResource($client->load('city')),
+            'client' => new ClientProfileResource($client),
         ]);
     }
 

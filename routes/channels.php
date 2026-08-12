@@ -2,6 +2,7 @@
 
 use App\Models\Client;
 use App\Models\Master;
+use App\Models\User;
 use Illuminate\Support\Facades\Broadcast;
 
 Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
@@ -9,12 +10,21 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
 });
 
 /*
- * Public channel for the admin map view — broadcasts every master location update
- * scoped by city id. Anyone (including unauthenticated guest in dev) can listen.
+ * Public channel for the admin map view — broadcasts every master location update.
+ * The service covers Ashgabat only, so a single channel carries all masters.
+ * Anyone (including unauthenticated guest in dev) can listen.
  * In production, switch to private channel + admin auth gate.
  */
-Broadcast::channel('masters-map.{cityId}', function () {
+Broadcast::channel('masters-map', function () {
     return true;
+});
+
+/*
+ * Private channel carrying OTP codes parked for manual delivery. Codes are
+ * secrets — only staff who can open the section may subscribe.
+ */
+Broadcast::channel('admin.pending-otps', function ($user) {
+    return $user instanceof User && ! $user->isOperator();
 });
 
 /*
