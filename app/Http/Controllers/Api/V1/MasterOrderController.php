@@ -7,6 +7,7 @@ use App\Actions\StartMasterOrderAction;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\MasterOrderResource;
 use App\Models\Master;
+use App\Models\Order;
 use App\Repositories\OrderRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -45,7 +46,7 @@ class MasterOrderController extends Controller
 
         $updated = $action->handle($master, $order);
 
-        return (new MasterOrderResource($updated))->response();
+        return (new MasterOrderResource($this->loadOrderRelations($updated)))->response();
     }
 
     public function complete(Request $request, int $id, CompleteMasterOrderAction $action): JsonResponse
@@ -57,6 +58,15 @@ class MasterOrderController extends Controller
 
         $updated = $action->handle($master, $order);
 
-        return (new MasterOrderResource($updated))->response();
+        return (new MasterOrderResource($this->loadOrderRelations($updated)))->response();
+    }
+
+    /**
+     * Status actions return a freshly re-fetched order, which drops the eager loaded
+     * relations — without this the response would silently omit `tasks` and `tasks_total`.
+     */
+    private function loadOrderRelations(Order $order): Order
+    {
+        return $order->load(['category', 'photos', 'tasks.beforePhotos', 'tasks.afterPhotos']);
     }
 }
