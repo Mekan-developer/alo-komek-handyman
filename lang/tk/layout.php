@@ -3,17 +3,20 @@
 return [
     'nav' => [
         'dashboard' => 'Baş sahypa',
-        'oblasts' => 'Welaýatlar',
-        'regions' => 'Etraplar',
-        'cities' => 'Şäherler',
         'categories' => 'Kategoriyalar',
         'masters' => 'Ussatlar',
         'clients' => 'Müşderiler',
         'orders' => 'Sargytlar',
         'payments' => 'Tölegler',
+        'pending_otps' => 'OTP kodlary',
         'banners' => 'Bannerlar',
         'users' => 'Ulanyjylar',
         'settings' => 'Sazlamalar',
+    ],
+    'nav_groups' => [
+        'operations' => 'Amallar',
+        'content' => 'Mazmun',
+        'system' => 'Ulgam',
     ],
     'header' => [
         'logout' => 'Çykmak',
@@ -37,14 +40,6 @@ return [
         'next' => 'Soňky',
     ],
     'selected' => 'saýlandy',
-    'select' => [
-        'oblast' => 'Welaýat saýlaň',
-        'city' => 'Şäher saýlaň',
-    ],
-    'labels' => [
-        'oblast' => 'Welaýat',
-        'city' => 'Şäher',
-    ],
     'services' => [
         'queue' => 'Nobat hyzmaty',
         'reverb' => 'Reverb serwer',

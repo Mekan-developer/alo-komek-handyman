@@ -3,17 +3,20 @@
 return [
     'nav' => [
         'dashboard' => 'Дашборд',
-        'oblasts' => 'Велаяты',
-        'regions' => 'Районы',
-        'cities' => 'Города',
         'categories' => 'Категории',
         'masters' => 'Мастера',
         'clients' => 'Клиенты',
         'orders' => 'Заказы',
         'payments' => 'Платежи',
+        'pending_otps' => 'OTP-коды',
         'banners' => 'Баннеры',
         'users' => 'Пользователи',
         'settings' => 'Настройки',
+    ],
+    'nav_groups' => [
+        'operations' => 'Операции',
+        'content' => 'Контент',
+        'system' => 'Система',
     ],
     'header' => [
         'logout' => 'Выйти',
@@ -37,14 +40,6 @@ return [
         'next' => 'Далее',
     ],
     'selected' => 'выбрано',
-    'select' => [
-        'oblast' => 'Выберите велаят',
-        'city' => 'Выберите город',
-    ],
-    'labels' => [
-        'oblast' => 'Велаят',
-        'city' => 'Город',
-    ],
     'services' => [
         'queue' => 'Очередь задач',
         'reverb' => 'Reverb сервер',
