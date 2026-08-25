@@ -156,6 +156,7 @@ let themeObserver = null
 let masterMarkerL = null
 let candidateMarkersL = []
 let trajectoryLine = null
+let trajectoryPoints = []
 let trackingStarted = false
 
 const liveDistance = ref(null)
@@ -279,15 +280,12 @@ async function startTrackingIfNeeded(L) {
 
             masterMarkerL?.setLatLng([lat, lng])
 
+            trajectoryPoints.push([lat, lng])
+
             if (trajectoryLine) {
-                trajectoryLine.addLatLng([lat, lng])
-            } else {
-                trajectoryLine = L.polyline([[lat, lng]], {
-                    color: '#2563eb',
-                    weight: 3,
-                    opacity: 0.7,
-                    dashArray: '8 5',
-                }).addTo(map)
+                trajectoryLine.setLatLngs(smoothTrajectory(trajectoryPoints))
+            } else if (trajectoryPoints.length >= 2) {
+                trajectoryLine = L.polyline(smoothTrajectory(trajectoryPoints), TRAJECTORY_STYLE).addTo(map)
             }
 
             updateDistanceEta(lat, lng, parseFloat(props.order.client_lat), parseFloat(props.order.client_lng))
@@ -491,19 +489,51 @@ async function fetchAndDrawTrajectory(L) {
     try {
         const res = await fetch(route('orders.master-trajectory', props.order.id))
         const json = await res.json()
-        const points = (json.points ?? []).map(p => [parseFloat(p.latitude), parseFloat(p.longitude)])
+        trajectoryPoints = (json.points ?? []).map(p => [parseFloat(p.latitude), parseFloat(p.longitude)])
 
-        if (points.length < 2) { return }
+        if (trajectoryPoints.length < 2) { return }
 
-        trajectoryLine = L.polyline(points, {
-            color: '#2563eb',
-            weight: 3,
-            opacity: 0.7,
-            dashArray: '8 5',
-        }).addTo(map)
+        trajectoryLine = L.polyline(smoothTrajectory(trajectoryPoints), TRAJECTORY_STYLE).addTo(map)
     } catch {
         // silent — trajectory is optional
     }
+}
+
+const TRAJECTORY_STYLE = { color: '#2563eb', weight: 3, opacity: 0.8, lineCap: 'round', lineJoin: 'round' }
+
+// Сглаживаем реальные GPS-точки катмулл-ромовским сплайном — без сторонних
+// зависимостей рисуем плавную кривую вместо ломаной по сырым координатам.
+function smoothTrajectory(points, segments = 12) {
+    if (points.length < 3) { return points }
+
+    const last = points.length - 1
+    const smoothed = []
+
+    for (let i = 0; i < last; i++) {
+        const p0 = points[i === 0 ? 0 : i - 1]
+        const p1 = points[i]
+        const p2 = points[i + 1]
+        const p3 = points[i === last - 1 ? last : i + 2]
+
+        for (let t = 0; t < segments; t++) {
+            smoothed.push(catmullRomPoint(p0, p1, p2, p3, t / segments))
+        }
+    }
+
+    smoothed.push(points[last])
+    return smoothed
+}
+
+function catmullRomPoint(p0, p1, p2, p3, t) {
+    const t2 = t * t
+    const t3 = t2 * t
+
+    return [0, 1].map((axis) => 0.5 * (
+        2 * p1[axis]
+        + (-p0[axis] + p2[axis]) * t
+        + (2 * p0[axis] - 5 * p1[axis] + 4 * p2[axis] - p3[axis]) * t2
+        + (-p0[axis] + 3 * p1[axis] - 3 * p2[axis] + p3[axis]) * t3
+    ))
 }
 
 const sortedEligibleMasters = computed(() => {
