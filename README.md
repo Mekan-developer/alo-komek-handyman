@@ -33,8 +33,7 @@ A platform for clients to search and book handyman services. Administrators mana
 | Testing | PHPUnit v10 |
 | Code Style | Laravel Pint v1 |
 | Basemap Renderer | MapLibre GL (`maplibre-gl`) via `@maplibre/maplibre-gl-leaflet` bridge on Leaflet |
-| Map Tiles (masters map) | Self-hosted **tileserver-gl** — style + tiles + glyphs + sprites; URL via `TILES_STYLE_URL` |
-| Map Tiles (order picker) | `protomaps-leaflet` + offline `pmtiles` (`turkmenistan.pmtiles`, `TilesController` w/ HTTP Range) |
+| Map Tiles | Self-hosted **tileserver-gl** — style + tiles + glyphs + sprites; URL via `TILES_STYLE_URL`. In dev: static `public/maps/style.json` + the `/tiles/{z}/{x}/{y}.pbf` route reading `storage/maps/tiles.mbtiles` |
 
 ---
 
@@ -133,8 +132,12 @@ routes/
     └── v1.php                  # Versioned API routes
 
 public/
+├── icons/
+│   ├── logo/                   # App logo (also used as favicon)
+│   └── services/               # Category icons — preset set + `u-*.svg` admin uploads
+├── maps/                       # MapLibre style.json, glyphs, sprites (self-hosted basemap)
 └── sounds/
-    └── new-order.mp3           # Admin panel alert sound
+    └── alarm.mp3               # Admin panel alert sound
 
 tests/
 ├── Feature/                    # Feature tests (primary)
@@ -388,10 +391,37 @@ When a client submits a new order:
 1. Backend dispatches a broadcast event via **Laravel Reverb**
 2. Admin panel receives the WebSocket message
 3. `useNotificationStore.info()` displays a toast notification
-4. Sound alert plays from `public/sounds/new-order.mp3`
+4. Sound alert plays from `public/sounds/alarm.mp3`
 5. Notification bell counter increments in the topbar (via `unreadNotificationsCount` shared prop)
 
 **Page Visibility API**: sound only plays when the browser tab is **active**, preventing stacked alerts when the admin returns to the tab.
+
+### Realtime Order Updates
+
+Every status transition — from the admin panel, the master app (`start` / `complete`) or the client app
+(`cancel`) — reaches open admin screens without a manual refresh:
+
+1. `OrderStatusChanged` broadcasts on the public `orders` channel. Assigning a master goes through
+   `AssignMasterAction`, which dispatches it too (Pending → Assigned is the one transition that skips
+   `UpdateOrderStatusAction`); a reassignment keeps the status, so no event fires.
+2. `NotifyAdminsOnOrderStatusChanged` writes an `OrderStatusChangedNotification` to the bell panel.
+   It is **not** queued: the broadcast leaves before listeners run, and the UI reloads its unread
+   counter right after — a queued write would land after that reload.
+3. The browser refreshes data through `resources/js/composables/useOrdersRealtime.js`:
+
+| Screen | Reloaded props |
+|--------|----------------|
+| `Orders/Index` | `orders` (filters and page stay in the URL) |
+| `Orders/Show` | `order`, `eligibleMasters` — only for the order the event belongs to; the map is not rebuilt |
+| `Dashboard` | `stats`, `ordersByStatus`, `recentOrders` |
+| `AdminLayout` | `unreadNotificationsCount`, `pendingOtpCount` |
+
+`scheduleRealtimeReload()` merges every subscriber's keys into one debounced `router.reload({ async: true })`
+— events arrive in bursts (an assignment fires `master.assigned` + `order.status.changed`) and Inertia does
+not merge parallel visits. Pages subscribe with `useOrdersChannel()` and detach via `stopListening`, never
+`Echo.leave`: the `orders` channel is shared with `AdminLayout`.
+
+Covered by `tests/Feature/OrderRealtimeTest.php`.
 
 ### Realtime Fault Tolerance
 
@@ -475,9 +505,7 @@ docker run --rm -it -v $(pwd)/data:/data -p 8080:8080 \
 
 > **Production**: serve the tileserver over **HTTPS** behind nginx (e.g. `https://tiles.example.tm`) — an HTTP tile origin is blocked as mixed content on an HTTPS admin panel. tileserver-gl already sends permissive CORS headers. Set `TILES_STYLE_URL` per environment.
 
-> The order-detail picker (`Pages/Orders/Partials/CreateOrderModal.vue`) still uses `protomaps-leaflet` + the offline `pmtiles` file — migrate it to the same tileserver style if needed.
-
-> The order-detail picker (`Pages/Orders/Partials/CreateOrderModal.vue`) still uses `protomaps-leaflet` — migrate it the same way if pixel-crispness is needed there too.
+> The order-detail picker (`Pages/Orders/Partials/CreateOrderModal.vue`) and the order tracking map (`Pages/Orders/Show.vue`) use the same `@maplibre/maplibre-gl-leaflet` bridge and the same `TILES_STYLE_URL` — there is no second tile stack.
 
 ### Per-Order Live Tracking (Orders → Show)
 
@@ -575,6 +603,63 @@ tasks subtotal.
 
 > The manual "set final price" flow (`POST /orders/{order}/price`, `SetOrderFinalPriceAction`,
 > `SetPriceModal.vue`) has been removed.
+
+### Master call-out fee notice
+
+Free-text notice telling the client they owe the master for the call-out when they cancel an
+order **after a master has already been assigned and is on the way**. No amount is stored —
+the wording (and any figure inside it) is entirely the admin's.
+
+- Stored as two rows in `settings` — `master_call_out_fee_note_ru` and
+  `master_call_out_fee_note_tk` (`nullable|string|max:500`) — edited in the **Отмена заказа**
+  card on `/settings`.
+- Exposed to the client app by `GET /api/v1/client/settings` as
+  `data.master_call_out_fee_note`: plain text already resolved for the request's `X-Locale`,
+  falling back to the Russian variant, `""` when nothing is written. The app shows it on the
+  cancel-confirmation screen.
+- **Informational only** — the money changes hands in cash on site. Nothing is written to the
+  order, and the master's `balance` is untouched. `CancelClientOrderAction` still refuses to
+  cancel an order that already has a master (`OrderException::cannotCancelAssignedOrder()`),
+  so today that cancellation goes through an operator in the admin panel.
+- The Settings page saves these fields with their own Inertia form, so saving the notice never
+  overwrites the rules editors (`UpdateSettingsAction` only writes the keys present in the
+  request).
+
+### Order receipts
+
+Every order gets a receipt the moment it is completed — a till-roll style document listing
+the client, the master who did the job, one line per priced task, and the total on the last
+line.
+
+- `IssueOrderReceiptAction` is called from `UpdateOrderStatusAction` on the transition to
+  `Completed`. **Never call it by hand** — it is idempotent and returns the existing receipt.
+- The receipt is a **snapshot**, not a view: `order_receipts` stores client/master names and
+  phones, the category, `subtotal`, `discount_percent`, `discount_amount` and `total`;
+  `order_receipt_items` stores one row per task (`title`, `description`, `price`). Task prices
+  are locked at completion anyway, so the receipt never drifts.
+- Tasks **without a price** are left out — same rule as `final_price`. An order completed with
+  no priced task gets a receipt with zero items and a `0.00` total.
+- Number format is `MDD-NNNN`: month, day, then a per-day counter — `824-0036` is the 36th
+  receipt issued on 24 August. Generated by `OrderReceiptRepository::nextNumberFor()`.
+- Orders completed before this feature shipped have no receipt. Backfill them once with
+  `php artisan receipts:backfill` (safe to re-run).
+
+**Where it shows up**
+
+| Surface | How |
+|---|---|
+| Admin | `Orders/Show` gets a `receipt` prop; the "Чек" button opens `OrderReceiptModal.vue`, "Распечатать" calls `window.print()` |
+| Client app | `GET /api/v1/client/orders/{order}/receipt` |
+| Master app | `GET /api/v1/master/orders/{order}/receipt` |
+
+Both endpoints return `OrderReceiptResource` (shared between web and API — the snapshot is
+identical everywhere; labels are localized client-side) and answer `404` until the order is
+completed.
+
+Printing is the one place with hand-written CSS: `resources/css/app.css` has an `@media print`
+block that hides everything except `.receipt-print`. Tailwind's `print:` variants cannot
+express "hide the rest of the page". The receipt itself is always light — it is a sheet of
+paper, not a UI surface — so it has no `dark:` variants by design.
 
 ### ⚠️ Breaking change — geography removed (v1)
 
@@ -725,6 +810,23 @@ vendor/bin/phpstan analyse        # Static analysis
 # ── Testing ──────────────────────────────────────────────────────────────────
 php artisan test --compact        # Full test suite
 ```
+
+---
+
+## Roadmap / Known Gaps
+
+Tracked here so the list stays next to the code it describes.
+
+| # | Task | Priority |
+|---|---|---|
+| 1 | **`/docs` is unprotected** — `ProtectScribeDocs` exists but is wired nowhere (`config/scribe.php` was never published, so `route:list` shows an empty middleware stack on `docs`, `docs.openapi`, `docs.postman`). Publish the config and register the middleware. | High |
+| 2 | **Private `orders` + `masters-map.*` channels** + admin gate — mobile `client.*` / `master.*` are already private, admin channels are not (see the note in `routes/channels.php`) | Low |
+| 3 | **Auth for the location ping** — `POST /api/v1/master/{master}/location` is still open ("temporary open auth until OTP flow stabilises") | Low |
+| 4 | **`OrderStatus` enum location** — lives in `app/OrderStatus.php` instead of `app/Enums/` alongside `UserRole` / `CategoryIconType`; `PaymentModel` has the same problem | Low |
+| 5 | **Dashboard tests** — no coverage for `DashboardController` / `DashboardRepository` | Low |
+| 6 | **Notification tests** — no coverage for `NotificationController` | Low |
+| 7 | **Policies for the remaining modules** — only `UserPolicy` exists | Low |
+| 8 | **Flutter apps** — the API is ready, the master/client clients are not built | — |
 
 ---
 
