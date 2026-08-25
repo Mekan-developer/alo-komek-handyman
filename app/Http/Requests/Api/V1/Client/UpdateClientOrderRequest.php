@@ -22,7 +22,7 @@ class UpdateClientOrderRequest extends FormRequest
             'client_lat' => ['sometimes', 'numeric', 'between:-90,90'],
             'client_lng' => ['sometimes', 'numeric', 'between:-180,180'],
             'photos' => ['sometimes', 'array', 'max:4'],
-            'photos.*' => ['file', 'image', 'mimes:jpeg,jpg,png,webp', 'max:8192'],
+            'photos.*' => ['file', 'image', 'mimes:jpeg,jpg,png,webp', 'max:102400'],
             'remove_photo_ids' => ['sometimes', 'array'],
             'remove_photo_ids.*' => ['integer'],
         ];

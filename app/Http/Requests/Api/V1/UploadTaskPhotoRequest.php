@@ -19,7 +19,7 @@ class UploadTaskPhotoRequest extends FormRequest
     {
         return [
             'type' => ['required', 'in:before,after'],
-            'photo' => ['required', 'file', 'image', 'max:8192'],
+            'photo' => ['required', 'file', 'image', 'max:102400'],
         ];
     }
 }
