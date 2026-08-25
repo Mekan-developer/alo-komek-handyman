@@ -23,6 +23,7 @@ class NewOrderNotification extends Notification implements ShouldQueue
     public function toDatabase(object $notifiable): array
     {
         return [
+            'type' => 'order.created',
             'order_id' => $this->order->id,
             'client_name' => $this->order->client_name,
             'category' => $this->order->category?->name,

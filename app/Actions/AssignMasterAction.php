@@ -3,6 +3,7 @@
 namespace App\Actions;
 
 use App\Events\MasterAssigned;
+use App\Events\OrderStatusChanged;
 use App\Exceptions\OrderException;
 use App\Models\Order;
 use App\Repositories\MasterRepository;
@@ -36,10 +37,18 @@ class AssignMasterAction
             throw OrderException::categoryMismatch();
         }
 
+        $previousStatus = $order->status;
         $isReassignment = $order->master_id !== null && $order->master_id !== $master->id;
         $assigned = $this->orderRepository->assignMaster($order, $master->id, $isReassignment ? $changeReason : null);
 
         MasterAssigned::dispatch($assigned->load('master'));
+
+        // Assigning a master is also a status transition (Pending -> Assigned) — the
+        // only one that does not go through UpdateOrderStatusAction. Broadcast it so
+        // admin screens refresh on every status change, not just the ones that do.
+        if ($previousStatus !== $assigned->status) {
+            OrderStatusChanged::dispatch($assigned, $previousStatus, $assigned->status);
+        }
 
         return $assigned;
     }

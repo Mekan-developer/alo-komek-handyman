@@ -33,6 +33,7 @@ return [
         'save' => 'Сохранить',
         'update' => 'Обновить',
         'cancel' => 'Отмена',
+        'close' => 'Закрыть',
     ],
     'pagination' => [
         'showing' => 'Показано {from}–{to} из {total}',

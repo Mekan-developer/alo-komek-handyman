@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { useThemeStore } from '@/stores/useThemeStore'
 import { useLocaleStore } from '@/stores/useLocaleStore'
 import { useNotificationStore } from '@/stores/useNotificationStore'
+import { scheduleRealtimeReload } from '@/composables/useOrdersRealtime'
 import NotificationPanel from '@/Components/NotificationPanel.vue'
 
 defineProps({
@@ -14,7 +15,7 @@ defineProps({
     },
 })
 
-const { t, locale } = useI18n()
+const { t, te, locale } = useI18n()
 const themeStore = useThemeStore()
 const localeStore = useLocaleStore()
 const notificationStore = useNotificationStore()
@@ -200,6 +201,15 @@ function playAlarmSound() {
     alarmAudio.play().catch(() => {})
 }
 
+/** Заказ попал в колокольчик — подтянуть счётчик и открытую панель. */
+function refreshStoredNotifications() {
+    scheduleRealtimeReload(['unreadNotificationsCount'])
+
+    if (notificationPanelOpen.value) {
+        notificationPanelRef.value?.fetchNotifications()
+    }
+}
+
 function handleNewOrder(payload) {
     const message = t('orders.notifications.new_order', {
         client: payload.client_name ?? '—',
@@ -208,10 +218,7 @@ function handleNewOrder(payload) {
     notificationStore.info(message)
     playAlarmSound()
 
-    router.reload({ only: ['unreadNotificationsCount'] })
-    if (notificationPanelOpen.value) {
-        notificationPanelRef.value?.fetchNotifications()
-    }
+    refreshStoredNotifications()
 }
 
 function handleMasterAssigned(payload) {
@@ -223,18 +230,35 @@ function handleMasterAssigned(payload) {
 }
 
 function handleOrderStatusChanged(payload) {
-    notificationStore.info(t('orders.notifications.status_changed_broadcast', {
-        order: `#${payload.order_id}`,
-        status: payload.to_label ?? payload.to,
-    }))
-    playAlarmSound()
+    // Назначение мастера прилетает парой событий (master.assigned + order.status.changed).
+    // Про него уже сказал handleMasterAssigned, причём с именем мастера — второй тост
+    // и второй сигнал были бы шумом.
+    const announcedByAssignment = payload.from === 'pending' && payload.to === 'assigned'
+
+    if (!announcedByAssignment) {
+        notificationStore.info(t('orders.notifications.status_changed_broadcast', {
+            order: `#${payload.order_id}`,
+            status: statusLabel(payload.to) ?? payload.to_label ?? payload.to,
+        }))
+        playAlarmSound()
+    }
+
+    refreshStoredNotifications()
+}
+
+function statusLabel(status) {
+    if (!status) { return null }
+
+    const key = `orders.statuses.${status}`
+
+    return te(key) ? t(key) : null
 }
 
 function handlePendingOtp(payload) {
     notificationStore.warning(t('pending_otps.notifications.new', { phone: payload.phone }))
     playAlarmSound()
 
-    router.reload({ only: ['pendingOtpCount'] })
+    scheduleRealtimeReload(['pendingOtpCount'])
 }
 
 onMounted(() => {

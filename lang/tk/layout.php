@@ -33,6 +33,7 @@ return [
         'save' => 'Sakla',
         'update' => 'Täzelemek',
         'cancel' => 'Ýatyr',
+        'close' => 'Ýap',
     ],
     'pagination' => [
         'showing' => '{from}–{to} / {total} görkezilýär',

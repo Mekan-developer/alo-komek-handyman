@@ -5,7 +5,7 @@ import { useI18n } from 'vue-i18n'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { Head } from '@inertiajs/vue3'
 import OrderStatusBadge from '@/Pages/Orders/Partials/OrderStatusBadge.vue'
-import PendingOtpPanel from '@/Components/PendingOtpPanel.vue'
+import { scheduleRealtimeReload, useOrdersChannel } from '@/composables/useOrdersRealtime'
 
 const { t } = useI18n()
 
@@ -79,6 +79,17 @@ const statusLabelColors = {
 }
 
 const totalOrders = computed(() => props.stats.total_orders || 1)
+
+// Realtime: любое изменение по заявкам двигает счётчики и список последних заявок.
+function reloadDashboard() {
+    scheduleRealtimeReload(['stats', 'ordersByStatus', 'recentOrders'])
+}
+
+useOrdersChannel({
+    '.order.created': reloadDashboard,
+    '.master.assigned': reloadDashboard,
+    '.order.status.changed': reloadDashboard,
+})
 </script>
 
 <template>
@@ -86,9 +97,6 @@ const totalOrders = computed(() => props.stats.total_orders || 1)
 
     <AdminLayout :title="t('dashboard.title')">
         <div class="space-y-6">
-            <!-- OTP codes waiting for manual delivery (SMS gateway down) -->
-            <PendingOtpPanel />
-
             <!-- Stat cards -->
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 <div

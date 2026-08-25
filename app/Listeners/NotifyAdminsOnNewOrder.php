@@ -3,13 +3,15 @@
 namespace App\Listeners;
 
 use App\Events\OrderCreated;
-use App\Models\User;
 use App\Notifications\NewOrderNotification;
+use App\Repositories\UserRepository;
 
 class NotifyAdminsOnNewOrder
 {
+    public function __construct(private readonly UserRepository $repository) {}
+
     public function handle(OrderCreated $event): void
     {
-        User::all()->each->notify(new NewOrderNotification($event->order));
+        $this->repository->all()->each->notify(new NewOrderNotification($event->order));
     }
 }

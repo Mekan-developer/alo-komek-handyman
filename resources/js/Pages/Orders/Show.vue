@@ -11,6 +11,7 @@ import OrderReceiptModal from '@/Pages/Orders/Partials/OrderReceiptModal.vue'
 import ImageLightbox from '@/Components/ImageLightbox.vue'
 import { formatPhone } from '@/utils/formatPhone'
 import { loadMapStyle, suppressBlankIconWarnings } from '@/utils/loadMapStyle'
+import { scheduleRealtimeReload, useOrdersChannel } from '@/composables/useOrdersRealtime'
 import 'leaflet/dist/leaflet.css'
 import 'maplibre-gl/dist/maplibre-gl.css'
 
@@ -148,6 +149,20 @@ const liveEta = ref(null)
 const isTracking = computed(() =>
     props.order.master && ['assigned', 'in_progress'].includes(props.order.status)
 )
+
+// Realtime: заявку могут вести параллельно оператор, мастер и клиент. Перечитываем
+// карточку и список кандидатов, когда пришло событие именно по этой заявке.
+// Карта живёт своей жизнью и не пересобирается — статус и таймлайн реактивны сами.
+function reloadThisOrder(payload) {
+    if (payload.order_id !== props.order.id) { return }
+
+    scheduleRealtimeReload(['order', 'eligibleMasters'])
+}
+
+useOrdersChannel({
+    '.master.assigned': reloadThisOrder,
+    '.order.status.changed': reloadThisOrder,
+})
 
 onMounted(async () => {
     const L = (await import('leaflet')).default

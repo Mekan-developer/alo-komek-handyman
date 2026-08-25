@@ -1,7 +1,10 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { router } from '@inertiajs/vue3'
+import { useI18n } from 'vue-i18n'
 import axios from 'axios'
+
+const { t } = useI18n()
 
 const props = defineProps({
     open: {
@@ -88,6 +91,26 @@ function prepend(notification) {
     notifications.value.unshift(notification)
 }
 
+/**
+ * Заголовок записи. `type` появился вместе с уведомлениями о смене статуса —
+ * записи, созданные до него, читаются как «новая заявка».
+ */
+function notificationTitle(notification) {
+    const order = `#${notification.data.order_id}`
+
+    return notification.data.type === 'order.status.changed'
+        ? t('notifications.panel.status_changed', { order })
+        : t('notifications.panel.new_order', { order })
+}
+
+function notificationSubtitle(notification) {
+    const parts = notification.data.type === 'order.status.changed'
+        ? [notification.data.client_name, t(`orders.statuses.${notification.data.to}`)]
+        : [notification.data.client_name, notification.data.category]
+
+    return parts.filter(Boolean).join(' · ')
+}
+
 defineExpose({ prepend, fetchNotifications })
 </script>
 
@@ -110,7 +133,7 @@ defineExpose({ prepend, fetchNotifications })
             <!-- Header -->
             <div class="flex h-16 shrink-0 items-center justify-between border-b border-gray-200 px-5 dark:border-slate-700">
                 <div class="flex items-center gap-2">
-                    <h2 class="text-base font-semibold text-gray-900 dark:text-white">Уведомления</h2>
+                    <h2 class="text-base font-semibold text-gray-900 dark:text-white">{{ t('notifications.panel.title') }}</h2>
                     <span
                         v-if="unreadCount > 0"
                         class="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-indigo-600 px-1.5 text-xs font-bold text-white"
@@ -125,14 +148,14 @@ defineExpose({ prepend, fetchNotifications })
                         @click="markAllRead"
                         class="rounded-md px-2.5 py-1.5 text-xs font-medium text-indigo-600 transition-colors hover:bg-indigo-50 dark:text-indigo-400 dark:hover:bg-indigo-900/30"
                     >
-                        Прочитать все
+                        {{ t('notifications.panel.mark_all_read') }}
                     </button>
                     <button
                         v-if="notifications.length > 0"
                         @click="deleteAll"
                         class="rounded-md px-2.5 py-1.5 text-xs font-medium text-red-500 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
                     >
-                        Удалить все
+                        {{ t('notifications.panel.delete_all') }}
                     </button>
                     <button
                         @click="$emit('close')"
@@ -164,7 +187,7 @@ defineExpose({ prepend, fetchNotifications })
                     <svg class="h-12 w-12 text-gray-300 dark:text-slate-600" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
                     </svg>
-                    <p class="text-sm text-gray-400 dark:text-slate-500">Уведомлений нет</p>
+                    <p class="text-sm text-gray-400 dark:text-slate-500">{{ t('notifications.panel.empty') }}</p>
                 </div>
 
                 <!-- Notification items -->
@@ -190,14 +213,14 @@ defineExpose({ prepend, fetchNotifications })
                         >
                             <div class="flex items-center justify-between gap-2">
                                 <p class="text-sm font-medium text-gray-900 dark:text-white">
-                                    Новый заказ #{{ n.data.order_id }}
+                                    {{ notificationTitle(n) }}
                                 </p>
                                 <time class="shrink-0 text-xs text-gray-400 dark:text-slate-500">
                                     {{ formatTime(n.created_at) }}
                                 </time>
                             </div>
                             <p class="mt-0.5 text-sm text-gray-600 dark:text-slate-400">
-                                {{ n.data.client_name }} · {{ n.data.category }}
+                                {{ notificationSubtitle(n) }}
                             </p>
                             <p v-if="n.data.address" class="mt-0.5 text-xs text-gray-400 dark:text-slate-500">
                                 {{ n.data.address }}
@@ -208,7 +231,7 @@ defineExpose({ prepend, fetchNotifications })
                         <button
                             @click.stop="deleteNotification(n)"
                             class="shrink-0 rounded-md p-1 text-gray-300 opacity-0 transition-all hover:bg-red-50 hover:text-red-500 group-hover:opacity-100 dark:text-slate-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
-                            title="Удалить"
+                            :title="t('notifications.panel.delete')"
                         >
                             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />

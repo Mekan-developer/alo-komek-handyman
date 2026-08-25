@@ -8,6 +8,7 @@ import CreateOrderModal from '@/Pages/Orders/Partials/CreateOrderModal.vue'
 import ConfirmModal from '@/Components/ConfirmModal.vue'
 import Pagination from '@/Components/Pagination.vue'
 import { formatPhone } from '@/utils/formatPhone'
+import { scheduleRealtimeReload, useOrdersChannel } from '@/composables/useOrdersRealtime'
 
 const { t } = useI18n()
 
@@ -78,6 +79,14 @@ function confirmDelete() {
         onFinish: () => { deleting.value = false },
     })
 }
+
+// Realtime: статус/мастер/новый заказ меняют выдачу списка — перечитываем только `orders`,
+// текущие фильтры и страница пагинации остаются в URL.
+useOrdersChannel({
+    '.order.created': () => scheduleRealtimeReload(['orders']),
+    '.master.assigned': () => scheduleRealtimeReload(['orders']),
+    '.order.status.changed': () => scheduleRealtimeReload(['orders']),
+})
 </script>
 
 <template>
