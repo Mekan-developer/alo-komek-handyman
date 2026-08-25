@@ -110,7 +110,7 @@ return [
         'status_title' => 'Sargydyň ýagdaýyny üýtget',
         'cancel_reason' => 'Ýatyrylan sebäbi',
         'no_eligible_masters' => 'Bu kategoriýa üçin elýeterli ussa ýok',
-        'complete_no_price_warning' => 'Jemi baha görkezilmedi. Göterimli tölegli ussa 0 hasaplanar. Dogry hasaplama üçin bahany giriziň.',
+        'complete_no_price_warning' => 'Ähli işlerde baha görkezilmedi. Sargydy diňe her bir iş üçin baha görkezilenden soň tamamlap bolar.',
         'change_reason_label' => 'Ussany çalyşmagyň sebäbi',
         'change_reason_placeholder' => 'Mysal üçin: usta elýeterli däl, ýalňyşyp bellenildi…',
         'confirm_master_change_title' => 'Ussanyň çalşylmagyny tassyklaň',
@@ -141,7 +141,6 @@ return [
         'task_price_set' => 'Işiň bahasy täzelendi',
         'discount_set' => 'Arzanladyş täzelendi',
         'status_updated' => 'Ýagdaý täzelendi',
-        'completed_without_price' => 'Sargyt tamamlandy, ýöne jemi baha görkezilmedi — ussa 0 hasaplandy',
         'new_order' => ':client müşderisinden täze sargyt — :category',
         'master_assigned_broadcast' => ':order sargydyna usta bellenildi: :master',
         'status_changed_broadcast' => ':order sargydy: ýagdaý — :status',
@@ -159,5 +158,6 @@ return [
         'too_many_photos' => 'Sargytda 4-den köp surat bolup bilmez',
         'not_completed_yet' => 'Syn diňe sargyt tamamlanandan soň goýlup bilner',
         'already_reviewed' => 'Siz eýýäm bu sargyda syn goýduňyz',
+        'unpriced_tasks' => 'Sargydy tamamlap bolmaýar — her bir iş üçin administrator baha kesgitlemeli',
     ],
 ];

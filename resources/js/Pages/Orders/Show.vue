@@ -954,7 +954,6 @@ const sortedEligibleMasters = computed(() => {
             :current-status="order.status"
             :statuses="statuses"
             :final-price="order.final_price"
-            :master-payment-model="order.master?.payment_model"
             @close="showStatusModal = false"
         />
 

@@ -665,6 +665,7 @@ class OrderTest extends TestCase
     {
         $this->actingAsAdmin();
         $order = Order::factory()->inProgress()->create();
+        OrderTask::factory()->for($order)->priced(100)->create();
 
         $this->post(route('orders.update-status', $order), ['status' => 'completed'])
             ->assertRedirect();
@@ -673,17 +674,17 @@ class OrderTest extends TestCase
         $this->assertNotNull($order->fresh()->completed_at);
     }
 
-    public function test_completing_percentage_order_without_price_credits_zero_and_warns(): void
+    public function test_completing_order_without_priced_tasks_is_blocked(): void
     {
         $this->actingAsAdmin();
         $master = Master::factory()->create(['payment_value' => 35, 'balance' => 0]);
-        $order = Order::factory()->forMaster($master)->inProgress()->create(['final_price' => null]);
+        $order = Order::factory()->forMaster($master)->inProgress()->create();
 
         $this->post(route('orders.update-status', $order), ['status' => 'completed'])
             ->assertRedirect()
-            ->assertSessionHas('notification', fn ($notification) => $notification['type'] === 'warning');
+            ->assertSessionHas('notification', fn ($notification) => $notification['type'] === 'error');
 
-        $this->assertEquals('completed', $order->fresh()->status->value);
+        $this->assertEquals('in_progress', $order->fresh()->status->value);
         $this->assertEqualsWithDelta(0.0, (float) $master->fresh()->balance, 0.01);
     }
 
@@ -691,7 +692,8 @@ class OrderTest extends TestCase
     {
         $this->actingAsAdmin();
         $master = Master::factory()->create(['payment_value' => 35, 'balance' => 0]);
-        $order = Order::factory()->forMaster($master)->inProgress()->create(['final_price' => 1000]);
+        $order = Order::factory()->forMaster($master)->inProgress()->create();
+        OrderTask::factory()->for($order)->priced(1000)->create();
 
         $this->post(route('orders.update-status', $order), ['status' => 'completed'])
             ->assertRedirect()

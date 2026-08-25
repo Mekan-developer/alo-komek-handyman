@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Actions\IssueOrderReceiptAction;
 use App\Actions\UpdateOrderStatusAction;
+use App\Exceptions\OrderException;
 use App\Models\Master;
 use App\Models\Order;
 use App\Models\OrderReceipt;
@@ -109,31 +110,25 @@ class OrderReceiptTest extends TestCase
         $this->assertSame($completed->final_price, $receipt->total);
     }
 
-    public function test_tasks_without_a_price_are_left_out_of_the_receipt(): void
+    public function test_completing_an_order_with_an_unpriced_task_is_blocked(): void
     {
         $order = $this->orderInProgressWithTasks();
         OrderTask::factory()->create(['order_id' => $order->id, 'title' => 'Без цены', 'price' => null]);
 
+        $this->expectException(OrderException::class);
+
         $this->complete($order->fresh());
-
-        $receipt = OrderReceipt::where('order_id', $order->id)->firstOrFail();
-
-        $this->assertCount(2, $receipt->items);
-        $this->assertNotContains('Без цены', $receipt->items->pluck('title')->all());
     }
 
-    public function test_completed_order_without_priced_tasks_gets_an_empty_receipt(): void
+    public function test_completing_an_order_with_only_unpriced_tasks_is_blocked(): void
     {
         $master = Master::factory()->create();
         $order = Order::factory()->forMaster($master)->inProgress()->create();
         OrderTask::factory()->create(['order_id' => $order->id, 'price' => null]);
 
+        $this->expectException(OrderException::class);
+
         $this->complete($order);
-
-        $receipt = OrderReceipt::where('order_id', $order->id)->firstOrFail();
-
-        $this->assertCount(0, $receipt->items);
-        $this->assertSame('0.00', $receipt->total);
     }
 
     public function test_cancelled_order_gets_no_receipt(): void

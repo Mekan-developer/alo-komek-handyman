@@ -182,17 +182,8 @@ class OrderController extends Controller
         $newStatus = OrderStatus::from($data['status']);
 
         try {
-            $updated = $action->handle($order, $newStatus, $data['cancel_reason'] ?? null);
-            $updated->loadMissing('master');
-
-            if ($newStatus === OrderStatus::Completed
-                && $updated->master !== null
-                && $updated->master->payment_model->requiresFinalPrice()
-                && $updated->final_price === null) {
-                $this->notifyWarning('orders.notifications.completed_without_price');
-            } else {
-                $this->notifySuccess('orders.notifications.status_updated');
-            }
+            $action->handle($order, $newStatus, $data['cancel_reason'] ?? null);
+            $this->notifySuccess('orders.notifications.status_updated');
         } catch (OrderException $e) {
             $this->notifyError($e->getMessage());
         }

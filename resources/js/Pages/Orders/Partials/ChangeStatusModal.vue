@@ -12,7 +12,6 @@ const props = defineProps({
     currentStatus: { type: String, required: true },
     statuses: { type: Array, default: () => [] },
     finalPrice: { type: [Number, String], default: null },
-    masterPaymentModel: { type: String, default: null },
 })
 
 const emit = defineEmits(['close'])
@@ -21,7 +20,6 @@ const form = useForm({ status: '', cancel_reason: '' })
 
 const warnNoPrice = computed(() =>
     form.status === 'completed'
-    && ['percentage', 'salary_percentage'].includes(props.masterPaymentModel)
     && (props.finalPrice === null || props.finalPrice === '' || Number(props.finalPrice) === 0)
 )
 

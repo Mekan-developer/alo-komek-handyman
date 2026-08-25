@@ -5,6 +5,7 @@ namespace App\Actions;
 use App\Events\OrderStatusChanged;
 use App\Exceptions\OrderException;
 use App\Models\Order;
+use App\Models\OrderTask;
 use App\OrderStatus;
 use App\Repositories\OrderRepository;
 
@@ -24,6 +25,10 @@ class UpdateOrderStatusAction
 
         if (! $this->isValidTransition($order->status, $newStatus)) {
             throw OrderException::invalidTransition($order->status->value, $newStatus->value);
+        }
+
+        if ($newStatus === OrderStatus::Completed && ! $this->allTasksPriced($order)) {
+            throw OrderException::unpricedTasks();
         }
 
         $previousStatus = $order->status;
@@ -52,5 +57,17 @@ class UpdateOrderStatusAction
             OrderStatus::InProgress => in_array($to, [OrderStatus::Completed, OrderStatus::Cancelled], true),
             default => false,
         };
+    }
+
+    /**
+     * An order can only be completed once every task on it has a price — an order
+     * with no tasks at all has nothing priced either, so it is blocked too.
+     */
+    private function allTasksPriced(Order $order): bool
+    {
+        $order->loadMissing('tasks');
+
+        return $order->tasks->isNotEmpty()
+            && $order->tasks->every(fn (OrderTask $task): bool => $task->price !== null);
     }
 }

@@ -58,4 +58,9 @@ class OrderException extends ApiException
     {
         return new self((string) __('orders.errors.already_reviewed'));
     }
+
+    public static function unpricedTasks(): self
+    {
+        return new self((string) __('orders.errors.unpriced_tasks'));
+    }
 }

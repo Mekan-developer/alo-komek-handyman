@@ -18,15 +18,4 @@ enum PaymentModel: string
             self::SalaryPercentage => 'Оклад + Процент',
         };
     }
-
-    /**
-     * Whether the per-order earning depends on the order's final price.
-     */
-    public function requiresFinalPrice(): bool
-    {
-        return match ($this) {
-            self::Percentage, self::SalaryPercentage => true,
-            default => false,
-        };
-    }
 }
