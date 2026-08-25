@@ -119,7 +119,7 @@ defineExpose({ prepend, fetchNotifications })
     <Transition name="backdrop">
         <div
             v-if="open"
-            class="fixed inset-0 z-[9999] bg-black/40 backdrop-blur-md"
+            class="fixed inset-0 z-[1010] bg-black/40 backdrop-blur-md"
             @click="$emit('close')"
         />
     </Transition>
@@ -128,7 +128,7 @@ defineExpose({ prepend, fetchNotifications })
     <Transition name="panel">
         <div
             v-if="open"
-            class="fixed inset-y-0 right-0 z-[99999] flex w-full max-w-sm flex-col bg-white shadow-2xl dark:bg-slate-800"
+            class="fixed inset-y-0 right-0 z-[1010] flex w-full max-w-sm flex-col bg-white shadow-2xl dark:bg-slate-800"
         >
             <!-- Header -->
             <div class="flex h-16 shrink-0 items-center justify-between border-b border-gray-200 px-5 dark:border-slate-700">

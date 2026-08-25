@@ -295,7 +295,7 @@ onBeforeUnmount(() => {
         <Transition name="overlay">
             <div
                 v-if="sidebarOpen"
-                class="fixed inset-0 z-20 bg-black/60 lg:hidden"
+                class="fixed inset-0 z-[1005] bg-black/60 lg:hidden"
                 @click="sidebarOpen = false"
             />
         </Transition>
@@ -303,7 +303,7 @@ onBeforeUnmount(() => {
         <!-- Sidebar -->
         <aside
             :class="[
-                'fixed inset-y-0 left-0 z-30 flex w-64 flex-col bg-slate-800 transition-transform duration-300 ease-in-out lg:static lg:z-auto lg:translate-x-0',
+                'fixed inset-y-0 left-0 z-[1010] flex w-64 flex-col bg-slate-800 transition-transform duration-300 ease-in-out lg:static lg:z-auto lg:translate-x-0',
                 sidebarOpen ? 'translate-x-0' : '-translate-x-full',
             ]"
         >
@@ -557,7 +557,7 @@ onBeforeUnmount(() => {
         />
 
         <!-- Toast notifications -->
-        <div class="pointer-events-none fixed right-4 top-4 z-50 flex flex-col gap-2">
+        <div class="pointer-events-none fixed right-4 top-4 z-[1010] flex flex-col gap-2">
             <TransitionGroup name="toast">
                 <div
                     v-for="notification in notificationStore.notifications"
