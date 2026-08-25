@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
+import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { Link, router, usePage } from '@inertiajs/vue3'
 import { useI18n } from 'vue-i18n'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
@@ -150,10 +150,13 @@ const currentMode = ref('auto')
 
 const mapContainer = ref(null)
 let map = null
+let leafletL = null
 let baseLayer = null
 let themeObserver = null
 let masterMarkerL = null
+let candidateMarkersL = []
 let trajectoryLine = null
+let trackingStarted = false
 
 const liveDistance = ref(null)
 const liveEta = ref(null)
@@ -179,67 +182,15 @@ useOrdersChannel({
     '.order.task.price.updated': reloadThisOrder,
 })
 
-onMounted(async () => {
-    const L = (await import('leaflet')).default
-    await import('@maplibre/maplibre-gl-leaflet')
+// Кандидатов на замену рисуем только пока мастер не назначен. После assign их
+// незачем показывать — заменить мастера можно через модалку «Сменить мастера»
+// (список sortedEligibleMasters), а не тыканьем в пины на карте.
+function renderCandidateMarkers(L) {
+    if (props.order.master) { return }
 
     const clientLat = parseFloat(props.order.client_lat)
     const clientLng = parseFloat(props.order.client_lng)
 
-    map = L.map(mapContainer.value, {
-        maxBounds: L.latLngBounds([[35.1, 52.5], [42.8, 66.7]]),
-        maxBoundsViscosity: 1.0,
-        minZoom: 5,
-        attributionControl: false,
-    }).setView([clientLat, clientLng], 14)
-
-    baseLayer = L.maplibreGL({ style: await loadMapStyle(page.props.tilesStyleUrl) }).addTo(map)
-    suppressBlankIconWarnings(baseLayer.getMaplibreMap?.())
-    currentMode.value = localStorage.getItem(MAP_MODE_STORAGE_KEY) ?? 'auto'
-    applyMapMode()
-    baseLayer.getMaplibreMap?.()?.on('load', applyMapMode)
-    watchTheme()
-    setupMapControls(L)
-
-    setTimeout(() => map?.invalidateSize(), 100)
-
-    const allLatLngs = [[clientLat, clientLng]]
-
-    const clientIcon = L.divIcon({
-        className: 'custom-marker-client',
-        html: '<div style="background:#22c55e;width:32px;height:32px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:13px;">К</div>',
-        iconSize: [32, 32],
-        iconAnchor: [16, 16],
-    })
-    L.marker([clientLat, clientLng], { icon: clientIcon })
-        .addTo(map)
-        .bindPopup(`<b>${escapeHtml(props.order.client_name)}</b><br>${escapeHtml(formatPhone(props.order.client_phone))}`)
-
-    if (props.order.master?.latest_location) {
-        const masterLat = parseFloat(props.order.master.latest_location.latitude)
-        const masterLng = parseFloat(props.order.master.latest_location.longitude)
-
-        const masterIcon = L.divIcon({
-            className: 'custom-marker-master',
-            html: '<div style="background:#2563eb;width:32px;height:32px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:13px;">М</div>',
-            iconSize: [32, 32],
-            iconAnchor: [16, 16],
-        })
-
-        masterMarkerL = L.marker([masterLat, masterLng], { icon: masterIcon })
-            .addTo(map)
-            .bindPopup(`<b>${escapeHtml(props.order.master.name)}</b><br>${escapeHtml(formatPhone(props.order.master.phone))}`)
-
-        allLatLngs.push([masterLat, masterLng])
-        updateDistanceEta(masterLat, masterLng, clientLat, clientLng)
-
-        if (isTracking.value) {
-            await fetchAndDrawTrajectory(L)
-        }
-    }
-
-    // Кандидаты на замену показываем всегда, а не только пока мастер не назначен —
-    // иначе после назначения их пины пропадают с карты и переназначить некого выбрать.
     props.eligibleMasters.forEach((m) => {
         if (!m.latest_location) { return }
 
@@ -269,12 +220,121 @@ onMounted(async () => {
             </div>
         `
 
-        L.marker([lat, lng], { icon: candidateIcon })
+        const marker = L.marker([lat, lng], { icon: candidateIcon })
             .addTo(map)
             .bindPopup(popupHtml)
 
-        allLatLngs.push([lat, lng])
+        candidateMarkersL.push(marker)
     })
+}
+
+function clearCandidateMarkers() {
+    candidateMarkersL.forEach((marker) => marker.remove())
+    candidateMarkersL = []
+}
+
+function renderMasterMarker(L) {
+    if (!props.order.master?.latest_location) { return }
+
+    const clientLat = parseFloat(props.order.client_lat)
+    const clientLng = parseFloat(props.order.client_lng)
+    const masterLat = parseFloat(props.order.master.latest_location.latitude)
+    const masterLng = parseFloat(props.order.master.latest_location.longitude)
+
+    const masterIcon = L.divIcon({
+        className: 'custom-marker-master',
+        html: '<div style="background:#2563eb;width:32px;height:32px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:13px;">М</div>',
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
+    })
+
+    masterMarkerL = L.marker([masterLat, masterLng], { icon: masterIcon })
+        .addTo(map)
+        .bindPopup(`<b>${escapeHtml(props.order.master.name)}</b><br>${escapeHtml(formatPhone(props.order.master.phone))}`)
+
+    updateDistanceEta(masterLat, masterLng, clientLat, clientLng)
+}
+
+function clearMasterMarker() {
+    masterMarkerL?.remove()
+    masterMarkerL = null
+}
+
+// Живой трек мастера подключаем один раз, когда заказ впервые становится
+// "в работе" — не важно, было это при загрузке страницы или пришло по realtime.
+async function startTrackingIfNeeded(L) {
+    if (trackingStarted || !isTracking.value) { return }
+    trackingStarted = true
+
+    await fetchAndDrawTrajectory(L)
+
+    if (!window.Echo) { return }
+
+    window.Echo.channel(MASTERS_MAP_CHANNEL)
+        .listen('.master.location.updated', (payload) => {
+            if (payload.master_id !== props.order.master?.id) { return }
+
+            const lat = parseFloat(payload.latitude)
+            const lng = parseFloat(payload.longitude)
+
+            masterMarkerL?.setLatLng([lat, lng])
+
+            if (trajectoryLine) {
+                trajectoryLine.addLatLng([lat, lng])
+            } else {
+                trajectoryLine = L.polyline([[lat, lng]], {
+                    color: '#2563eb',
+                    weight: 3,
+                    opacity: 0.7,
+                    dashArray: '8 5',
+                }).addTo(map)
+            }
+
+            updateDistanceEta(lat, lng, parseFloat(props.order.client_lat), parseFloat(props.order.client_lng))
+        })
+}
+
+onMounted(async () => {
+    const L = (await import('leaflet')).default
+    await import('@maplibre/maplibre-gl-leaflet')
+    leafletL = L
+
+    const clientLat = parseFloat(props.order.client_lat)
+    const clientLng = parseFloat(props.order.client_lng)
+
+    map = L.map(mapContainer.value, {
+        maxBounds: L.latLngBounds([[35.1, 52.5], [42.8, 66.7]]),
+        maxBoundsViscosity: 1.0,
+        minZoom: 5,
+        attributionControl: false,
+    }).setView([clientLat, clientLng], 14)
+
+    baseLayer = L.maplibreGL({ style: await loadMapStyle(page.props.tilesStyleUrl) }).addTo(map)
+    suppressBlankIconWarnings(baseLayer.getMaplibreMap?.())
+    currentMode.value = localStorage.getItem(MAP_MODE_STORAGE_KEY) ?? 'auto'
+    applyMapMode()
+    baseLayer.getMaplibreMap?.()?.on('load', applyMapMode)
+    watchTheme()
+    setupMapControls(L)
+
+    setTimeout(() => map?.invalidateSize(), 100)
+
+    const clientIcon = L.divIcon({
+        className: 'custom-marker-client',
+        html: '<div style="background:#22c55e;width:32px;height:32px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:13px;">К</div>',
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
+    })
+    L.marker([clientLat, clientLng], { icon: clientIcon })
+        .addTo(map)
+        .bindPopup(`<b>${escapeHtml(props.order.client_name)}</b><br>${escapeHtml(formatPhone(props.order.client_phone))}`)
+
+    renderMasterMarker(L)
+    renderCandidateMarkers(L)
+
+    const allLatLngs = [[clientLat, clientLng]]
+    if (masterMarkerL) { allLatLngs.push(masterMarkerL.getLatLng()) }
+    candidateMarkersL.forEach((marker) => allLatLngs.push(marker.getLatLng()))
 
     if (allLatLngs.length > 1) {
         map.fitBounds(L.latLngBounds(allLatLngs), { padding: [80, 80] })
@@ -284,31 +344,27 @@ onMounted(async () => {
         router.post(route('orders.assign', props.order.id), { master_id: masterId })
     }
 
-    if (isTracking.value && window.Echo) {
-        window.Echo.channel(MASTERS_MAP_CHANNEL)
-            .listen('.master.location.updated', (payload) => {
-                if (payload.master_id !== props.order.master.id) { return }
-
-                const lat = parseFloat(payload.latitude)
-                const lng = parseFloat(payload.longitude)
-
-                masterMarkerL?.setLatLng([lat, lng])
-
-                if (trajectoryLine) {
-                    trajectoryLine.addLatLng([lat, lng])
-                } else {
-                    trajectoryLine = L.polyline([[lat, lng]], {
-                        color: '#2563eb',
-                        weight: 3,
-                        opacity: 0.7,
-                        dashArray: '8 5',
-                    }).addTo(map)
-                }
-
-                updateDistanceEta(lat, lng, clientLat, clientLng)
-            })
-    }
+    await startTrackingIfNeeded(L)
 })
+
+// Реалтайм (master.assigned / order.status.changed) перечитывает пропсы order и
+// eligibleMasters (см. reloadThisOrder), но Leaflet-карта — императивный инстанс
+// и сама на них не реагирует. Пересобираем маркеры мастера/кандидатов вручную,
+// не трогая viewport, чтобы после назначения мастера кандидаты пропали с карты.
+watch(
+    () => [props.order.master?.id, props.eligibleMasters],
+    () => {
+        if (!map || !leafletL) { return }
+
+        clearMasterMarker()
+        clearCandidateMarkers()
+        renderMasterMarker(leafletL)
+        renderCandidateMarkers(leafletL)
+
+        startTrackingIfNeeded(leafletL)
+    },
+    { deep: true }
+)
 
 onBeforeUnmount(() => {
     delete window.__assignFromMap
@@ -962,7 +1018,7 @@ const sortedEligibleMasters = computed(() => {
                             <span class="h-3 w-3 rounded-full bg-blue-600 ring-2 ring-white dark:ring-slate-700" />
                             <span class="text-gray-600 dark:text-slate-300">{{ t('orders.fields.master') }}</span>
                         </div>
-                        <div v-if="sortedEligibleMasters.length > 0" class="flex items-center gap-1.5">
+                        <div v-if="!order.master && sortedEligibleMasters.length > 0" class="flex items-center gap-1.5">
                             <span class="h-3 w-3 rounded-full bg-slate-400 ring-2 ring-white dark:ring-slate-700" />
                             <span class="text-gray-600 dark:text-slate-300">Кандидаты</span>
                         </div>
