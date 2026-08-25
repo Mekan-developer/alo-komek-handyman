@@ -13,11 +13,8 @@ use App\Http\Controllers\PendingOtpController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\SystemStatusController;
-use App\Http\Controllers\TilesController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
-
-Route::get('/tiles/{file}', [TilesController::class, 'serve'])->where('file', '.+\.pmtiles');
 
 Route::get('/tiles/{z}/{x}/{y}.pbf', function (int $z, int $x, int $y) {
     $db = new PDO('sqlite:'.config('services.mbtiles.path'), null, null, [

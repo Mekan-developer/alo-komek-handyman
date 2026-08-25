@@ -177,4 +177,4 @@ System must support real-time updates for:
   - A toast notification appears via useNotificationStore
   - Implemented via Laravel Reverb (WebSocket)
   - Sound plays only when the browser tab is active (Page Visibility API)
-  - Sound file stored at `public/sounds/new-order.mp3`
+  - Sound file stored at `public/sounds/alarm.mp3`
