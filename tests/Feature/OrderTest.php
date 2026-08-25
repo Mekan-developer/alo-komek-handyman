@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Category;
 use App\Models\Client;
 use App\Models\Master;
+use App\Models\MasterLocation;
 use App\Models\Order;
 use App\Models\OrderTask;
 use App\Models\OrderTaskPhoto;
@@ -348,6 +349,45 @@ class OrderTest extends TestCase
         $fresh = $order->fresh();
         $this->assertEquals($secondMaster->id, $fresh->master_id);
         $this->assertEquals('Первый мастер недоступен', $fresh->master_change_reason);
+    }
+
+    // ── Master trajectory ────────────────────────────────────────────────────
+
+    public function test_master_trajectory_returns_only_points_recorded_for_this_order(): void
+    {
+        $this->actingAsAdmin();
+        $master = Master::factory()->create();
+        $order = Order::factory()->forMaster($master)->assigned()->create();
+        $otherOrder = Order::factory()->forMaster($master)->assigned()->create();
+
+        MasterLocation::factory()->create([
+            'master_id' => $master->id,
+            'order_id' => $order->id,
+            'latitude' => 37.95,
+            'longitude' => 58.38,
+            'recorded_at' => now()->subMinutes(10),
+        ]);
+        MasterLocation::factory()->create([
+            'master_id' => $master->id,
+            'order_id' => $otherOrder->id,
+            'latitude' => 38.5,
+            'longitude' => 59.0,
+            'recorded_at' => now()->subMinutes(5),
+        ]);
+
+        $response = $this->getJson(route('orders.master-trajectory', $order));
+
+        $response->assertOk()->assertJsonCount(1, 'points');
+    }
+
+    public function test_master_trajectory_is_empty_without_an_assigned_master(): void
+    {
+        $this->actingAsAdmin();
+        $order = Order::factory()->create();
+
+        $this->getJson(route('orders.master-trajectory', $order))
+            ->assertOk()
+            ->assertJson(['points' => []]);
     }
 
     public function test_first_time_assignment_ignores_change_reason(): void

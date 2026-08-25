@@ -199,19 +199,8 @@ class OrderController extends Controller
             return response()->json(['points' => []]);
         }
 
-        // Bounding box ~33 km around the client location to filter noise from unrelated simulate runs
-        $lat = (float) $order->client_lat;
-        $lng = (float) $order->client_lng;
-        $delta = 0.3; // ~33 km
-
         $points = MasterLocation::where('master_id', $order->master_id)
-            ->whereBetween('latitude', [$lat - $delta, $lat + $delta])
-            ->whereBetween('longitude', [$lng - $delta, $lng + $delta])
-            ->when($order->assigned_at, fn ($q) => $q->where('recorded_at', '>=', $order->assigned_at))
-            ->when(
-                $order->completed_at ?? $order->cancelled_at,
-                fn ($q) => $q->where('recorded_at', '<=', $order->completed_at ?? $order->cancelled_at)
-            )
+            ->where('order_id', $order->id)
             ->orderBy('recorded_at')
             ->get(['latitude', 'longitude', 'recorded_at']);
 
