@@ -78,6 +78,7 @@ class OrderRepository
             'photos',
             'tasks.beforePhotos',
             'tasks.afterPhotos',
+            'receipt.items',
         ])->findOrFail($id);
     }
 

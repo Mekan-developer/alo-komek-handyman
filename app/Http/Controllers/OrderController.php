@@ -16,6 +16,7 @@ use App\Http\Requests\SetOrderTaskPriceRequest;
 use App\Http\Requests\StoreOrderRequest;
 use App\Http\Requests\UpdateOrderRequest;
 use App\Http\Requests\UpdateOrderStatusRequest;
+use App\Http\Resources\OrderReceiptResource;
 use App\Http\Resources\OrderResource;
 use App\Http\Traits\WithNotification;
 use App\Models\MasterLocation;
@@ -65,6 +66,9 @@ class OrderController extends Controller
 
         return Inertia::render('Orders/Show', [
             'order' => (new OrderResource($order))->resolve(),
+            'receipt' => $order->receipt !== null
+                ? (new OrderReceiptResource($order->receipt))->resolve()
+                : null,
             'categories' => $isPending ? app(CategoryRepository::class)->treeForSelect() : [],
             'eligibleMasters' => $isAssignable
                 ? $this->masterRepository

@@ -1,0 +1,66 @@
+meta {
+  name: Get Receipt
+  type: http
+  seq: 8
+}
+
+get {
+  url: {{base_url}}/api/v1/client/orders/{{client_order_id}}/receipt
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{client_token}}
+}
+
+headers {
+  Accept: application/json
+}
+
+docs {
+  # Get Receipt
+
+  Returns the receipt of a **completed** order — an immutable snapshot taken
+  the moment the order was completed: who ordered, which master did the job,
+  every priced task as its own line, and the total on the last line.
+
+  Task prices and the order discount can no longer change after completion,
+  so the receipt never drifts from what the client was shown.
+
+  Tasks left **without a price** are not listed on the receipt and do not
+  count towards the total.
+
+  **Response 200:**
+  ```json
+  {
+    "data": {
+      "id": 1,
+      "order_id": 12,
+      "number": "824-0036",
+      "client_name": "Emil",
+      "client_phone": "+99362111222",
+      "master_name": "Gurban Azadow",
+      "master_phone": "+99365111222",
+      "category_name": "Сантехника",
+      "subtotal": 100,
+      "discount_percent": 10,
+      "discount_amount": 10,
+      "total": 90,
+      "currency": "TMT",
+      "items": [
+        { "id": 1, "title": "Замена смесителя", "description": null, "price": 30 },
+        { "id": 2, "title": "Прочистка сифона", "description": null, "price": 70 }
+      ],
+      "issued_at": "2026-08-24 11:31:00",
+      "issued_date": "24.08.26",
+      "issued_time": "11:31"
+    }
+  }
+  ```
+
+  **Errors:**
+  - `404` — order not found, does not belong to this client, or is not
+    completed yet (the receipt only exists after completion)
+  - `401` — missing / invalid client token
+}

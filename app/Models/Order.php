@@ -113,4 +113,9 @@ class Order extends Model
     {
         return $this->hasOne(OrderReview::class);
     }
+
+    public function receipt(): HasOne
+    {
+        return $this->hasOne(OrderReceipt::class);
+    }
 }

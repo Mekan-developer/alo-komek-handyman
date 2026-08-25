@@ -13,7 +13,9 @@ use App\Http\Requests\Api\V1\Client\CreateOrderReviewRequest;
 use App\Http\Requests\Api\V1\Client\UpdateClientOrderRequest;
 use App\Http\Resources\Api\V1\Client\ClientOrderResource;
 use App\Http\Resources\Api\V1\Client\OrderReviewResource;
+use App\Http\Resources\OrderReceiptResource;
 use App\Models\Client;
+use App\Repositories\OrderReceiptRepository;
 use App\Repositories\OrderRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,7 +23,10 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class ClientOrderController extends Controller
 {
-    public function __construct(private readonly OrderRepository $repository) {}
+    public function __construct(
+        private readonly OrderRepository $repository,
+        private readonly OrderReceiptRepository $receiptRepository,
+    ) {}
 
     public function index(Request $request): AnonymousResourceCollection
     {
@@ -86,6 +91,19 @@ class ClientOrderController extends Controller
         $cancelled = $action->handle($order, $request->validated('reason'));
 
         return (new ClientOrderResource($cancelled->load(['category', 'master', 'photos'])))->response();
+    }
+
+    /**
+     * Чек по завершённому заказу. 404, пока заказ не завершён.
+     */
+    public function receipt(Request $request, int $id): OrderReceiptResource
+    {
+        /** @var Client $client */
+        $client = $request->user();
+
+        $order = $this->repository->findForClientOrFail($id, $client);
+
+        return new OrderReceiptResource($this->receiptRepository->findForOrderOrFail($order));
     }
 
     public function storeReview(CreateOrderReviewRequest $request, int $id, CreateOrderReviewAction $action): JsonResponse

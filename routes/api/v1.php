@@ -62,6 +62,7 @@ Route::prefix('master')->group(function () {
                 ->name('show');
             Route::post('{order}/start', [MasterOrderController::class, 'start'])->name('start');
             Route::post('{order}/complete', [MasterOrderController::class, 'complete'])->name('complete');
+            Route::get('{order}/receipt', [MasterOrderController::class, 'receipt'])->name('receipt');
 
             Route::prefix('{order}/tasks')->name('tasks.')->group(function () {
                 Route::post('/', [MasterTaskController::class, 'store'])->name('store');
@@ -108,6 +109,7 @@ Route::prefix('client')->group(function () {
             Route::patch('{order}', [ClientOrderController::class, 'update'])->name('update');
             Route::post('{order}/cancel', [ClientOrderController::class, 'cancel'])->name('cancel');
             Route::post('{order}/review', [ClientOrderController::class, 'storeReview'])->name('review');
+            Route::get('{order}/receipt', [ClientOrderController::class, 'receipt'])->name('receipt');
         });
     });
 });

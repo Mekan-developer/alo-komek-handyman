@@ -13,6 +13,7 @@ class UpdateOrderStatusAction
     public function __construct(
         private readonly OrderRepository $repository,
         private readonly CreditMasterBalanceAction $creditBalance,
+        private readonly IssueOrderReceiptAction $issueReceipt,
     ) {}
 
     public function handle(Order $order, OrderStatus $newStatus, ?string $cancelReason = null): Order
@@ -34,6 +35,7 @@ class UpdateOrderStatusAction
 
         if ($newStatus === OrderStatus::Completed) {
             $this->creditBalance->handle($updated->load('master'));
+            $this->issueReceipt->handle($updated);
         }
 
         OrderStatusChanged::dispatch($updated, $previousStatus, $newStatus);

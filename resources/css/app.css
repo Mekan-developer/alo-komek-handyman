@@ -1,3 +1,36 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/**
+ * Печать чека: на бумагу уходит только лента `.receipt-print`, весь остальной
+ * интерфейс скрывается. Классами Tailwind это не выражается — `print:hidden`
+ * пришлось бы вешать на каждый узел вне чека.
+ */
+@media print {
+    @page {
+        margin: 8mm;
+    }
+
+    body {
+        background: #fff;
+    }
+
+    body * {
+        visibility: hidden;
+    }
+
+    .receipt-print,
+    .receipt-print * {
+        visibility: visible;
+    }
+
+    .receipt-print {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        max-width: none;
+        box-shadow: none;
+    }
+}
