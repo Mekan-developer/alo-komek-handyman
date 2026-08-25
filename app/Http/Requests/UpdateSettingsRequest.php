@@ -20,6 +20,8 @@ class UpdateSettingsRequest extends FormRequest
         return [
             'master_app_rules' => ['nullable', 'string'],
             'client_app_rules' => ['nullable', 'string'],
+            'master_call_out_fee_note_ru' => ['nullable', 'string', 'max:500'],
+            'master_call_out_fee_note_tk' => ['nullable', 'string', 'max:500'],
         ];
     }
 }

@@ -9,12 +9,39 @@ const { t } = useI18n()
 const props = defineProps({
     masterAppRules: { type: String, default: '' },
     clientAppRules: { type: String, default: '' },
+    masterAppRulesUpdatedAt: { type: String, default: null },
+    clientAppRulesUpdatedAt: { type: String, default: null },
+    masterCallOutFeeNoteRu: { type: String, default: '' },
+    masterCallOutFeeNoteTk: { type: String, default: '' },
+    masterCallOutFeeNoteUpdatedAt: { type: String, default: null },
 })
 
 const form = useForm({
     master_app_rules: props.masterAppRules ?? '',
     client_app_rules: props.clientAppRules ?? '',
 })
+
+// ── Плата за выезд мастера ─────────────────────────────────────────────────
+// Отдельная форма: PUT уходит без ключей правил, поэтому сохранение текста
+// не перезатирает тексты правил приложений.
+const feeForm = useForm({
+    master_call_out_fee_note_ru: props.masterCallOutFeeNoteRu ?? '',
+    master_call_out_fee_note_tk: props.masterCallOutFeeNoteTk ?? '',
+})
+
+const feeSaved = ref(false)
+const feeLastSaved = ref(props.masterCallOutFeeNoteUpdatedAt)
+
+function saveFee() {
+    feeForm.put(route('settings.update'), {
+        preserveScroll: true,
+        onSuccess() {
+            feeSaved.value = true
+            feeLastSaved.value = new Date().toISOString()
+            setTimeout(() => { feeSaved.value = false }, 2500)
+        },
+    })
+}
 
 // ── App cards ──────────────────────────────────────────────────────────────
 const MASTER_ID = 'rte-master'
@@ -26,10 +53,20 @@ const masterEditing = ref(false)
 const clientEditing = ref(false)
 const masterSaved   = ref(false)
 const clientSaved   = ref(false)
-const masterLastSaved = ref('14:32')
-const clientLastSaved = ref('09:18')
+const masterLastSaved = ref(props.masterAppRulesUpdatedAt)
+const clientLastSaved = ref(props.clientAppRulesUpdatedAt)
 const masterEmpty   = ref(!props.masterAppRules)
 const clientEmpty   = ref(!props.clientAppRules)
+
+function formatSaved(iso) {
+    if (!iso) { return t('settings.never_saved') }
+    const date = new Date(iso)
+    const time = `${date.getHours()}:${String(date.getMinutes()).padStart(2, '0')}`
+
+    return date.toDateString() === new Date().toDateString()
+        ? `${t('settings.today')}, ${time}`
+        : `${date.toLocaleDateString()}, ${time}`
+}
 
 function execCmd(id, cmd, val) {
     const el = document.getElementById(id)
@@ -66,24 +103,22 @@ function toggleEdit(which) {
 }
 
 function save(which) {
-    const el = document.getElementById(which === 'master' ? MASTER_ID : CLIENT_ID)
-    if (which === 'master') { form.master_app_rules = el?.innerHTML ?? '' }
-    else { form.client_app_rules = el?.innerHTML ?? '' }
+    form.master_app_rules = document.getElementById(MASTER_ID)?.innerHTML ?? ''
+    form.client_app_rules = document.getElementById(CLIENT_ID)?.innerHTML ?? ''
 
     form.put(route('settings.update'), {
         preserveScroll: true,
         onSuccess() {
-            const now  = new Date()
-            const time = `${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`
+            const now = new Date().toISOString()
             if (which === 'master') {
                 masterEditing.value = false
                 masterSaved.value   = true
-                masterLastSaved.value = time
+                masterLastSaved.value = now
                 setTimeout(() => { masterSaved.value = false }, 2500)
             } else {
                 clientEditing.value = false
                 clientSaved.value   = true
-                clientLastSaved.value = time
+                clientLastSaved.value = now
                 setTimeout(() => { clientSaved.value = false }, 2500)
             }
         },
@@ -387,6 +422,92 @@ onBeforeUnmount(() => {
                 </div>
             </section>
 
+            <!-- ─── Cancellation Section ──────────────────────────────────────── -->
+            <section>
+                <div class="mb-4 flex items-center gap-2.5">
+                    <div class="h-[18px] w-[3px] shrink-0 rounded-sm" style="background:linear-gradient(to bottom,#f59e0b,#f97316)" />
+                    <h2 class="text-[13px] font-semibold uppercase tracking-[0.5px] text-slate-400">
+                        {{ t('settings.section_cancellation') }}
+                    </h2>
+                </div>
+
+                <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-white/[0.07] dark:bg-[#131729]">
+                    <div class="flex flex-col gap-3.5 px-5 pb-4 pt-[18px] sm:flex-row sm:items-center">
+                        <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-[11px] border border-amber-500/20 bg-amber-500/[0.12]">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="1.8">
+                                <path d="M5 17h-2v-6l2-5h11v11h-2"/>
+                                <circle cx="7.5" cy="17.5" r="2.5"/>
+                                <circle cx="17.5" cy="17.5" r="2.5"/>
+                                <path d="M16 8h4l2 4v5h-2"/>
+                            </svg>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <div class="text-[15px] font-semibold text-gray-900 dark:text-slate-100">{{ t('settings.call_out_fee.title') }}</div>
+                            <div class="mt-0.5 text-xs text-gray-400 dark:text-slate-500">{{ t('settings.call_out_fee.hint') }}</div>
+                        </div>
+                        <button
+                            type="button"
+                            @click="saveFee"
+                            :disabled="feeForm.processing"
+                            class="shrink-0 rounded-lg bg-amber-500 px-[18px] py-[7px] text-[12.5px] font-semibold text-white transition-colors hover:bg-amber-600 disabled:opacity-60"
+                        >
+                            {{ t('settings.save') }}
+                        </button>
+                    </div>
+
+                    <!-- Текст для клиента: ru / tk -->
+                    <div class="grid grid-cols-1 gap-3.5 px-5 pb-[18px] md:grid-cols-2">
+                        <div>
+                            <label class="mb-1.5 block text-[12.5px] font-medium text-gray-700 dark:text-slate-300">
+                                {{ t('settings.call_out_fee.note_ru') }}
+                            </label>
+                            <textarea
+                                v-model="feeForm.master_call_out_fee_note_ru"
+                                rows="3"
+                                maxlength="500"
+                                :placeholder="t('settings.call_out_fee.note_ru_placeholder')"
+                                class="w-full resize-y rounded-[9px] border bg-gray-50 px-[13px] py-[10px] text-[13px] leading-[1.6] text-gray-700 outline-none transition-colors focus:border-amber-500/50 dark:bg-white/[0.03] dark:text-slate-300"
+                                :class="feeForm.errors.master_call_out_fee_note_ru
+                                    ? 'border-red-500/60'
+                                    : 'border-gray-200 dark:border-white/[0.07]'"
+                            />
+                            <p v-if="feeForm.errors.master_call_out_fee_note_ru" class="mt-1.5 text-[11.5px] font-medium text-red-500">
+                                {{ feeForm.errors.master_call_out_fee_note_ru }}
+                            </p>
+                        </div>
+                        <div>
+                            <label class="mb-1.5 block text-[12.5px] font-medium text-gray-700 dark:text-slate-300">
+                                {{ t('settings.call_out_fee.note_tk') }}
+                            </label>
+                            <textarea
+                                v-model="feeForm.master_call_out_fee_note_tk"
+                                rows="3"
+                                maxlength="500"
+                                :placeholder="t('settings.call_out_fee.note_tk_placeholder')"
+                                class="w-full resize-y rounded-[9px] border bg-gray-50 px-[13px] py-[10px] text-[13px] leading-[1.6] text-gray-700 outline-none transition-colors focus:border-amber-500/50 dark:bg-white/[0.03] dark:text-slate-300"
+                                :class="feeForm.errors.master_call_out_fee_note_tk
+                                    ? 'border-red-500/60'
+                                    : 'border-gray-200 dark:border-white/[0.07]'"
+                            />
+                            <p v-if="feeForm.errors.master_call_out_fee_note_tk" class="mt-1.5 text-[11.5px] font-medium text-red-500">
+                                {{ feeForm.errors.master_call_out_fee_note_tk }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col gap-1 border-t border-gray-100 bg-amber-500/[0.04] px-5 py-3 dark:border-white/[0.05] sm:flex-row sm:items-center sm:justify-between">
+                        <span class="text-[11.5px] text-gray-400 dark:text-slate-500">
+                            {{ feeSaved
+                                ? t('settings.saved_ok')
+                                : `${t('settings.last_saved')}: ${formatSaved(feeLastSaved)}` }}
+                        </span>
+                        <span class="text-[11.5px] text-gray-400 dark:text-slate-500">
+                            {{ t('settings.call_out_fee.api_note') }}
+                        </span>
+                    </div>
+                </div>
+            </section>
+
             <!-- ─── App Settings Section ──────────────────────────────────────── -->
             <section>
                 <div class="mb-4 flex items-center gap-2.5">
@@ -504,7 +625,7 @@ onBeforeUnmount(() => {
                             <span class="text-[11.5px] text-gray-400 dark:text-slate-500">
                                 {{ masterSaved
                                     ? t('settings.saved_ok')
-                                    : `${t('settings.last_saved')}: сегодня, ${masterLastSaved}` }}
+                                    : `${t('settings.last_saved')}: ${formatSaved(masterLastSaved)}` }}
                             </span>
                             <button
                                 v-if="masterEditing"
@@ -627,7 +748,7 @@ onBeforeUnmount(() => {
                             <span class="text-[11.5px] text-gray-400 dark:text-slate-500">
                                 {{ clientSaved
                                     ? t('settings.saved_ok')
-                                    : `${t('settings.last_saved')}: сегодня, ${clientLastSaved}` }}
+                                    : `${t('settings.last_saved')}: ${formatSaved(clientLastSaved)}` }}
                             </span>
                             <button
                                 v-if="clientEditing"

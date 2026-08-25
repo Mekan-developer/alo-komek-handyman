@@ -12,23 +12,32 @@ get {
 
 headers {
   Accept: application/json
+  X-Locale: ru
 }
 
 docs {
   # Get Client App Settings
 
-  Public endpoint. Returns the client app rules/terms of use configured in the admin panel.
-  Use this to show T&C screen before or during client registration (no auth required).
+  Public endpoint. Returns the client app rules/terms of use and the call-out fee notice,
+  both written in the admin panel (/settings). Use this to show the T&C screen before or
+  during client registration (no auth required).
 
   **Response 200:**
   ```json
   {
     "data": {
-      "content": "<h1>Правила</h1><p>Текст правил пользования...</p>"
+      "content": "<h1>Правила</h1><p>Текст правил пользования...</p>",
+      "master_call_out_fee_note": "Если вы отмените заказ после выезда мастера, нужно оплатить выезд."
     }
   }
   ```
 
   `content` is raw HTML — render it in a WebView or parse it to display in the app.
   Returns empty string `""` if no rules have been configured yet.
+
+  `master_call_out_fee_note` — plain-text notice about paying the master for the call-out
+  when the client cancels an order after a master has already been assigned. Show it on the
+  cancel-confirmation screen. Already resolved for the request locale: send `X-Locale: tk`
+  for Turkmen, `ru` (or nothing) for Russian. Falls back to the Russian text when the
+  Turkmen one is empty, and is `""` when nothing has been written yet — hide the block then.
 }

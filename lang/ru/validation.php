@@ -260,6 +260,8 @@ return [
         'recorded_at' => 'время записи',
         'final_price' => 'итоговая стоимость',
         'discount_percent' => 'скидка',
+        'master_call_out_fee_note_ru' => 'текст о плате за выезд (рус.)',
+        'master_call_out_fee_note_tk' => 'текст о плате за выезд (туркм.)',
         'type' => 'тип',
         'email' => 'email',
         'password' => 'пароль',

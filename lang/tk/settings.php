@@ -3,9 +3,21 @@
 return [
     'title' => 'Sazlamalar',
     'section_app' => 'Programma sazlamalary',
+    'section_cancellation' => 'Sargydy ýatyrmak',
+    'call_out_fee' => [
+        'title' => 'Ussanyň barmagy üçin töleg',
+        'hint' => 'Ussa bellenenden soň sargydy ýatyranda müşderiniň görýän teksti',
+        'api_note' => 'API arkaly müşderi programmasyna berilýär',
+        'note_ru' => 'Müşderi üçin tekst (rusça)',
+        'note_tk' => 'Müşderi üçin tekst (türkmençe)',
+        'note_ru_placeholder' => 'Например: Если вы отмените заказ после выезда мастера, нужно оплатить выезд.',
+        'note_tk_placeholder' => 'Mysal üçin: Ussa ýola çykandan soň sargydy ýatyrsaňyz, ýol tölegini tölemeli.',
+    ],
     'done' => 'Taýyn',
     'saved_ok' => '✓ Saklandy!',
     'last_saved' => 'Soňky saklanan',
+    'never_saved' => 'entek saklanmady',
+    'today' => 'şu gün',
     'master_app' => [
         'title' => 'Usta programmasy',
         'label' => 'Düzgünler we şertler',

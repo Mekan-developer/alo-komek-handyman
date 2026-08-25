@@ -15,8 +15,38 @@ class ClientSettingApiTest extends TestCase
         $response = $this->getJson('/api/v1/client/settings');
 
         $response->assertOk()
-            ->assertJsonStructure(['data' => ['content']])
-            ->assertJsonPath('data.content', '');
+            ->assertJsonStructure(['data' => ['content', 'master_call_out_fee_note']])
+            ->assertJsonPath('data.content', '')
+            ->assertJsonPath('data.master_call_out_fee_note', '');
+    }
+
+    public function test_returns_call_out_fee_note_in_russian_by_default(): void
+    {
+        Setting::create(['key' => 'master_call_out_fee_note_ru', 'value' => 'Оплатите выезд мастера']);
+        Setting::create(['key' => 'master_call_out_fee_note_tk', 'value' => 'Ussanyň ýol tölegi']);
+
+        $this->getJson('/api/v1/client/settings')
+            ->assertOk()
+            ->assertJsonPath('data.master_call_out_fee_note', 'Оплатите выезд мастера');
+    }
+
+    public function test_returns_call_out_fee_note_in_turkmen_for_tk_locale(): void
+    {
+        Setting::create(['key' => 'master_call_out_fee_note_ru', 'value' => 'Оплатите выезд мастера']);
+        Setting::create(['key' => 'master_call_out_fee_note_tk', 'value' => 'Ussanyň ýol tölegi']);
+
+        $this->getJson('/api/v1/client/settings', ['X-Locale' => 'tk'])
+            ->assertOk()
+            ->assertJsonPath('data.master_call_out_fee_note', 'Ussanyň ýol tölegi');
+    }
+
+    public function test_call_out_fee_note_falls_back_to_russian_when_turkmen_is_empty(): void
+    {
+        Setting::create(['key' => 'master_call_out_fee_note_ru', 'value' => 'Оплатите выезд мастера']);
+
+        $this->getJson('/api/v1/client/settings', ['X-Locale' => 'tk'])
+            ->assertOk()
+            ->assertJsonPath('data.master_call_out_fee_note', 'Оплатите выезд мастера');
     }
 
     public function test_returns_saved_client_rules(): void
