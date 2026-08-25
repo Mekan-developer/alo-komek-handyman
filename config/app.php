@@ -123,4 +123,18 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Admin Seeder Credentials
+    |--------------------------------------------------------------------------
+    |
+    | Used by DatabaseSeeder to create the initial admin user. Both values
+    | must be set or the admin user is skipped (no hardcoded fallback).
+    |
+    */
+
+    'admin_email' => env('ADMIN_EMAIL'),
+
+    'admin_password' => env('ADMIN_PASSWORD'),
+
 ];

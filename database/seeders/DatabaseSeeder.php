@@ -9,10 +9,17 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        User::updateOrCreate(
-            ['email' => 'admin@gmail.com'],
-            ['name' => 'Admin', 'password' => bcrypt('password')]
-        );
+        $adminEmail = config('app.admin_email');
+        $adminPassword = config('app.admin_password');
+
+        if ($adminEmail && $adminPassword) {
+            User::updateOrCreate(
+                ['email' => $adminEmail],
+                ['name' => 'Admin', 'password' => bcrypt($adminPassword)]
+            );
+        } else {
+            $this->command?->warn('ADMIN_EMAIL / ADMIN_PASSWORD not set — skipping admin user creation.');
+        }
 
         $this->call([
             CategorySeeder::class,
