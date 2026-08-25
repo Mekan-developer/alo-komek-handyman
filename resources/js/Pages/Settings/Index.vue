@@ -51,14 +51,18 @@ function onInput(which) {
     if (which === 'master') { masterEmpty.value = isEmpty } else { clientEmpty.value = isEmpty }
 }
 
+/** «Готово» закрывает режим редактирования через сохранение, а не молча. */
 function toggleEdit(which) {
-    if (which === 'master') {
-        masterEditing.value = !masterEditing.value
-        if (masterEditing.value) { nextTick(() => document.getElementById(MASTER_ID)?.focus()) }
-    } else {
-        clientEditing.value = !clientEditing.value
-        if (clientEditing.value) { nextTick(() => document.getElementById(CLIENT_ID)?.focus()) }
+    const editing = which === 'master' ? masterEditing : clientEditing
+
+    if (editing.value) {
+        save(which)
+
+        return
     }
+
+    editing.value = true
+    nextTick(() => document.getElementById(which === 'master' ? MASTER_ID : CLIENT_ID)?.focus())
 }
 
 function save(which) {
