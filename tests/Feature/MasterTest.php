@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Models\Category;
 use App\Models\Master;
-use App\Models\MasterLocation;
 use App\Models\OrderReview;
 use App\Models\User;
 use App\PaymentModel;
@@ -110,34 +109,6 @@ class MasterTest extends TestCase
 
         $this->get(route('masters.map'))
             ->assertInertia(fn ($page) => $page->where('masters', fn ($masters) => count($masters) === 2));
-    }
-
-    // ── Trajectory ────────────────────────────────────────────────────────────
-
-    public function test_trajectory_returns_json_with_points(): void
-    {
-        $this->actingAsAdmin();
-        $master = Master::factory()->create();
-
-        MasterLocation::factory()->create([
-            'master_id' => $master->id,
-            'latitude' => 37.95,
-            'longitude' => 58.38,
-            'recorded_at' => now()->subHours(2),
-        ]);
-
-        $response = $this->getJson(route('masters.trajectory', $master->id));
-
-        $response->assertOk()
-            ->assertJsonStructure(['master', 'points'])
-            ->assertJsonPath('master.id', $master->id);
-    }
-
-    public function test_trajectory_returns_404_for_unknown_master(): void
-    {
-        $this->actingAsAdmin();
-
-        $this->getJson(route('masters.trajectory', 999))->assertNotFound();
     }
 
     // ── Store ─────────────────────────────────────────────────────────────────

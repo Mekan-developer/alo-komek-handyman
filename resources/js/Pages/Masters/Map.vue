@@ -20,8 +20,6 @@ let L = null
 let baseLayer = null
 let locateMarker = null
 const markers = {}
-const trajectoryLayers = {}
-const activeTrajectories = ref(new Set())
 const lastUpdateAt = ref({})
 const subscribedChannels = []
 
@@ -82,13 +80,10 @@ onMounted(async () => {
 
     fitAllMasters()
 
-    window.__showTrajectory = (masterId) => toggleTrajectory(masterId)
-
     subscribeToLocationUpdates()
 })
 
 onBeforeUnmount(() => {
-    delete window.__showTrajectory
     subscribedChannels.forEach((channel) => window.Echo?.leave(channel))
     themeObserver?.disconnect()
     if (map) {
@@ -245,10 +240,6 @@ function handleLocationUpdate(payload) {
 
     addOrUpdateMarker(payload.master_id, master, payload.latitude, payload.longitude, true)
     lastUpdateAt.value[payload.master_id] = payload.recorded_at
-
-    if (activeTrajectories.value.has(payload.master_id) && trajectoryLayers[payload.master_id]) {
-        trajectoryLayers[payload.master_id].addLatLng([parseFloat(payload.latitude), parseFloat(payload.longitude)])
-    }
 }
 
 function addOrUpdateMarker(masterId, master, lat, lng, animated = false) {
@@ -275,11 +266,7 @@ function addOrUpdateMarker(masterId, master, lat, lng, animated = false) {
     const popupHtml = `
         <div style="min-width:180px;">
             <div style="font-weight:600;font-size:13px;margin-bottom:4px;">${escapeHtml(master.name)}</div>
-            <div style="color:#6b7280;font-size:12px;margin-bottom:8px;">${escapeHtml(master.phone)}</div>
-            <button
-                onclick="window.__showTrajectory(${master.id})"
-                style="background:#2563eb;color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;width:100%"
-            >${t('masters.trajectory')}</button>
+            <div style="color:#6b7280;font-size:12px;">${escapeHtml(master.phone)}</div>
         </div>
     `
     marker.bindPopup(popupHtml)
@@ -300,33 +287,6 @@ function animateMarkerTo(marker, targetLatLng, duration = 1500) {
         if (t < 1) { requestAnimationFrame(step) }
     }
     requestAnimationFrame(step)
-}
-
-async function toggleTrajectory(masterId) {
-    if (activeTrajectories.value.has(masterId)) {
-        trajectoryLayers[masterId]?.remove()
-        delete trajectoryLayers[masterId]
-        activeTrajectories.value.delete(masterId)
-        return
-    }
-
-    const response = await fetch(route('masters.trajectory', masterId))
-    const data = await response.json()
-    if (!data.points?.length) { return }
-
-    const latlngs = data.points.map((p) => [p.latitude, p.longitude])
-    const polyline = L.polyline(latlngs, { color: '#2563eb', weight: 3, opacity: 0.8 }).addTo(map)
-
-    L.circleMarker(latlngs[0], { radius: 6, color: '#16a34a', fillColor: '#22c55e', fillOpacity: 1 })
-        .addTo(map).bindTooltip(data.points[0].recorded_at)
-
-    const last = latlngs[latlngs.length - 1]
-    L.circleMarker(last, { radius: 6, color: '#dc2626', fillColor: '#ef4444', fillOpacity: 1 })
-        .addTo(map).bindTooltip(data.points[data.points.length - 1].recorded_at)
-
-    trajectoryLayers[masterId] = polyline
-    activeTrajectories.value.add(masterId)
-    map.fitBounds(polyline.getBounds(), { padding: [40, 40] })
 }
 
 function initialOf(name) {

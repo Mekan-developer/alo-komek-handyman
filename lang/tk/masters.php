@@ -44,7 +44,6 @@ return [
     ],
     'empty' => 'Ussatlar tapylmady',
     'view_map' => 'Kartada',
-    'trajectory' => 'Ugur',
     'no_location' => 'Ýerleşiş maglumaty ýok',
     'last_seen' => 'Soňky ýerleşiş',
     'fit_all' => 'Ähli ussatlary görkez',

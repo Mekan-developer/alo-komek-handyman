@@ -77,7 +77,6 @@ Route::middleware('auth')->group(function () {
         Route::resource('categories', CategoryController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::post('categories/{category}/content', [CategoryContentController::class, 'upsert'])->name('categories.content.upsert');
         Route::get('masters/map', [MasterController::class, 'map'])->name('masters.map');
-        Route::get('masters/{master}/trajectory', [MasterController::class, 'trajectory'])->name('masters.trajectory');
         Route::post('masters/{master}/reset-balance', [MasterController::class, 'resetBalance'])->name('masters.reset-balance');
         Route::resource('masters', MasterController::class)->only(['index', 'store', 'destroy']);
         Route::post('masters/{master}', [MasterController::class, 'update'])->name('masters.update');

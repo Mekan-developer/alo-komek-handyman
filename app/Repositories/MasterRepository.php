@@ -38,15 +38,6 @@ class MasterRepository
             ->get();
     }
 
-    /** Location history for a single master — for trajectory. */
-    public function trajectory(Master $master, int $hours = 8): Collection
-    {
-        return $master->locations()
-            ->where('recorded_at', '>=', now()->subHours($hours))
-            ->orderBy('recorded_at')
-            ->get(['latitude', 'longitude', 'recorded_at']);
-    }
-
     public function findOrFail(int $id): Master
     {
         return Master::findOrFail($id);

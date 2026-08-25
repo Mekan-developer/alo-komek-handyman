@@ -14,7 +14,6 @@ use App\Http\Traits\WithNotification;
 use App\PaymentModel;
 use App\Repositories\CategoryRepository;
 use App\Repositories\MasterRepository;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -48,16 +47,6 @@ class MasterController extends Controller
     {
         return Inertia::render('Masters/Map', [
             'masters' => MasterResource::collection($this->repository->forMap())->resolve(),
-        ]);
-    }
-
-    public function trajectory(int $id): JsonResponse
-    {
-        $master = $this->repository->findOrFail($id);
-
-        return response()->json([
-            'master' => ['id' => $master->id, 'name' => $master->name],
-            'points' => $this->repository->trajectory($master),
         ]);
     }
 
