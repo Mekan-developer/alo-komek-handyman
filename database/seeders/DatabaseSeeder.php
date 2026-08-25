@@ -23,9 +23,7 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             CategorySeeder::class,
-            MasterSeeder::class,
-            MasterLocationSeeder::class,
-            OrderSeeder::class,
+            SettingSeeder::class,
         ]);
     }
 }
