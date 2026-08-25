@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Events\OrderTaskPhotoUpdated;
 use App\Models\OrderTaskPhoto;
 use App\Support\PhotoConverter;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -46,6 +47,8 @@ class ConvertTaskPhotoJob implements ShouldQueue
                 'path' => $webpRelative,
                 'status' => OrderTaskPhoto::STATUS_DONE,
             ]);
+
+            OrderTaskPhotoUpdated::dispatch($photo);
         } catch (\Throwable $e) {
             $photo->update(['status' => OrderTaskPhoto::STATUS_FAILED]);
             throw $e;

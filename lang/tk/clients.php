@@ -35,5 +35,6 @@ return [
     'notifications' => [
         'blocked' => 'Müşderi petiklendi',
         'unblocked' => 'Müşderi açyldy',
+        'new_client' => 'Täze müşderi hasaba durdy: :phone',
     ],
 ];

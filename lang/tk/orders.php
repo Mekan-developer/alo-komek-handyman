@@ -56,6 +56,7 @@ return [
         'call_client' => 'Müşderä jaň et',
         'show_receipt' => 'Çek',
         'print_receipt' => 'Çap et',
+        'refresh' => 'Sahypany täzele',
     ],
 
     'receipt' => [

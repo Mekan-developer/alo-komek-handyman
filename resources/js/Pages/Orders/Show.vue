@@ -31,6 +31,18 @@ const showStatusModal = ref(false)
 const showEditModal = ref(false)
 const showReceiptModal = ref(false)
 
+const refreshing = ref(false)
+
+function refreshOrder() {
+    if (refreshing.value) { return }
+
+    router.reload({
+        only: ['order', 'receipt', 'eligibleMasters'],
+        onStart: () => { refreshing.value = true },
+        onFinish: () => { refreshing.value = false },
+    })
+}
+
 const lightbox = ref({ show: false, images: [], index: 0 })
 
 function openLightbox(images, index = 0) {
@@ -162,6 +174,8 @@ function reloadThisOrder(payload) {
 useOrdersChannel({
     '.master.assigned': reloadThisOrder,
     '.order.status.changed': reloadThisOrder,
+    '.order.task.created': reloadThisOrder,
+    '.order.task.photo.updated': reloadThisOrder,
 })
 
 onMounted(async () => {
@@ -539,6 +553,29 @@ const sortedEligibleMasters = computed(() => {
                         class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                     >
                         {{ t('orders.actions.change_status') }}
+                    </button>
+
+                    <button
+                        @click="refreshOrder"
+                        :disabled="refreshing"
+                        :title="t('orders.actions.refresh')"
+                        :aria-label="t('orders.actions.refresh')"
+                        class="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white p-1.5 text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+                    >
+                        <svg
+                            class="h-3.5 w-3.5"
+                            :class="{ 'animate-spin': refreshing }"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"
+                            />
+                        </svg>
                     </button>
                 </div>
             </div>

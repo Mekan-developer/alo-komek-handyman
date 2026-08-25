@@ -2,6 +2,7 @@
 
 namespace App\Actions;
 
+use App\Events\OrderTaskCreated;
 use App\Exceptions\OrderException;
 use App\Models\Master;
 use App\Models\Order;
@@ -21,9 +22,13 @@ class CreateOrderTaskAction
             throw new \DomainException('Tasks can only be created for orders that are in progress.');
         }
 
-        return $order->tasks()->create([
+        $task = $order->tasks()->create([
             'title' => $data['title'],
             'description' => $data['description'] ?? null,
         ]);
+
+        OrderTaskCreated::dispatch($task);
+
+        return $task;
     }
 }

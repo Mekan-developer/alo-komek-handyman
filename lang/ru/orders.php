@@ -56,6 +56,7 @@ return [
         'call_client' => 'Позвонить клиенту',
         'show_receipt' => 'Чек',
         'print_receipt' => 'Распечатать',
+        'refresh' => 'Обновить страницу',
     ],
 
     'receipt' => [

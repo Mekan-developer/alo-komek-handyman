@@ -2,8 +2,11 @@
 
 namespace Tests\Feature\Api\V1\Client;
 
+use App\Events\ClientRegistered;
+use App\Models\Client;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -83,5 +86,40 @@ class ClientAuthTest extends TestCase
             ->assertJsonPath('delivery', 'sms');
 
         $this->assertDatabaseCount('pending_otps', 0);
+    }
+
+    public function test_verifying_otp_for_a_new_phone_dispatches_client_registered_event(): void
+    {
+        Event::fake([ClientRegistered::class]);
+        Http::fake(['*/emit-otp' => Http::response(['message' => 'No gateway client connected'], 503)]);
+
+        $phone = '+99362111222';
+
+        $this->postJson(route('api.v1.client.auth.request-otp'), ['phone' => $phone])->assertOk();
+
+        $this->postJson(route('api.v1.client.auth.verify-otp'), [
+            'phone' => $phone,
+            'code' => Cache::get("client_otp:{$phone}"),
+        ])->assertOk()->assertJsonPath('is_new', true);
+
+        Event::assertDispatched(ClientRegistered::class, fn ($event) => $event->client->phone === $phone);
+    }
+
+    public function test_verifying_otp_for_an_existing_client_does_not_dispatch_client_registered_event(): void
+    {
+        Event::fake([ClientRegistered::class]);
+        Http::fake(['*/emit-otp' => Http::response(['message' => 'No gateway client connected'], 503)]);
+
+        $phone = '+99362111222';
+        Client::factory()->create(['phone' => $phone]);
+
+        $this->postJson(route('api.v1.client.auth.request-otp'), ['phone' => $phone])->assertOk();
+
+        $this->postJson(route('api.v1.client.auth.verify-otp'), [
+            'phone' => $phone,
+            'code' => Cache::get("client_otp:{$phone}"),
+        ])->assertOk()->assertJsonPath('is_new', false);
+
+        Event::assertNotDispatched(ClientRegistered::class);
     }
 }

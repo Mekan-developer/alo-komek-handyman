@@ -2,6 +2,7 @@
 
 namespace App\Actions;
 
+use App\Events\ClientRegistered;
 use App\Exceptions\OtpException;
 use App\Models\Client;
 use App\Repositories\ClientRepository;
@@ -30,6 +31,8 @@ class VerifyClientOtpAction
 
         if ($isNew) {
             $client = $this->repository->create(['phone' => $phone]);
+
+            ClientRegistered::dispatch($client);
         }
 
         $client->tokens()->where('name', 'mobile-client')->delete();
