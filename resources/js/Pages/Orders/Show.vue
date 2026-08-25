@@ -176,6 +176,7 @@ useOrdersChannel({
     '.order.status.changed': reloadThisOrder,
     '.order.task.created': reloadThisOrder,
     '.order.task.photo.updated': reloadThisOrder,
+    '.order.task.price.updated': reloadThisOrder,
 })
 
 onMounted(async () => {

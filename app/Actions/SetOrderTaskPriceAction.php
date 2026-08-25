@@ -2,6 +2,7 @@
 
 namespace App\Actions;
 
+use App\Events\OrderTaskPriceUpdated;
 use App\Exceptions\OrderException;
 use App\Models\Order;
 use App\Models\OrderTask;
@@ -27,6 +28,10 @@ class SetOrderTaskPriceAction
             throw OrderException::masterNotAssigned();
         }
 
-        return $this->repository->updateTask($task, ['price' => $price]);
+        $task = $this->repository->updateTask($task, ['price' => $price]);
+
+        OrderTaskPriceUpdated::dispatch($order->fresh(), $task);
+
+        return $task;
     }
 }

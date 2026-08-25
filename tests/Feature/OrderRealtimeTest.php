@@ -3,9 +3,11 @@
 namespace Tests\Feature;
 
 use App\Events\OrderStatusChanged;
+use App\Events\OrderTaskPriceUpdated;
 use App\Models\Category;
 use App\Models\Master;
 use App\Models\Order;
+use App\Models\OrderTask;
 use App\Models\User;
 use App\Notifications\OrderStatusChangedNotification;
 use App\OrderStatus;
@@ -101,6 +103,40 @@ class OrderRealtimeTest extends TestCase
             'to_label' => OrderStatus::InProgress->label(),
         ], $event->broadcastWith());
         $this->assertContains('orders', collect($event->broadcastOn())->map->name->all());
+    }
+
+    public function test_setting_a_task_price_broadcasts_the_price_update(): void
+    {
+        Event::fake([OrderTaskPriceUpdated::class]);
+        $this->actingAsAdmin();
+        $master = Master::factory()->create();
+        $order = Order::factory()->forMaster($master)->inProgress()->create();
+        $task = OrderTask::factory()->create(['order_id' => $order->id]);
+
+        $this->post(route('orders.tasks.set-price', ['order' => $order->id, 'task' => $task->id]), ['price' => 350.50]);
+
+        Event::assertDispatched(OrderTaskPriceUpdated::class, fn (OrderTaskPriceUpdated $event) => $event->order->id === $order->id
+            && $event->task->id === $task->id);
+    }
+
+    public function test_task_price_broadcast_payload_carries_the_new_price(): void
+    {
+        $master = Master::factory()->create();
+        $order = Order::factory()->forMaster($master)->inProgress()->create(['final_price' => 350.50]);
+        $task = OrderTask::factory()->priced(350.50)->create(['order_id' => $order->id]);
+        $event = new OrderTaskPriceUpdated($order, $task);
+
+        $this->assertSame('order.task.price.updated', $event->broadcastAs());
+        $this->assertSame([
+            'order_id' => $order->id,
+            'task_id' => $task->id,
+            'price' => 350.50,
+            'final_price' => 350.50,
+        ], $event->broadcastWith());
+
+        $channelNames = collect($event->broadcastOn())->map->name->all();
+        $this->assertContains('orders', $channelNames);
+        $this->assertContains('private-master.'.$master->id, $channelNames);
     }
 
     // ── Колокольчик ───────────────────────────────────────────────────────────
