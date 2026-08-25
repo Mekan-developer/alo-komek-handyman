@@ -5,35 +5,9 @@
 
 The Laravel Boost guidelines are specifically curated by Laravel maintainers for this application. These guidelines should be followed closely to ensure the best experience when building Laravel applications.
 
-## Foundational Context
-
-This application is a Laravel application and its main Laravel ecosystems package & versions are below. You are an expert with them all. Ensure you abide by these specific packages & versions.
-
-- php - 8.3
-- inertiajs/inertia-laravel (INERTIA_LARAVEL) - v2
-- laravel/framework (LARAVEL) - v11
-- laravel/prompts (PROMPTS) - v0
-- laravel/sanctum (SANCTUM) - v4
-- tightenco/ziggy (ZIGGY) - v2
-- laravel/boost (BOOST) - v2
-- laravel/breeze (BREEZE) - v2
-- laravel/mcp (MCP) - v0
-- laravel/pint (PINT) - v1
-- laravel/sail (SAIL) - v1
-- phpunit/phpunit (PHPUNIT) - v10
-- @inertiajs/vue3 (INERTIA_VUE) - v2
-- tailwindcss (TAILWINDCSS) - v3
-- vue (VUE) - v3
-
 ## Skills Activation
 
 This project has domain-specific skills available in `**/skills/**`. You MUST activate the relevant skill whenever you work in that domain—don't wait until you're stuck.
-
-## Conventions
-
-- You must follow all existing code conventions used in this application. When creating or editing a file, check sibling files for the correct structure, approach, and naming.
-- Use descriptive names for variables and methods. For example, `isRegisteredForDiscounts`, not `discount()`.
-- Check for existing components to reuse before writing a new one.
 
 ## Verification Scripts
 
@@ -63,10 +37,6 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 ## Tools
 
 - Laravel Boost is an MCP server with tools designed specifically for this application. Prefer Boost tools over manual alternatives like shell commands or file reads.
-- Use `database-query` to run read-only queries against the database instead of writing raw SQL in tinker.
-- Use `database-schema` to inspect table structure before writing migrations or models.
-- Use `get-absolute-url` to resolve the correct scheme, domain, and port for project URLs. Always use this before sharing a URL with the user.
-- Use `browser-logs` to read browser logs, errors, and exceptions. Only recent logs are useful, ignore old entries.
 
 ## Searching Documentation (IMPORTANT)
 
@@ -81,13 +51,6 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 2. Use `"quoted phrases"` for exact position matching: `"infinite scroll"` requires adjacent words in order.
 3. Combine words and phrases for mixed queries: `middleware "rate limit"`.
 4. Use multiple queries for OR logic: `queries=["authentication", "middleware"]`.
-
-## Artisan
-
-- Run Artisan commands directly via the command line (e.g., `php artisan route:list`). Use `php artisan list` to discover available commands and `php artisan [command] --help` to check parameters.
-- Inspect routes with `php artisan route:list`. Filter with: `--method=GET`, `--name=users`, `--path=api`, `--except-vendor`, `--only-vendor`.
-- Read configuration values using dot notation: `php artisan config:show app.name`, `php artisan config:show database.default`. Or read config files directly from the `config/` directory.
-- To check environment variables, read the `.env` file directly.
 
 ## Tinker
 
@@ -106,12 +69,6 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - Prefer PHPDoc blocks over inline comments. Only add inline comments for exceptionally complex logic.
 - Use array shape type definitions in PHPDoc blocks.
 
-=== deployments rules ===
-
-# Deployment
-
-- Laravel can be deployed using [Laravel Cloud](https://cloud.laravel.com/), which is the fastest way to deploy and scale production Laravel applications.
-
 === tests rules ===
 
 # Test Enforcement
@@ -123,23 +80,18 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 
 # Inertia
 
-- Inertia creates fully client-side rendered SPAs without modern SPA complexity, leveraging existing server-side patterns.
-- Components live in `resources/js/Pages` (unless specified in `vite.config.js`). Use `Inertia::render()` for server-side routing instead of Blade views.
 - ALWAYS use `search-docs` tool for version-specific Inertia documentation and updated code examples.
 - IMPORTANT: Activate `inertia-vue-development` when working with Inertia Vue client-side patterns.
 
 # Inertia v2
 
 - Use all Inertia features from v1 and v2. Check the documentation before making changes to ensure the correct approach.
-- New features: deferred props, infinite scroll, merging props, polling, prefetching, once props, flash data.
 - When using deferred props, add an empty state with a pulsing or animated skeleton.
 
 === laravel/core rules ===
 
 # Do Things the Laravel Way
 
-- Use `php artisan make:` commands to create new files (i.e. migrations, controllers, models, etc.). You can list available Artisan commands using `php artisan list` and check their parameters with `php artisan [command] --help`.
-- If you're creating a generic PHP class, use `php artisan make:class`.
 - Pass `--no-interaction` to all Artisan commands to ensure they work without user input. You should also pass the correct `--options` to ensure correct behavior.
 
 ### Model Creation
@@ -160,26 +112,11 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - Faker: Use methods such as `$this->faker->word()` or `fake()->randomDigit()`. Follow existing conventions whether to use `$this->faker` or `fake()`.
 - When creating tests, make use of `php artisan make:test [options] {name}` to create a feature test, and pass `--unit` to create a unit test. Most tests should be feature tests.
 
-## Vite Error
-
-- If you receive an "Illuminate\Foundation\ViteException: Unable to locate file in Vite manifest" error, you can run `npm run build` or ask the user to run `npm run dev` or `composer run dev`.
-
 === laravel/v11 rules ===
 
 # Laravel 11
 
 - CRITICAL: ALWAYS use `search-docs` tool for version-specific Laravel documentation and updated code examples.
-- Laravel 11 brought a new streamlined file structure which this project now uses.
-
-## Laravel 11 Structure
-
-- In Laravel 11, middleware are no longer registered in `app\Http/Kernel.php`.
-- Middleware are configured declaratively in `bootstrap/app.php` using `Application::configure()->withMiddleware()`.
-- `bootstrap/app.php` is the file to register middleware, exceptions, and routing files.
-- `bootstrap/providers.php` contains application specific service providers.
-- No app\Console\Kernel.php - use `bootstrap/app.php` or `routes/console.php` for console configuration.
-- Commands auto-register - files in `app\Console/Commands/` are automatically available and do not require manual registration.
-
 ## Database
 
 - When modifying a column, the migration must include all of the attributes that were previously defined on the column. Otherwise, they will be dropped and lost.
@@ -188,13 +125,6 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 ### Models
 
 - Casts can and likely should be set in a `casts()` method on a model rather than the `$casts` property. Follow existing conventions from other models.
-
-## New Artisan Commands
-
-- List Artisan commands using Boost's MCP tool, if available. New commands available in Laravel 11:
-    - `php artisan make:enum`
-    - `php artisan make:class`
-    - `php artisan make:interface`
 
 === pint/core rules ===
 
@@ -214,19 +144,11 @@ This project has domain-specific skills available in `**/skills/**`. You MUST ac
 - Tests should cover all happy paths, failure paths, and edge cases.
 - You must not remove any tests or test files from the tests directory without approval. These are not temporary or helper files; these are core to the application.
 
-## Running Tests
-
-- Run the minimal number of tests, using an appropriate filter, before finalizing.
-- To run all tests: `php artisan test --compact`.
-- To run all tests in a file: `php artisan test --compact tests/Feature/ExampleTest.php`.
-- To filter on a particular test name: `php artisan test --compact --filter=testName` (recommended after making a change to a related file).
-
 === inertia-vue/core rules ===
 
 # Inertia + Vue
 
 Vue components must have a single root element.
-- IMPORTANT: Activate `inertia-vue-development` when working with Inertia Vue client-side patterns.
 
 </laravel-boost-guidelines>
 
@@ -266,13 +188,7 @@ Vue components must have a single root element.
 - Most tests should be Feature tests; Unit tests only for isolated logic.
 
 ## Implementation Workflow
-When asked to build a feature, provide the full stack in this order:
-1. Migration & Model
-2. Repository
-3. Service/Action
-4. Controller
-5. Form Request & Resource
-6. Vue Component (with i18n & Dark Mode)
+- Порядок сборки фичи по слоям — в навыке `laravel-feature-workflow`.
 
 ## API (когда потребуется)
 - Versioned API only: routes in `routes/api/v1.php`
@@ -316,3 +232,25 @@ When asked to build a feature, provide the full stack in this order:
 - When adding a package: update the Tech Stack table and document its usage.
 - When adding a new pattern or convention: add it to the Architecture & Patterns section.
 - When adding new environment variables: update the Environment Variables section and `.env.example`.
+- Известные пробелы и техдолг живут в разделе `## Roadmap / Known Gaps` в `README.md` — туда же добавлять новые.
+
+## Ловушки проекта (не переизобретать)
+
+1. **OrderStatus state machine** — переходы только Pending→Assigned/Cancelled, Assigned→InProgress/Cancelled, InProgress→Completed/Cancelled. Логика в `UpdateOrderStatusAction::isValidTransition()`. Не дублировать проверки в других местах.
+2. **AssignMasterAction** валидирует 4 условия: статус не финальный, мастер активен, мастер доступен, категории мастера включают категорию заказа. Своя валидация не нужна — вызывать экшен.
+3. **CreditMasterBalanceAction** вызывается автоматически из `UpdateOrderStatusAction` при `Completed`. Вручную не звать. Списание баланса — отдельный `RecordMasterPayoutAction` со страницы Payments.
+4. **OTP** лежит в Cache: `master_otp:{phone}` / `client_otp:{phone}`, TTL — `config('services.otp.ttl_minutes')`. Отправка через `OtpGatewayService` (HTTP → `socket-server/` Socket.IO мост → Flutter SMS-gateway). Phone нормализуется в локальный формат без `+993`. Если шлюз недоступен — `OtpException::sendFailed()` (503), и код в Cache НЕ кладётся. Reverb (Pusher-протокол) несовместим с `socket_io_client` — поэтому отдельный Node-сервер.
+5. **Каналы вещания**: `orders` и `masters-map.*` пока публичные; `client.{id}` / `master.{id}` — приватные через Sanctum.
+6. **Фото-конвертация** отдаёт `.webp` и УДАЛЯЕТ оригинал. Только через `PhotoConverter::convert()`. Фото задач — `OrderTaskPhoto`, до 2 на тип (before/after).
+7. **Translations cache** — в production через дефолтный кэш-драйвер, в dev через `array` (см. `HandleInertiaRequests::loadTranslations`). Переводы не подхватились → `php artisan cache:clear`.
+8. **`MasterLocation`** — `public $timestamps = false`, таблица использует `recorded_at` вместо `created_at`/`updated_at`.
+9. **`Master` и `Client` extends `Authenticatable`** + `HasApiTokens` — авторизуются через Sanctum отдельно от `User`-админов.
+10. **API-ошибки** — никаких try/catch в API-контроллерах. Все `*Exception` рендерятся через `bootstrap/app.php`; HTTP-код определяет `ApiException::statusCode()`.
+11. **Иконки категорий** — preset-ключи валидируются по `config/service_icons.php`, кастомные загрузки лежат как `u-*.svg` на диске `service_icons`. Пути к SVG не хардкодить: рендер только через `ServiceIcon.vue` (CSS mask) и `CategoryIcon`.
+12. **System status** — `SystemStatusController` читает `queue:worker_heartbeat` (пишет `Queue::looping()` в `AppServiceProvider`) и пингует Reverb. Без запущенного `queue:work` heartbeat протухает за ~120с. Планировщик для этого не нужен.
+13. **Карты** — один стек на все три карты: `@maplibre/maplibre-gl-leaflet` + `TILES_STYLE_URL`. В dev это статический `public/maps/style.json` + роут `/tiles/{z}/{x}/{y}.pbf` поверх `storage/maps/tiles.mbtiles`.
+14. **Чеки** — `IssueOrderReceiptAction` вызывается автоматически из `UpdateOrderStatusAction` при `Completed`, вручную не звать (идемпотентен). Чек — снапшот в `order_receipts` + `order_receipt_items`, а не вычисляемое представление: задачи без цены в него не попадают. Номер — `MDD-NNNN` (`824-0036` = 36-й чек за 24 августа). Старые завершённые заказы добираются командой `php artisan receipts:backfill`. Печать держится на `@media print` в `resources/css/app.css` (класс `.receipt-print`) — единственный кастомный CSS в проекте.
+
+## Тестирование API вручную
+- **Bruno**: коллекции в `bruno-client/` и `bruno-master/`. Каждый новый эндпоинт = новый `.bru`-файл в нужной папке.
+- **Scribe**: `php artisan scribe:generate`, доки на `/docs`.
