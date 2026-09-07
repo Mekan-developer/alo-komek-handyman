@@ -14,7 +14,7 @@ class OrderReviewRepository
         'master:id,name,photo',
         'client:id,name,phone',
         'order:id,client_name,client_phone,category_id,final_price,completed_at',
-        'order.category:id,name',
+        'order.category:id,name_ru,name_tk',
     ];
 
     /**

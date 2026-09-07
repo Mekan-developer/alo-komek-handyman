@@ -69,6 +69,7 @@ class ReviewTest extends TestCase
         $master = Master::factory()->create(['name' => 'Мурад']);
         $client = Client::factory()->create(['name' => 'Клиент Тест']);
         $review = $this->reviewFor($master, 5, 'Отличная работа', $client);
+        $categoryName = $review->order->category->name;
 
         $this->get(route('reviews.index'))
             ->assertOk()
@@ -80,6 +81,7 @@ class ReviewTest extends TestCase
                 ->where('reviews.data.0.master.name', 'Мурад')
                 ->where('reviews.data.0.client.name', 'Клиент Тест')
                 ->where('reviews.data.0.order.id', $review->order_id)
+                ->where('reviews.data.0.order.category.name', $categoryName)
             );
     }
 
