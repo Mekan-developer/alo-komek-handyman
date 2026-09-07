@@ -860,6 +860,8 @@ Tracked here so the list stays next to the code it describes.
 | 6 | **Notification tests** — no coverage for `NotificationController` | Low |
 | 7 | **Policies for the remaining modules** — only `UserPolicy` exists | Low |
 | 8 | **Flutter apps** — the API is ready, the master/client clients are not built | — |
+| 9 | **`\DomainException` in the task actions** — `CreateOrderTaskAction`, `DeleteOrderTaskAction` and `UploadTaskPhotoAction` throw raw `\DomainException` with hardcoded English strings, caught by `try/catch` in `MasterTaskController`. Every other API action throws a localized `ApiException` rendered centrally in `bootstrap/app.php` (see `UpdateOrderTaskAction`, `ReplaceTaskPhotoAction`). Convert the three and drop the `try/catch`. | Medium |
+| 10 | **`UploadTaskPhotoAction` ignores the order status** — creating, editing and deleting a task all require `in_progress`, and so does replacing a photo (`ReplaceTaskPhotoAction`), but uploading a *new* photo is allowed on a completed or cancelled order. Add the same guard. | Medium |
 
 ---
 
