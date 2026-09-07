@@ -63,4 +63,19 @@ class OrderException extends ApiException
     {
         return new self((string) __('orders.errors.unpriced_tasks'));
     }
+
+    public static function taskNotOwned(): self
+    {
+        return new self((string) __('orders.errors.task_not_owned'));
+    }
+
+    public static function taskNotEditable(): self
+    {
+        return new self((string) __('orders.errors.task_not_editable'));
+    }
+
+    public static function taskPhotoNotEditable(): self
+    {
+        return new self((string) __('orders.errors.task_photo_not_editable'));
+    }
 }

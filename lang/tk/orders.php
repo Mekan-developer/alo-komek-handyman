@@ -160,5 +160,8 @@ return [
         'not_completed_yet' => 'Syn diňe sargyt tamamlanandan soň goýlup bilner',
         'already_reviewed' => 'Siz eýýäm bu sargyda syn goýduňyz',
         'unpriced_tasks' => 'Sargydy tamamlap bolmaýar — her bir iş üçin administrator baha kesgitlemeli',
+        'task_not_owned' => 'Bu iş başga sargyda degişli',
+        'task_not_editable' => 'Işi diňe sargyt ýerine ýetirilýän wagty redaktirläp bolýar',
+        'task_photo_not_editable' => 'Suraty diňe sargyt ýerine ýetirilýän wagty çalşyp bolýar',
     ],
 ];

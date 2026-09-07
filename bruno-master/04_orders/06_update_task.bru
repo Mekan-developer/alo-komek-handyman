@@ -1,0 +1,71 @@
+meta {
+  name: Update Task
+  type: http
+  seq: 6
+}
+
+patch {
+  url: {{base_url}}/api/v1/master/orders/{{order_id}}/tasks/{{task_id}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+headers {
+  Content-Type: application/json
+  Accept: application/json
+}
+
+body:json {
+  {
+    "title": "Замена смесителя",
+    "description": "Прокладка не помогла — поменял смеситель целиком"
+  }
+}
+
+docs {
+  # Update Task
+
+  Правит `title` / `description` уже созданной задачи.
+
+  **Частичное обновление**: отсутствующий ключ не трогает сохранённое значение —
+  можно прислать только `title` или только `description`. Чтобы стереть описание,
+  явно пришлите `"description": null`.
+
+  `price` через этот эндпоинт не меняется — цену ставит админ в панели
+  (`SetOrderTaskPriceAction`). Лишние поля в теле молча игнорируются.
+
+  Разрешено **только пока заявка в статусе `in_progress`** — то же окно, что у
+  создания и удаления задачи.
+
+  **Response 200:**
+  ```json
+  {
+    "data": {
+      "id": 7,
+      "title": "Замена смесителя",
+      "description": "Прокладка не помогла — поменял смеситель целиком",
+      "price": null,
+      "before_photos": [],
+      "after_photos": []
+    }
+  }
+  ```
+
+  Успешная правка вещает `order.task.updated` на каналы `orders`,
+  `private-client.{id}` и `private-master.{id}` с
+  `{ order_id, task_id, title, description }`. Если ничего не изменилось —
+  событие не отправляется.
+
+  **Errors:**
+  - `422` — заявка не в `in_progress`
+    ```json
+    { "message": "Задачу можно редактировать только пока заявка в работе" }
+    ```
+  - `422` — валидация (`title` пустой или длиннее 255, `description` длиннее 2000)
+  - `404` — заявка/задача не найдена или принадлежит другому мастеру
+  - `401` — нет или невалидный токен мастера
+}

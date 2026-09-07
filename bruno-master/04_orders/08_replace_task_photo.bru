@@ -1,0 +1,81 @@
+meta {
+  name: Replace Task Photo
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{base_url}}/api/v1/master/orders/{{order_id}}/tasks/{{task_id}}/photos/{{photo_id}}
+  body: multipartForm
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+headers {
+  Accept: application/json
+}
+
+body:multipart-form {
+  photo: @file(/path/to/photo.jpg)
+}
+
+docs {
+  # Replace Task Photo
+
+  Перезаливает файл уже существующего фото — мастер переснял смазанный кадр.
+  Старый файл удаляется с диска, `status` сбрасывается в `pending`, конвертация
+  в WebP запускается заново (`ConvertTaskPhotoJob`).
+
+  **Слот не освобождается**: лимит в 2 фото на тип не трогается — вы меняете
+  файл, а не количество. Поэтому `type` в теле **нет**: он берётся из самого
+  фото и измениться не может (иначе через замену можно было бы обойти лимит).
+  Лишние поля в теле молча игнорируются.
+
+  **Метод — `POST`, не `PATCH`**: PHP наполняет `$_FILES` только для POST, при
+  настоящем multipart-PATCH файл до сервера не доедет.
+
+  Разрешено **только пока заявка в статусе `in_progress`**.
+
+  ## Fields
+
+  | Field   | Type   | Required | Description                    |
+  |---------|--------|----------|--------------------------------|
+  | `photo` | file   | ✅       | Image file, max 100 MB (image/*) |
+
+  ## Response 202 Accepted
+
+  Возвращается вся задача целиком — тот же shape, что у upload (#7):
+
+  ```json
+  {
+    "data": {
+      "id": 7,
+      "title": "Замена труб",
+      "description": null,
+      "price": null,
+      "before_photos": [
+        { "id": 1, "url": "https://example.com/storage/orders/1/tasks/7/before/new.jpg", "status": "pending" }
+      ],
+      "after_photos": []
+    }
+  }
+  ```
+
+  `id` фото сохраняется — меняется только `url` и `status`. Когда конвертация
+  завершится, на канал `orders` придёт `order.task.photo.updated` со статусом
+  `done` (тот же путь, что и у обычной загрузки).
+
+  ## Errors
+
+  - `422` — заявка не в `in_progress`
+    ```json
+    { "message": "Фото можно заменить только пока заявка в работе" }
+    ```
+  - `422` — валидация (`photo` отсутствует, не изображение или больше 100 МБ)
+  - `404` — заявка/задача/фото не найдены, принадлежат другому мастеру
+    или фото относится к другой задаче
+  - `401` — нет или невалидный токен мастера
+}

@@ -66,7 +66,9 @@ Route::prefix('master')->group(function () {
 
             Route::prefix('{order}/tasks')->name('tasks.')->group(function () {
                 Route::post('/', [MasterTaskController::class, 'store'])->name('store');
+                Route::patch('{task}', [MasterTaskController::class, 'update'])->name('update');
                 Route::post('{task}/photo', [MasterTaskController::class, 'uploadPhoto'])->name('photo');
+                Route::post('{task}/photos/{photo}', [MasterTaskController::class, 'replacePhoto'])->name('photo.replace');
                 Route::delete('{task}', [MasterTaskController::class, 'destroy'])->name('destroy');
             });
         });
