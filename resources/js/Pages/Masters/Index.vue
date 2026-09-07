@@ -4,8 +4,10 @@ import { Link, useForm, router } from '@inertiajs/vue3'
 import { useI18n } from 'vue-i18n'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import MasterFormModal from '@/Pages/Masters/Partials/MasterFormModal.vue'
+import MasterReviewsModal from '@/Pages/Masters/Partials/MasterReviewsModal.vue'
 import ConfirmModal from '@/Components/ConfirmModal.vue'
 import Pagination from '@/Components/Pagination.vue'
+import StarRating from '@/Components/StarRating.vue'
 import { formatPhone } from '@/utils/formatPhone'
 
 const { t } = useI18n()
@@ -106,6 +108,9 @@ function confirmResetBalance() {
         onFinish: () => { resettingBalance.value = false },
     })
 }
+
+/** Master whose reviews are shown in the side panel — null keeps it closed. */
+const reviewsTarget = ref(null)
 
 // ── Filters ────────────────────────────────────────────────────────────────────
 const search = ref(props.filters.search ?? '')
@@ -255,13 +260,19 @@ const paginationMeta = computed(() => props.masters?.meta ?? null)
                                     {{ formatPhone(master.phone) }}
                                 </td>
                                 <td class="px-6 py-4 text-sm">
-                                    <div v-if="master.reviews_count > 0" class="flex items-center gap-1">
-                                        <svg class="h-4 w-4 text-amber-400" fill="currentColor" viewBox="0 0 20 20">
-                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.958a1 1 0 00.95.69h4.162c.969 0 1.371 1.24.588 1.81l-3.368 2.446a1 1 0 00-.363 1.118l1.287 3.957c.3.922-.755 1.688-1.538 1.118l-3.367-2.446a1 1 0 00-1.176 0l-3.367 2.446c-.783.57-1.838-.196-1.538-1.118l1.286-3.957a1 1 0 00-.363-1.118L2.02 9.385c-.783-.57-.38-1.81.588-1.81h4.162a1 1 0 00.95-.69l1.286-3.958z" />
-                                        </svg>
-                                        <span class="font-medium text-gray-900 dark:text-slate-200">{{ master.reviews_avg_rating }}</span>
+                                    <button
+                                        v-if="master.reviews_count > 0"
+                                        type="button"
+                                        @click="reviewsTarget = master"
+                                        class="group/rating inline-flex items-center gap-1.5 rounded-lg px-2 py-1 -mx-2 transition-colors hover:bg-amber-50 dark:hover:bg-amber-500/10"
+                                        :title="t('reviews.master_panel.title')"
+                                    >
+                                        <StarRating :rating="master.reviews_avg_rating" size="sm" show-value />
                                         <span class="text-xs text-gray-400 dark:text-slate-500">({{ master.reviews_count }})</span>
-                                    </div>
+                                        <svg class="h-3.5 w-3.5 text-gray-300 transition-colors group-hover/rating:text-amber-500 dark:text-slate-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+                                        </svg>
+                                    </button>
                                     <span v-else class="text-gray-300 dark:text-slate-600">—</span>
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-500 dark:text-slate-400">
@@ -360,6 +371,11 @@ const paginationMeta = computed(() => props.masters?.meta ?? null)
             :payment-models="paymentModels"
             @close="closeModal"
             @submit="submit"
+        />
+
+        <MasterReviewsModal
+            :master="reviewsTarget"
+            @close="reviewsTarget = null"
         />
 
         <ConfirmModal

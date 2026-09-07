@@ -9,6 +9,7 @@ import ChangeStatusModal from '@/Pages/Orders/Partials/ChangeStatusModal.vue'
 import EditOrderModal from '@/Pages/Orders/Partials/EditOrderModal.vue'
 import OrderReceiptModal from '@/Pages/Orders/Partials/OrderReceiptModal.vue'
 import ImageLightbox from '@/Components/ImageLightbox.vue'
+import StarRating from '@/Components/StarRating.vue'
 import { formatPhone } from '@/utils/formatPhone'
 import { loadMapStyle, suppressBlankIconWarnings } from '@/utils/loadMapStyle'
 import { scheduleRealtimeReload, useOrdersChannel } from '@/composables/useOrdersRealtime'
@@ -877,6 +878,38 @@ const sortedEligibleMasters = computed(() => {
                                 </div>
                                 <p v-else class="text-gray-400 dark:text-slate-500">{{ t('orders.no_master') }}</p>
                             </div>
+                        </div>
+
+                        <!-- Client review -->
+                        <div v-if="order.status === 'completed'" class="rounded-xl bg-white shadow-sm dark:bg-slate-800">
+                            <div class="border-b border-gray-100 px-4 py-2.5 dark:border-slate-700">
+                                <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-slate-500">
+                                    {{ t('reviews.order_card.title') }}
+                                </h3>
+                            </div>
+                            <div v-if="order.review" class="px-4 py-3">
+                                <div class="flex items-center justify-between gap-2">
+                                    <StarRating :rating="order.review.rating" size="md" show-value />
+                                    <span class="text-xs text-gray-400 dark:text-slate-500">
+                                        {{ order.review.created_at }}
+                                    </span>
+                                </div>
+                                <p
+                                    v-if="order.review.comment"
+                                    class="mt-2 whitespace-pre-line rounded-lg bg-gray-50 px-3 py-2 text-sm leading-relaxed text-gray-700 dark:bg-slate-700/40 dark:text-slate-300"
+                                >
+                                    {{ order.review.comment }}
+                                </p>
+                                <p v-else class="mt-2 text-sm italic text-gray-300 dark:text-slate-600">
+                                    {{ t('reviews.no_comment') }}
+                                </p>
+                                <p class="mt-2 text-xs text-gray-400 dark:text-slate-500">
+                                    {{ order.review.client_name }}
+                                </p>
+                            </div>
+                            <p v-else class="px-4 py-3 text-sm text-gray-400 dark:text-slate-500">
+                                {{ t('reviews.order_card.none') }}
+                            </p>
                         </div>
 
                         <!-- Photos -->

@@ -7,6 +7,7 @@ return [
         'masters' => 'Ussatlar',
         'clients' => 'Müşderiler',
         'orders' => 'Sargytlar',
+        'reviews' => 'Synlar',
         'payments' => 'Tölegler',
         'pending_otps' => 'OTP kodlary',
         'banners' => 'Bannerlar',

@@ -85,6 +85,17 @@ class MasterRepository
         $master->update(['balance' => 0]);
     }
 
+    /** Masters that have at least one review — for the reviews filter dropdown. */
+    public function withReviews(): Collection
+    {
+        return Master::query()
+            ->has('reviews')
+            ->withAvg('reviews', 'rating')
+            ->withCount('reviews')
+            ->orderBy('name')
+            ->get();
+    }
+
     /** Masters with a positive outstanding balance — awaiting payout. */
     public function withOutstandingBalance(): Collection
     {

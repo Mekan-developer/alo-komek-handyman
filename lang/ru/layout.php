@@ -7,6 +7,7 @@ return [
         'masters' => 'Мастера',
         'clients' => 'Клиенты',
         'orders' => 'Заказы',
+        'reviews' => 'Отзывы',
         'payments' => 'Платежи',
         'pending_otps' => 'OTP-коды',
         'banners' => 'Баннеры',

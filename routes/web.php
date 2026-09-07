@@ -11,6 +11,7 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PendingOtpController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\SystemStatusController;
 use App\Http\Controllers\UserController;
@@ -76,6 +77,8 @@ Route::middleware('auth')->group(function () {
 
         Route::resource('categories', CategoryController::class)->only(['index', 'store', 'update', 'destroy']);
         Route::post('categories/{category}/content', [CategoryContentController::class, 'upsert'])->name('categories.content.upsert');
+        Route::get('reviews', [ReviewController::class, 'index'])->name('reviews.index');
+        Route::get('masters/{master}/reviews', [ReviewController::class, 'forMaster'])->name('masters.reviews');
         Route::get('masters/map', [MasterController::class, 'map'])->name('masters.map');
         Route::post('masters/{master}/reset-balance', [MasterController::class, 'resetBalance'])->name('masters.reset-balance');
         Route::resource('masters', MasterController::class)->only(['index', 'store', 'destroy']);

@@ -67,6 +67,16 @@ class OrderResource extends JsonResource
                     : [],
             ])),
 
+            'review' => $this->whenLoaded('review', fn () => $this->review ? [
+                'id' => $this->review->id,
+                'rating' => $this->review->rating,
+                'comment' => $this->review->comment,
+                'client_name' => $this->review->relationLoaded('client') && $this->review->client
+                    ? $this->review->client->name
+                    : $this->client_name,
+                'created_at' => $this->review->created_at->format('d.m.Y H:i'),
+            ] : null),
+
             'assigned_at' => $this->assigned_at?->toDateTimeString(),
             'started_at' => $this->started_at?->toDateTimeString(),
             'completed_at' => $this->completed_at?->toDateTimeString(),
