@@ -569,6 +569,7 @@ Web (Inertia) and API controllers are **strictly separate**. Never reuse or shar
 | `POST` | `/api/v1/auth/verify-otp` | — | Verify OTP, returns Sanctum token |
 | `POST` | `/api/v1/auth/complete-registration` | Sanctum | Save name after first login |
 | `POST` | `/api/v1/auth/logout` | Sanctum | Revoke current token |
+| `POST` | `/api/v1/client/orders/{order}/review` | Sanctum | Rate the master (1–5) and leave a comment on a completed order |
 
 ### Order pricing — per-task prices + discount
 
@@ -666,6 +667,32 @@ Printing is the one place with hand-written CSS: `resources/css/app.css` has an 
 block that hides everything except `.receipt-print`. Tailwind's `print:` variants cannot
 express "hide the rest of the page". The receipt itself is always light — it is a sheet of
 paper, not a UI surface — so it has no `dark:` variants by design.
+
+### Client reviews (ratings & comments)
+
+After an order is completed the client rates the master 1–5 and may leave a comment:
+`POST /api/v1/client/orders/{order}/review` → `CreateOrderReviewAction`. One review per order
+(`order_reviews.order_id` is unique); a second attempt is `OrderException::alreadyReviewed()`,
+and reviewing an unfinished order is `OrderException::notCompletedYet()`.
+
+The admin side reads that data in three places, all served by `OrderReviewRepository`:
+
+| Surface | What it shows |
+|---|---|
+| **Отзывы** (`/reviews`, `Reviews/Index.vue`) | Average score, star histogram, counters (total / with a comment / negative), a master leaderboard, and the review feed. Filters: master, star, "only with a comment", free-text search (comment, client, master), date range — validated by `IndexReviewRequest` |
+| **Мастера** (`Masters/Index.vue`) | The rating cell is a button; it opens `MasterReviewsModal.vue`, which fetches `GET masters/{master}/reviews` (JSON) for that master's stats and last 50 reviews |
+| **Заказ** (`Orders/Show.vue`) | A "Отзыв клиента" card on every completed order — the score, the comment, and who left it (`order.review` prop) |
+
+Two details worth keeping:
+
+- `OrderReviewRepository::stats()` computes the star histogram **ignoring the `rating`
+  filter**, so selecting "2 ★" narrows the feed without collapsing the chart to a single bar.
+- Reviews are read-only in the admin panel by design — staff must not be able to edit or
+  delete what a client wrote.
+- Demo data: `php artisan db:seed --class=OrderReviewSeeder` (not part of `db:seed`). It
+  reviews any completed order that has none, then gives most masters a review history with a
+  realistic spread — a few weak masters, a few with no feedback at all, and about a third of
+  the reviews with no comment.
 
 ### ⚠️ Breaking change — geography removed (v1)
 
