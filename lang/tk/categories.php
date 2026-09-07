@@ -29,6 +29,12 @@ return [
     'type_child_desc' => 'Başga kategoriýanyň içinde',
     'add_child' => 'Çaga kategoriýa goş',
     'delete_has_children' => 'Çaga kategoriýalary bolan kategoriýany öçürmek bolmaýar',
+    // Frontend-only tooltip — vue-i18n interpolation, hence {count} and not :count
+    'delete_blocked' => 'Öçürip bolmaýar: bu kategoriýa boýunça sargytlar bar ({count})',
+
+    'errors' => [
+        'has_orders' => 'Kategoriýany öçürip bolmaýar: oňa sargytlar salgylanýar (:count). Ilki şol sargytlary öçüriň ýa-da başga kategoriýa geçiriň. Kategoriýa gerek däl bolsa — ony işjeň däl ediň.',
+    ],
 
     'icon' => 'Nyşan',
     'icon_remove' => 'Aýyr',

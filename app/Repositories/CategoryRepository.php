@@ -12,6 +12,7 @@ class CategoryRepository
     public function paginate(int $perPage = 15, array $filters = []): LengthAwarePaginator
     {
         return Category::with(['parent', 'content.images'])
+            ->withCount('orders')
             ->when($filters['search'] ?? null, function ($q, $search) {
                 $escaped = addcslashes($search, '%_\\');
                 $q->where(fn ($sub) => $sub
@@ -96,6 +97,12 @@ class CategoryRepository
         $category->update($data);
 
         return $category;
+    }
+
+    /** Number of orders referencing this category — blocks deletion when non-zero. */
+    public function ordersCount(Category $category): int
+    {
+        return $category->orders()->count();
     }
 
     public function delete(Category $category): void

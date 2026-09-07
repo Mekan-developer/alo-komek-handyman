@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Actions\CreateCategoryAction;
 use App\Actions\DeleteCategoryAction;
 use App\Actions\UpdateCategoryAction;
+use App\Exceptions\CategoryException;
 use App\Http\Requests\StoreCategoryRequest;
 use App\Http\Requests\UpdateCategoryRequest;
 use App\Http\Resources\CategoryResource;
@@ -61,7 +62,7 @@ class CategoryController extends Controller
         try {
             $action->handle($category);
             $this->notifySuccess('notifications.deleted', ['resource' => __('resources.category')]);
-        } catch (\RuntimeException $e) {
+        } catch (CategoryException $e) {
             $this->notifyError($e->getMessage());
         }
 

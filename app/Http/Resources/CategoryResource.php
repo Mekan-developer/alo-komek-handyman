@@ -20,6 +20,7 @@ class CategoryResource extends JsonResource
             'icon_type' => $this->icon_type?->value,
             'icon' => $this->icon,
             'icon_url' => $this->icon_url,
+            'orders_count' => $this->orders_count ?? 0,
             'parent' => $this->whenLoaded('parent', fn () => [
                 'id' => $this->parent->id,
                 'name' => $this->parent->name,

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Category;
+use App\Models\Order;
 use App\Models\User;
 use App\Support\CategoryIcon;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
@@ -195,6 +196,31 @@ class CategoryTest extends TestCase
             'id' => $child->id,
             'parent_id' => null,
         ]);
+    }
+
+    public function test_deleting_a_category_with_orders_is_blocked_with_a_readable_message(): void
+    {
+        $this->actingAsAdmin();
+        $category = Category::factory()->create();
+        Order::factory()->count(2)->create(['category_id' => $category->id]);
+
+        $this->delete(route('categories.destroy', $category))
+            ->assertRedirect(route('categories.index'))
+            ->assertSessionHas('notification', fn (array $notification) => $notification['type'] === 'error'
+                && $notification['message'] === __('categories.errors.has_orders', ['count' => 2]));
+
+        $this->assertModelExists($category);
+    }
+
+    public function test_category_index_exposes_orders_count(): void
+    {
+        $this->actingAsAdmin();
+        $category = Category::factory()->create();
+        Order::factory()->create(['category_id' => $category->id]);
+
+        $this->get(route('categories.index'))
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->where('categories.data.0.orders_count', 1));
     }
 
     public function test_deleting_nonexistent_category_returns_404(): void

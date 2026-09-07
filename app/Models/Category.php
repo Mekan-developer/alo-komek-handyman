@@ -91,6 +91,15 @@ class Category extends Model
         return $this->hasOne(CategoryContent::class);
     }
 
+    /**
+     * Orders placed under this category. The FK is `restrictOnDelete`, so
+     * DeleteCategoryAction checks this relation before removing the category.
+     */
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
+    }
+
     public function isRoot(): bool
     {
         return $this->parent_id === null;
