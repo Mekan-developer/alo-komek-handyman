@@ -954,59 +954,61 @@ const sortedEligibleMasters = computed(() => {
                                     </p>
 
                                     <!-- Price -->
-                                    <div class="mt-2 flex items-center justify-between gap-2 border-t border-gray-100 pt-2 dark:border-slate-700">
-                                        <span class="text-xs text-gray-400 dark:text-slate-500">{{ t('orders.fields.task_price') }}</span>
-
-                                        <div v-if="editingTaskId === task.id" class="flex items-center gap-1">
+                                    <div class="mt-2 border-t border-gray-100 pt-2 dark:border-slate-700">
+                                        <div v-if="editingTaskId === task.id" class="flex items-center gap-1.5">
                                             <input
                                                 v-model="taskPriceInput"
                                                 type="number"
                                                 min="0"
                                                 step="0.01"
                                                 :placeholder="t('orders.modals.price_placeholder')"
-                                                class="w-24 rounded-md border-gray-300 py-1 text-right font-mono text-xs dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"
+                                                class="w-0 min-w-0 flex-1 rounded-md border-gray-300 py-1 text-right font-mono text-xs dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"
                                                 @keyup.enter="saveTaskPrice(task)"
                                                 @keyup.esc="cancelEditingTaskPrice"
                                             />
                                             <button
                                                 type="button"
                                                 :disabled="savingTaskPrice"
-                                                class="rounded-md bg-green-600 px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-green-700 disabled:opacity-50"
+                                                class="shrink-0 rounded-md bg-green-600 px-2 py-1 text-xs font-medium text-white transition-colors hover:bg-green-700 disabled:opacity-50"
                                                 @click="saveTaskPrice(task)"
                                             >
                                                 {{ savingTaskPrice ? '...' : t('layout.actions.save') }}
                                             </button>
                                             <button
                                                 type="button"
-                                                class="rounded-md px-2 py-1 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-slate-700"
+                                                class="shrink-0 rounded-md px-2 py-1 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-slate-700"
                                                 @click="cancelEditingTaskPrice"
                                             >
                                                 {{ t('layout.actions.cancel') }}
                                             </button>
                                         </div>
 
-                                        <button
-                                            v-else-if="isPriceEditable"
-                                            type="button"
-                                            :title="task.price ? t('orders.actions.edit_price') : t('orders.actions.set_price')"
-                                            class="group inline-flex items-center gap-1.5 rounded-md border border-dashed border-gray-300 px-2 py-1 font-mono text-xs font-semibold transition-colors hover:border-blue-500 hover:bg-blue-50 dark:border-slate-600 dark:hover:border-blue-400 dark:hover:bg-blue-500/10"
-                                            :class="task.price ? 'text-green-600 dark:text-green-400' : 'text-blue-600 dark:text-blue-400'"
-                                            @click="startEditingTaskPrice(task)"
-                                        >
-                                            <span v-if="task.price">{{ task.price }}</span>
-                                            <span v-else class="font-sans">{{ t('orders.actions.set_price') }}</span>
-                                            <svg class="h-3 w-3 shrink-0 opacity-60 transition-opacity group-hover:opacity-100" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
-                                            </svg>
-                                        </button>
+                                        <div v-else class="flex items-center justify-between gap-2">
+                                            <span class="text-xs text-gray-400 dark:text-slate-500">{{ t('orders.fields.task_price') }}</span>
 
-                                        <span
-                                            v-else
-                                            class="font-mono text-xs font-semibold"
-                                            :class="task.price ? 'text-green-600 dark:text-green-400' : 'text-gray-300 dark:text-slate-600'"
-                                        >
-                                            {{ task.price ?? t('orders.no_price') }}
-                                        </span>
+                                            <button
+                                                v-if="isPriceEditable"
+                                                type="button"
+                                                :title="task.price ? t('orders.actions.edit_price') : t('orders.actions.set_price')"
+                                                class="group inline-flex items-center gap-1.5 rounded-md border border-dashed border-gray-300 px-2 py-1 font-mono text-xs font-semibold transition-colors hover:border-blue-500 hover:bg-blue-50 dark:border-slate-600 dark:hover:border-blue-400 dark:hover:bg-blue-500/10"
+                                                :class="task.price ? 'text-green-600 dark:text-green-400' : 'text-blue-600 dark:text-blue-400'"
+                                                @click="startEditingTaskPrice(task)"
+                                            >
+                                                <span v-if="task.price">{{ task.price }}</span>
+                                                <span v-else class="font-sans">{{ t('orders.actions.set_price') }}</span>
+                                                <svg class="h-3 w-3 shrink-0 opacity-60 transition-opacity group-hover:opacity-100" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
+                                                </svg>
+                                            </button>
+
+                                            <span
+                                                v-else
+                                                class="font-mono text-xs font-semibold"
+                                                :class="task.price ? 'text-green-600 dark:text-green-400' : 'text-gray-300 dark:text-slate-600'"
+                                            >
+                                                {{ task.price ?? t('orders.no_price') }}
+                                            </span>
+                                        </div>
                                     </div>
 
                                     <div class="mt-2 grid grid-cols-2 gap-2">
