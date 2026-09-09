@@ -6,6 +6,7 @@ use App\Models\Category;
 use App\Models\Master;
 use App\Models\MasterLocation;
 use App\PaymentModel;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -70,6 +71,47 @@ class MasterSeeder extends Seeder
                     'recorded_at' => now()->subMinutes(rand(1, 60)),
                 ]);
             }
+
+            $this->seedStoreReviewMaster($leafCategories);
         });
+    }
+
+    /**
+     * The account App Store / Google Play reviewers use — it signs in with the
+     * fixed OTP from config('services.otp'), so it has to exist as a master.
+     *
+     * @param  Collection<int, Category>  $leafCategories
+     */
+    private function seedStoreReviewMaster(Collection $leafCategories): void
+    {
+        $phone = config('services.otp.test_phones.0');
+
+        if ($phone === null) {
+            return;
+        }
+
+        $master = Master::updateOrCreate(
+            ['phone' => $phone],
+            [
+                'name' => 'Demo Master',
+                'payment_model' => PaymentModel::Percentage,
+                'payment_value' => 15.0,
+                'balance' => 0,
+                'access_expires_at' => now()->addYears(5),
+                'is_active' => true,
+                'photo' => null,
+            ]
+        );
+
+        $master->categories()->sync($leafCategories->pluck('id')->all());
+
+        MasterLocation::query()->where('master_id', $master->id)->delete();
+
+        MasterLocation::create([
+            'master_id' => $master->id,
+            'latitude' => self::CENTER_LAT,
+            'longitude' => self::CENTER_LNG,
+            'recorded_at' => now(),
+        ]);
     }
 }

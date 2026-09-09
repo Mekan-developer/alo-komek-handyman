@@ -8,6 +8,7 @@ use App\Events\PendingOtpCreated;
 use App\Exceptions\OtpException;
 use App\Repositories\PendingOtpRepository;
 use App\Services\OtpGatewayService;
+use App\Services\OtpTestAccountService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
@@ -21,10 +22,17 @@ class DispatchOtpAction
     public function __construct(
         private readonly OtpGatewayService $gateway,
         private readonly PendingOtpRepository $pendingOtps,
+        private readonly OtpTestAccountService $testAccounts,
     ) {}
 
     public function handle(string $phone, OtpRecipientType $recipient, ?string $recipientName = null): OtpDeliveryChannel
     {
+        // Store reviewers already know their code, so nothing is generated,
+        // sent or parked for them.
+        if ($this->testAccounts->isTestPhone($phone)) {
+            return OtpDeliveryChannel::Sms;
+        }
+
         $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
         $expiresAt = now()->addMinutes((int) config('services.otp.ttl_minutes'));
 

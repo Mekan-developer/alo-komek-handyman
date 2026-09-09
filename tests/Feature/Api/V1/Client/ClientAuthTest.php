@@ -105,6 +105,69 @@ class ClientAuthTest extends TestCase
         Event::assertDispatched(ClientRegistered::class, fn ($event) => $event->client->phone === $phone);
     }
 
+    // ── store-review account ──────────────────────────────────────────────────
+
+    public function test_store_review_client_signs_in_with_the_fixed_code_and_no_sms(): void
+    {
+        Http::fake();
+        $this->enableStoreReviewAccount();
+
+        $phone = '+99362222222';
+
+        $this->postJson(route('api.v1.client.auth.request-otp'), ['phone' => $phone])
+            ->assertOk()
+            ->assertJsonPath('delivery', 'sms');
+
+        Http::assertNothingSent();
+        $this->assertNull(Cache::get("client_otp:{$phone}"));
+        $this->assertDatabaseCount('pending_otps', 0);
+
+        $this->postJson(route('api.v1.client.auth.verify-otp'), [
+            'phone' => $phone,
+            'code' => '010101',
+        ])->assertOk()->assertJsonStructure(['token', 'client']);
+
+        $this->assertDatabaseHas('clients', ['phone' => $phone]);
+    }
+
+    public function test_store_review_client_cannot_sign_in_with_another_code(): void
+    {
+        $this->enableStoreReviewAccount();
+
+        $this->postJson(route('api.v1.client.auth.verify-otp'), [
+            'phone' => '+99362222222',
+            'code' => '999999',
+        ])->assertUnprocessable();
+    }
+
+    public function test_fixed_code_does_not_work_for_a_regular_client_phone(): void
+    {
+        $this->enableStoreReviewAccount();
+
+        $this->postJson(route('api.v1.client.auth.verify-otp'), [
+            'phone' => '+99361234567',
+            'code' => '010101',
+        ])->assertUnprocessable();
+    }
+
+    public function test_fixed_code_does_not_work_while_the_bypass_is_disabled(): void
+    {
+        config(['services.otp.test_phones' => [], 'services.otp.test_code' => '']);
+
+        $this->postJson(route('api.v1.client.auth.verify-otp'), [
+            'phone' => '+99362222222',
+            'code' => '010101',
+        ])->assertUnprocessable();
+    }
+
+    private function enableStoreReviewAccount(): void
+    {
+        config([
+            'services.otp.test_phones' => ['+99362222222'],
+            'services.otp.test_code' => '010101',
+        ]);
+    }
+
     public function test_verifying_otp_for_an_existing_client_does_not_dispatch_client_registered_event(): void
     {
         Event::fake([ClientRegistered::class]);

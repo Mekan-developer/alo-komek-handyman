@@ -132,6 +132,85 @@ class MasterAuthTest extends TestCase
         ])->assertUnprocessable();
     }
 
+    // ── store-review account ──────────────────────────────────────────────────
+
+    public function test_store_review_master_signs_in_with_the_fixed_code_and_no_sms(): void
+    {
+        Http::fake();
+        $master = $this->storeReviewMaster();
+
+        $this->postJson(route('api.v1.master.auth.request-otp'), ['phone' => $master->phone])
+            ->assertOk()
+            ->assertJsonPath('delivery', 'sms');
+
+        Http::assertNothingSent();
+        $this->assertNull(Cache::get("master_otp:{$master->phone}"));
+        $this->assertDatabaseCount('pending_otps', 0);
+
+        $this->postJson(route('api.v1.master.auth.verify-otp'), [
+            'phone' => $master->phone,
+            'code' => '010101',
+        ])->assertOk()->assertJsonStructure(['token', 'master']);
+    }
+
+    public function test_store_review_master_cannot_sign_in_with_another_code(): void
+    {
+        $master = $this->storeReviewMaster();
+
+        $this->postJson(route('api.v1.master.auth.verify-otp'), [
+            'phone' => $master->phone,
+            'code' => '999999',
+        ])->assertUnprocessable();
+    }
+
+    public function test_fixed_code_does_not_work_for_a_regular_master(): void
+    {
+        $this->enableStoreReviewAccount();
+        $master = Master::factory()->create(['phone' => '+99361234567']);
+
+        $this->postJson(route('api.v1.master.auth.verify-otp'), [
+            'phone' => $master->phone,
+            'code' => '010101',
+        ])->assertUnprocessable();
+    }
+
+    public function test_fixed_code_does_not_work_while_the_bypass_is_disabled(): void
+    {
+        config(['services.otp.test_phones' => [], 'services.otp.test_code' => '']);
+        $master = Master::factory()->create(['phone' => '+99362222222']);
+
+        $this->postJson(route('api.v1.master.auth.verify-otp'), [
+            'phone' => $master->phone,
+            'code' => '010101',
+        ])->assertUnprocessable();
+    }
+
+    public function test_deactivated_store_review_master_cannot_sign_in(): void
+    {
+        $this->enableStoreReviewAccount();
+        $master = Master::factory()->inactive()->create(['phone' => '+99362222222']);
+
+        $this->postJson(route('api.v1.master.auth.verify-otp'), [
+            'phone' => $master->phone,
+            'code' => '010101',
+        ])->assertForbidden();
+    }
+
+    private function storeReviewMaster(): Master
+    {
+        $this->enableStoreReviewAccount();
+
+        return Master::factory()->create(['phone' => '+99362222222']);
+    }
+
+    private function enableStoreReviewAccount(): void
+    {
+        config([
+            'services.otp.test_phones' => ['+99362222222'],
+            'services.otp.test_code' => '010101',
+        ]);
+    }
+
     // ── ensure.master middleware ──────────────────────────────────────────────
 
     public function test_deactivated_master_existing_token_is_rejected(): void

@@ -46,6 +46,14 @@ return [
 
     'otp' => [
         'ttl_minutes' => (int) env('OTP_TTL_MINUTES', 3),
+
+        // Store-review accounts that sign in with a fixed code instead of a real
+        // SMS. Leaving either value empty disables the bypass entirely.
+        'test_phones' => array_values(array_filter(array_map(
+            'trim',
+            explode(',', (string) env('OTP_TEST_PHONES', ''))
+        ))),
+        'test_code' => (string) env('OTP_TEST_CODE', ''),
     ],
 
 ];
