@@ -50,4 +50,8 @@ docs {
   | `is_available`     | boolean | Set by master — ready for work right now         |
   | `access_expires_at`| date    | When master's access subscription expires        |
   | `payment_model`    | string  | `percentage` / `fixed_per_job` / `salary` / `salary_percentage` |
+
+  **Errors:**
+  - `401` — missing / invalid token
+  - `403` — not a master token, inactive, or access expired
 }

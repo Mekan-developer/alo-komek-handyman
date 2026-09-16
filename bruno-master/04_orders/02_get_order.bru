@@ -21,7 +21,14 @@ headers {
 docs {
   # Get Single Order
 
-  Returns full order details including client info, photos, and tasks.
+  Returns full order details including client info, photos, tasks and schedule.
+
+  Schedule fields:
+  - `preferred_date` — день вызова (`Y-m-d`), `null` если срочно
+  - `time_slot` — значение `08-10`…`18-20`, или `null` = по возможности
+  - `time_slot_label` — для UI: `10:00 - 12:00`
+  - `time_flexible` — `true`, если слот не выбран
+  - `is_urgent` / `urgency_fee` — срочность и зафиксированная доплата
 
   **Response 200:**
   ```json
@@ -36,6 +43,12 @@ docs {
       "longitude": 58.38,
       "category": "Сантехника",
       "description": "Сломался кран на кухне",
+      "preferred_date": "2026-09-16",
+      "time_slot": "10-12",
+      "time_slot_label": "10:00 - 12:00",
+      "time_flexible": false,
+      "is_urgent": false,
+      "urgency_fee": null,
       "final_price": 405.22,
       "discount_percent": 10,
       "tasks_total": 450.25,

@@ -312,11 +312,11 @@ onMounted(() => {
 
     if (!window.Echo) { return }
     window.Echo.connector.pusher.connection.bind('state_change', updateWsStatus)
-    window.Echo.channel('orders')
+    window.Echo.private('orders')
         .listen('.order.created', handleNewOrder)
         .listen('.master.assigned', handleMasterAssigned)
         .listen('.order.status.changed', handleOrderStatusChanged)
-    window.Echo.channel('clients').listen('.client.registered', handleNewClient)
+    window.Echo.private('clients').listen('.client.registered', handleNewClient)
 
     // Operators have no access to parked OTP codes — subscribing would 403.
     if (currentUserRole.value !== 'operator') {

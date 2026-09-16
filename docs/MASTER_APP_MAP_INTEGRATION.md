@@ -122,7 +122,7 @@ Coordinates are already included in the **list** response — no need to call or
 
 ## 4. Sending the master's own live location
 
-`POST /api/v1/master/{masterId}/location`
+`POST /api/v1/master/location`
 
 ```json
 {
@@ -163,5 +163,5 @@ Full Reverb connection details (host/key/port) are not filled in for production 
 - [ ] Fetch `style.json`, rewrite `tiles`/`glyphs`/`sprite` to absolute prod URLs, cache result
 - [ ] Show attribution `© OpenMapTiles © OpenStreetMap contributors` somewhere on screen (required by license)
 - [ ] Plot pins from `GET /api/v1/master/orders?filter=active`, skip null coordinates
-- [ ] Send location via `POST /api/v1/master/{masterId}/location` every 10–15s while online
+- [ ] Send location via `POST /api/v1/master/location` every 10–15s while online
 - [ ] Default camera: Ashgabat `(37.9415, 58.3794)`, zoom `11`, when no GPS/no jobs

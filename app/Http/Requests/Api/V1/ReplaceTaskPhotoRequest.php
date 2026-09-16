@@ -23,7 +23,7 @@ class ReplaceTaskPhotoRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'photo' => ['required', 'file', 'image', 'max:102400'],
+            'photo' => ['required', 'file', 'image', 'max:10240'],
         ];
     }
 }

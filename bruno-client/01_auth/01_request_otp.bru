@@ -24,16 +24,24 @@ body:json {
 docs {
   # Request OTP
 
-  Sends a 6-digit OTP to the client's phone via the SMS gateway
-  (Socket.IO bridge in `socket-server/` → Flutter SMS-gateway phone).
-  The code is valid for 3 minutes.
+  Sends a 6-digit OTP to the phone via the SMS gateway
+  (`socket-server/` → Flutter OTP Listener). TTL = `OTP_TTL_MINUTES` (default 3).
+
+  Any valid phone may request OTP (auto-registers on verify). Rate limited:
+  3 req/min per IP and per phone (`throttle:otp-request`).
 
   **Response 200:**
   ```json
-  { "message": "OTP sent." }
+  {
+    "message": "OTP sent.",
+    "delivery": "sms",
+    "delivery_message": null
+  }
   ```
+
+  `delivery` may be `"manual"` when SMS is unavailable.
 
   **Errors:**
   - `422` — phone validation error
-  - `503` — SMS gateway unreachable or no gateway phone connected
+  - `429` — too many requests
 }

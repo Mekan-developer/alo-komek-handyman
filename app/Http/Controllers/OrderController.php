@@ -8,13 +8,16 @@ use App\Actions\DeleteOrderAction;
 use App\Actions\SetOrderDiscountAction;
 use App\Actions\SetOrderTaskPriceAction;
 use App\Actions\UpdateOrderAction;
+use App\Actions\UpdateOrderScheduleAction;
 use App\Actions\UpdateOrderStatusAction;
+use App\Enums\OrderTimeSlot;
 use App\Exceptions\OrderException;
 use App\Http\Requests\AssignMasterToOrderRequest;
 use App\Http\Requests\SetOrderDiscountRequest;
 use App\Http\Requests\SetOrderTaskPriceRequest;
 use App\Http\Requests\StoreOrderRequest;
 use App\Http\Requests\UpdateOrderRequest;
+use App\Http\Requests\UpdateOrderScheduleRequest;
 use App\Http\Requests\UpdateOrderStatusRequest;
 use App\Http\Resources\OrderReceiptResource;
 use App\Http\Resources\OrderResource;
@@ -25,6 +28,7 @@ use App\Repositories\CategoryRepository;
 use App\Repositories\ClientRepository;
 use App\Repositories\MasterRepository;
 use App\Repositories\OrderRepository;
+use App\Repositories\SettingRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -53,6 +57,8 @@ class OrderController extends Controller
                 'label' => $s->label(),
                 'color' => $s->color(),
             ]),
+            'timeSlots' => OrderTimeSlot::values(),
+            'urgencyFee' => (float) (app(SettingRepository::class)->get('order_urgency_fee') ?? '20'),
             'filters' => $filters,
         ]);
     }
@@ -91,6 +97,8 @@ class OrderController extends Controller
                 'label' => $s->label(),
                 'color' => $s->color(),
             ]),
+            'timeSlots' => OrderTimeSlot::values(),
+            'urgencyFee' => (float) (app(SettingRepository::class)->get('order_urgency_fee') ?? '20'),
         ]);
     }
 
@@ -113,6 +121,20 @@ class OrderController extends Controller
         try {
             $action->handle($order, $request->validated());
             $this->notifySuccess('notifications.updated', ['resource' => __('resources.order')]);
+        } catch (OrderException $e) {
+            $this->notifyError($e->getMessage());
+        }
+
+        return redirect()->route('orders.show', $id);
+    }
+
+    public function updateSchedule(UpdateOrderScheduleRequest $request, int $id, UpdateOrderScheduleAction $action): RedirectResponse
+    {
+        $order = $this->repository->findOrFail($id);
+
+        try {
+            $action->handle($order, $request->validated());
+            $this->notifySuccess('orders.notifications.schedule_updated');
         } catch (OrderException $e) {
             $this->notifyError($e->getMessage());
         }

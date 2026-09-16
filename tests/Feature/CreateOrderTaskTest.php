@@ -85,6 +85,6 @@ class CreateOrderTaskTest extends TestCase
             'task_id' => $task->id,
             'title' => 'Замена крана',
         ], $event->broadcastWith());
-        $this->assertContains('orders', collect($event->broadcastOn())->map->name->all());
+        $this->assertContains('private-orders', collect($event->broadcastOn())->map->name->all());
     }
 }

@@ -102,7 +102,7 @@ class OrderRealtimeTest extends TestCase
             'to' => 'in_progress',
             'to_label' => OrderStatus::InProgress->label(),
         ], $event->broadcastWith());
-        $this->assertContains('orders', collect($event->broadcastOn())->map->name->all());
+        $this->assertContains('private-orders', collect($event->broadcastOn())->map->name->all());
     }
 
     public function test_setting_a_task_price_broadcasts_the_price_update(): void
@@ -135,7 +135,7 @@ class OrderRealtimeTest extends TestCase
         ], $event->broadcastWith());
 
         $channelNames = collect($event->broadcastOn())->map->name->all();
-        $this->assertContains('orders', $channelNames);
+        $this->assertContains('private-orders', $channelNames);
         $this->assertContains('private-master.'.$master->id, $channelNames);
     }
 

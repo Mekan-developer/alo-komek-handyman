@@ -12,7 +12,7 @@ export const useLocaleStore = defineStore('locale', () => {
     watch(locale, (value) => {
         localStorage.setItem('locale', value)
         axios.post(`/locale/${value}`)
-    })
+    }, { immediate: true })
 
     return { locale, setLocale }
 })

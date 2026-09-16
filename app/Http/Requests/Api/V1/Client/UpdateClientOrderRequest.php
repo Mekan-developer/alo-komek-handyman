@@ -2,13 +2,23 @@
 
 namespace App\Http\Requests\Api\V1\Client;
 
+use App\Enums\OrderTimeSlot;
+use App\Http\Requests\Concerns\ValidatesOrderSchedule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateClientOrderRequest extends FormRequest
 {
+    use ValidatesOrderSchedule;
+
     public function authorize(): bool
     {
         return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->prepareOrderSchedule();
     }
 
     /** @return array<string, mixed> */
@@ -25,6 +35,22 @@ class UpdateClientOrderRequest extends FormRequest
             'photos.*' => ['file', 'image', 'mimes:jpeg,jpg,png,webp', 'max:102400'],
             'remove_photo_ids' => ['sometimes', 'array'],
             'remove_photo_ids.*' => ['integer'],
+            'is_urgent' => ['sometimes', 'boolean'],
+            'preferred_date' => [
+                'sometimes',
+                'nullable',
+                'date',
+                'after_or_equal:today',
+                Rule::prohibitedIf(fn (): bool => $this->boolean('is_urgent')),
+            ],
+            'time_slot' => [
+                'sometimes',
+                'nullable',
+                'string',
+                Rule::enum(OrderTimeSlot::class),
+                Rule::prohibitedIf(fn (): bool => $this->boolean('is_urgent')),
+                $this->timeSlotStillAvailableRule(),
+            ],
         ];
     }
 }

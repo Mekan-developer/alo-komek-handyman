@@ -8,6 +8,7 @@ use App\Models\Order;
 use App\Models\OrderTask;
 use App\OrderStatus;
 use App\Repositories\OrderRepository;
+use App\Repositories\SettingRepository;
 
 class UpdateOrderStatusAction
 {
@@ -15,6 +16,7 @@ class UpdateOrderStatusAction
         private readonly OrderRepository $repository,
         private readonly CreditMasterBalanceAction $creditBalance,
         private readonly IssueOrderReceiptAction $issueReceipt,
+        private readonly SettingRepository $settings,
     ) {}
 
     public function handle(Order $order, OrderStatus $newStatus, ?string $cancelReason = null): Order
@@ -34,8 +36,16 @@ class UpdateOrderStatusAction
         $previousStatus = $order->status;
         $updated = $this->repository->changeStatus($order, $newStatus);
 
-        if ($newStatus === OrderStatus::Cancelled && $cancelReason !== null) {
-            $updated->update(['cancel_reason' => $cancelReason]);
+        if ($newStatus === OrderStatus::Cancelled) {
+            $payload = [
+                'cancel_fee' => round((float) ($this->settings->get('order_cancel_fee') ?? '0'), 2),
+            ];
+
+            if ($cancelReason !== null) {
+                $payload['cancel_reason'] = $cancelReason;
+            }
+
+            $updated->update($payload);
         }
 
         if ($newStatus === OrderStatus::Completed) {

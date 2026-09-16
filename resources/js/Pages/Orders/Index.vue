@@ -18,6 +18,8 @@ const props = defineProps({
     clients: Array,
     statuses: Array,
     filters: Object,
+    timeSlots: { type: Array, default: () => [] },
+    urgencyFee: { type: Number, default: 20 },
 })
 
 const showCreate = ref(false)
@@ -64,6 +66,10 @@ const activeFilters = computed(() => ({
     date_from: dateFrom.value || undefined,
     date_to: dateTo.value || undefined,
 }))
+
+function isActiveUrgent(order) {
+    return order.is_urgent && !['completed', 'cancelled'].includes(order.status)
+}
 
 const deleteTarget = ref(null)
 const deleting = ref(false)
@@ -171,12 +177,12 @@ useOrdersChannel({
                     <table class="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
                         <thead class="bg-gray-50 dark:bg-slate-700/50">
                             <tr>
-                                <!-- <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">№</th> -->
                                 <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">id(#)</th>
                                 <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">{{ t('orders.fields.client_name') }}</th>
                                 <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">{{ t('orders.fields.category') }}</th>
                                 <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">{{ t('orders.fields.master') }}</th>
                                 <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">{{ t('orders.fields.status') }}</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">{{ t('orders.fields.is_urgent') }}</th>
                                 <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">{{ t('orders.fields.final_price') }}</th>
                                 <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">{{ t('orders.fields.created_at') }}</th>
                                 <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400" />
@@ -184,18 +190,27 @@ useOrdersChannel({
                         </thead>
                         <tbody class="divide-y divide-gray-100 dark:divide-slate-700">
                             <tr v-if="orderList.length === 0">
-                                <td colspan="8" class="px-6 py-12 text-center text-sm text-gray-400 dark:text-slate-500">
+                                <td colspan="9" class="px-6 py-12 text-center text-sm text-gray-400 dark:text-slate-500">
                                     {{ t('orders.empty') }}
                                 </td>
                             </tr>
                             <tr
-                                v-for="(order, index) in orderList"
+                                v-for="order in orderList"
                                 :key="order.id"
-                                class="cursor-pointer transition-colors hover:bg-blue-50/60 dark:hover:bg-slate-700"
+                                :class="[
+                                    'cursor-pointer transition-colors',
+                                    isActiveUrgent(order)
+                                        ? 'bg-amber-50/90 hover:bg-amber-100/90 dark:bg-amber-500/10 dark:hover:bg-amber-500/15'
+                                        : 'hover:bg-blue-50/60 dark:hover:bg-slate-700',
+                                ]"
                                 @click="router.visit(route('orders.show', order.id))"
                             >
-                                <!-- <td class="px-6 py-4 text-sm font-mono text-gray-500 dark:text-slate-400">{{ index + 1 + ((paginationMeta?.current_page ?? 1) - 1) * (paginationMeta?.per_page ?? 15) }}</td> -->
-                                <td class="px-6 py-4 text-sm font-mono text-gray-500 dark:text-slate-400">{{ order.id }}</td>
+                                <td
+                                    class="px-6 py-4 text-sm font-mono text-gray-500 dark:text-slate-400"
+                                    :class="isActiveUrgent(order) ? 'border-l-4 border-amber-500' : 'border-l-4 border-transparent'"
+                                >
+                                    {{ order.id }}
+                                </td>
                                 <td class="px-6 py-4">
                                     <div class="text-sm font-medium text-gray-900 dark:text-slate-200">{{ order.client_name }}</div>
                                     <div class="text-xs text-gray-400">{{ formatPhone(order.client_phone) }}</div>
@@ -207,6 +222,15 @@ useOrdersChannel({
                                 </td>
                                 <td class="px-6 py-4">
                                     <OrderStatusBadge :status="order.status" :label="order.status_label" :color="order.status_color" />
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span
+                                        v-if="order.is_urgent"
+                                        class="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-500/20 dark:text-amber-300"
+                                    >
+                                        {{ t('orders.fields.urgent_badge') }}
+                                    </span>
+                                    <span v-else class="text-gray-300 dark:text-slate-600">—</span>
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-700 dark:text-slate-300">
                                     <span v-if="order.final_price">{{ order.final_price }}</span>
@@ -252,6 +276,8 @@ useOrdersChannel({
             :show="showCreate"
             :categories="categories"
             :clients="clients"
+            :time-slots="timeSlots"
+            :urgency-fee="urgencyFee"
             @close="showCreate = false"
         />
 

@@ -3,11 +3,12 @@
 namespace App\Actions;
 
 use App\Events\ClientRegistered;
+use App\Exceptions\ClientBlockedException;
 use App\Exceptions\OtpException;
 use App\Models\Client;
 use App\Repositories\ClientRepository;
+use App\Services\OtpCodeVerifier;
 use App\Services\OtpTestAccountService;
-use Illuminate\Support\Facades\Cache;
 use Laravel\Sanctum\NewAccessToken;
 
 class VerifyClientOtpAction
@@ -15,21 +16,19 @@ class VerifyClientOtpAction
     public function __construct(
         private readonly ClientRepository $repository,
         private readonly OtpTestAccountService $testAccounts,
+        private readonly OtpCodeVerifier $verifier,
     ) {}
 
     /**
      * @return array{client: Client, token: NewAccessToken, is_new: bool}
+     *
+     * @throws OtpException
+     * @throws ClientBlockedException
      */
     public function handle(string $phone, string $code): array
     {
         if (! $this->testAccounts->matches($phone, $code)) {
-            $cached = Cache::get("client_otp:{$phone}");
-
-            if ($cached === null || $cached !== $code) {
-                throw OtpException::invalid();
-            }
-
-            Cache::forget("client_otp:{$phone}");
+            $this->verifier->verify("client_otp:{$phone}", $code);
         }
 
         $client = $this->repository->findByPhone($phone);
@@ -39,6 +38,10 @@ class VerifyClientOtpAction
             $client = $this->repository->create(['phone' => $phone]);
 
             ClientRegistered::dispatch($client);
+        }
+
+        if ($client->is_blocked) {
+            throw ClientBlockedException::blocked();
         }
 
         $client->tokens()->where('name', 'mobile-client')->delete();

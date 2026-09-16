@@ -7,10 +7,13 @@ use App\Models\Master;
 use App\Models\OrderTask;
 use App\Observers\MasterObserver;
 use App\Observers\OrderTaskObserver;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Foundation\Application;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 
@@ -30,6 +33,35 @@ class AppServiceProvider extends ServiceProvider
 
         $this->registerResilientBroadcaster();
         $this->registerQueueHeartbeat();
+        $this->registerRateLimiters();
+    }
+
+    /**
+     * API and OTP rate limiters used by throttle middleware.
+     */
+    private function registerRateLimiters(): void
+    {
+        RateLimiter::for('api', function (Request $request) {
+            return Limit::perMinute(60)->by($request->user()?->getAuthIdentifier() ?: $request->ip());
+        });
+
+        RateLimiter::for('otp-request', function (Request $request) {
+            $phone = (string) $request->input('phone', '');
+
+            return [
+                Limit::perMinute(3)->by('otp-request-ip:'.$request->ip()),
+                Limit::perMinute(3)->by('otp-request-phone:'.($phone !== '' ? $phone : $request->ip())),
+            ];
+        });
+
+        RateLimiter::for('otp-verify', function (Request $request) {
+            $phone = (string) $request->input('phone', '');
+
+            return [
+                Limit::perMinute(10)->by('otp-verify-ip:'.$request->ip()),
+                Limit::perMinute(5)->by('otp-verify-phone:'.($phone !== '' ? $phone : $request->ip())),
+            ];
+        });
     }
 
     /**

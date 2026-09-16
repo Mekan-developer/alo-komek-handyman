@@ -61,6 +61,7 @@ class MasterAuthTest extends TestCase
             ->assertForbidden();
 
         $this->assertDatabaseCount('pending_otps', 0);
+        $this->assertNull(Cache::get("master_otp:{$master->phone}"));
     }
 
     public function test_inactive_master_cannot_request_otp(): void
@@ -79,6 +80,17 @@ class MasterAuthTest extends TestCase
 
         $this->postJson(route('api.v1.master.auth.request-otp'), ['phone' => $master->phone])
             ->assertForbidden();
+
+        $this->assertNull(Cache::get("master_otp:{$master->phone}"));
+    }
+
+    public function test_unknown_phone_gets_generic_success_without_caching_otp(): void
+    {
+        $this->postJson(route('api.v1.master.auth.request-otp'), ['phone' => '+99369999999'])
+            ->assertOk()
+            ->assertJson(['message' => 'OTP sent.']);
+
+        $this->assertNull(Cache::get('master_otp:+99369999999'));
     }
 
     // ── verify-otp ────────────────────────────────────────────────────────────

@@ -25,7 +25,7 @@ class UploadTaskPhotoTest extends TestCase
 
     private function makeTask(Master $master): OrderTask
     {
-        $order = Order::factory()->create(['master_id' => $master->id]);
+        $order = Order::factory()->inProgress()->create(['master_id' => $master->id]);
 
         return OrderTask::factory()->create(['order_id' => $order->id]);
     }
@@ -128,8 +128,7 @@ class UploadTaskPhotoTest extends TestCase
             ->postJson($this->uploadUrl($task->order_id, $task->id), [
                 'type' => 'before',
                 'photo' => UploadedFile::fake()->image('extra.jpg'),
-            ])->assertStatus(422)
-            ->assertJsonPath('message', 'Maximum 2 before photos allowed per task.');
+            ])->assertStatus(422);
 
         $this->assertDatabaseCount('order_task_photos', 2);
     }

@@ -28,6 +28,8 @@ class SettingController extends Controller
             'masterCallOutFeeNoteRu' => $settings->get('master_call_out_fee_note_ru')?->value ?? '',
             'masterCallOutFeeNoteTk' => $settings->get('master_call_out_fee_note_tk')?->value ?? '',
             'masterCallOutFeeNoteUpdatedAt' => $settings->get('master_call_out_fee_note_ru')?->updated_at?->toIso8601String(),
+            'orderUrgencyFee' => $settings->get('order_urgency_fee')?->value ?? '20',
+            'orderCancelFee' => $settings->get('order_cancel_fee')?->value ?? '0',
         ]);
     }
 

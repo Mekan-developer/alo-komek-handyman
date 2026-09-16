@@ -7,12 +7,17 @@ use App\Jobs\ConvertOrderPhotoJob;
 use App\Models\Order;
 use App\OrderStatus;
 use App\Repositories\OrderRepository;
+use App\Repositories\SettingRepository;
+use App\Support\OrderSchedule;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 
 class CreateOrderAction
 {
-    public function __construct(private readonly OrderRepository $repository) {}
+    public function __construct(
+        private readonly OrderRepository $repository,
+        private readonly SettingRepository $settings,
+    ) {}
 
     /**
      * @param  array<string, mixed>  $data
@@ -21,6 +26,8 @@ class CreateOrderAction
     public function handle(array $data, array $photos = []): Order
     {
         return DB::transaction(function () use ($data, $photos) {
+            $data = OrderSchedule::applyUrgency($data, $this->settings);
+
             $order = $this->repository->create([
                 ...$data,
                 'status' => OrderStatus::Pending,

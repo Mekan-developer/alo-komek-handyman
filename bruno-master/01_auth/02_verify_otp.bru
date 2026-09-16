@@ -30,10 +30,15 @@ script:post-response {
 
 docs {
   # Verify OTP
-  
-  Verifies the OTP code and returns a Sanctum Bearer token on success.
-  The script automatically saves the token to the `token` env variable.
-  
+
+  Verifies the OTP and returns a Sanctum Bearer token (`mobile`).
+  The script saves the token to the `token` env variable.
+
+  Rate limited: 10/min per IP, 5/min per phone (`throttle:otp-verify`).
+  After **5 failed** attempts the cached OTP is discarded.
+
+  Token lifetime: `SANCTUM_TOKEN_EXPIRATION` minutes (default 30 days).
+
   **Response 200:**
   ```json
   {
@@ -49,9 +54,10 @@ docs {
     }
   }
   ```
-  
+
   **Errors:**
-  - `404` — master not found
-  - `403` — master disabled
+  - `404` — master phone not registered (`exists:masters,phone`)
+  - `403` — master inactive / access expired
   - `422` — invalid or expired OTP
+  - `429` — too many requests
 }

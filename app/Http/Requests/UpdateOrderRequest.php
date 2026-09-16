@@ -2,13 +2,21 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\ValidatesOrderSchedule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateOrderRequest extends FormRequest
 {
+    use ValidatesOrderSchedule;
+
     public function authorize(): bool
     {
         return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->prepareOrderSchedule();
     }
 
     /** @return array<string, mixed> */
@@ -22,6 +30,7 @@ class UpdateOrderRequest extends FormRequest
             'client_address' => ['nullable', 'string', 'max:500'],
             'client_lat' => ['required', 'numeric', 'between:-90,90'],
             'client_lng' => ['required', 'numeric', 'between:-180,180'],
+            ...$this->orderScheduleRules(),
         ];
     }
 }

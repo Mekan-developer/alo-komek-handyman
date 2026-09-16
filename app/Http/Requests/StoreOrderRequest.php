@@ -2,11 +2,14 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\ValidatesOrderSchedule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StoreOrderRequest extends FormRequest
 {
+    use ValidatesOrderSchedule;
+
     public function authorize(): bool
     {
         return true;
@@ -21,6 +24,7 @@ class StoreOrderRequest extends FormRequest
         $this->merge([
             'client_id' => filled($this->input('client_id')) ? $this->input('client_id') : null,
         ]);
+        $this->prepareOrderSchedule();
     }
 
     /** Клиент выбран из существующих — имя и телефон берём из его карточки. */
@@ -43,6 +47,7 @@ class StoreOrderRequest extends FormRequest
             'client_lng' => ['required', 'numeric', 'between:-180,180'],
             'photos' => ['nullable', 'array', 'max:4'],
             'photos.*' => ['file', 'image', 'max:8192'],
+            ...$this->orderScheduleRules(),
         ];
     }
 }

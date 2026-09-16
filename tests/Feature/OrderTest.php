@@ -35,6 +35,7 @@ class OrderTest extends TestCase
             'client_name' => 'Aman Jumayev',
             'client_phone' => '+99362111222',
             'description' => 'Кран течёт уже неделю, нужна срочная починка.',
+            'preferred_date' => now()->toDateString(),
             'client_address' => 'ул. Андалиб, 12',
             'client_lat' => 37.952321,
             'client_lng' => 58.382345,
@@ -293,7 +294,7 @@ class OrderTest extends TestCase
     {
         $this->actingAsAdmin();
         $this->post(route('orders.store'), [])
-            ->assertSessionHasErrors(['category_id', 'client_name', 'client_phone', 'description', 'client_lat', 'client_lng']);
+            ->assertSessionHasErrors(['category_id', 'client_name', 'client_phone', 'description', 'preferred_date', 'client_lat', 'client_lng']);
     }
 
     public function test_store_rejects_more_than_4_photos(): void
@@ -794,6 +795,7 @@ class OrderTest extends TestCase
             'client_name' => 'Обновлённое имя',
             'client_phone' => '+99362999888',
             'description' => 'Новое описание проблемы',
+            'preferred_date' => now()->toDateString(),
             'client_address' => 'ул. Новая, 5',
             'client_lat' => 37.95,
             'client_lng' => 58.38,
@@ -816,6 +818,7 @@ class OrderTest extends TestCase
             'client_name' => 'Test',
             'client_phone' => '+99362000000',
             'description' => 'Test',
+            'preferred_date' => now()->toDateString(),
             'client_lat' => 37.95,
             'client_lng' => 58.38,
         ])->assertRedirect();
@@ -829,7 +832,7 @@ class OrderTest extends TestCase
         $order = Order::factory()->create(['status' => 'pending']);
 
         $this->put(route('orders.update', $order), [])
-            ->assertSessionHasErrors(['category_id', 'client_name', 'client_phone', 'description', 'client_lat', 'client_lng']);
+            ->assertSessionHasErrors(['category_id', 'client_name', 'client_phone', 'description', 'preferred_date', 'client_lat', 'client_lng']);
     }
 
     // ── Destroy ───────────────────────────────────────────────────────────────

@@ -228,7 +228,7 @@ function subscribeToLocationUpdates() {
 
     subscribedChannels.push(MASTERS_MAP_CHANNEL)
 
-    window.Echo.channel(MASTERS_MAP_CHANNEL)
+    window.Echo.private(MASTERS_MAP_CHANNEL)
         .listen('.master.location.updated', (payload) => {
             handleLocationUpdate(payload)
         })

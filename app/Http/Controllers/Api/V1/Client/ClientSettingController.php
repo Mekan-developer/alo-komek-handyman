@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Client;
 
+use App\Enums\OrderTimeSlot;
 use App\Http\Controllers\Controller;
 use App\Repositories\SettingRepository;
 use Illuminate\Http\JsonResponse;
@@ -16,6 +17,9 @@ class ClientSettingController extends Controller
             'data' => [
                 'content' => $this->repository->get('client_app_rules') ?? '',
                 'master_call_out_fee_note' => $this->callOutFeeNote(),
+                'order_urgency_fee' => (float) ($this->repository->get('order_urgency_fee') ?? '20'),
+                'order_cancel_fee' => (float) ($this->repository->get('order_cancel_fee') ?? '0'),
+                'time_slots' => OrderTimeSlot::values(),
             ],
         ]);
     }

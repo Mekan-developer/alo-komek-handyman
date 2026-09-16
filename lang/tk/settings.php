@@ -4,6 +4,13 @@ return [
     'title' => 'Sazlamalar',
     'section_app' => 'Programma sazlamalary',
     'section_cancellation' => 'Sargydy ýatyrmak',
+    'section_order_fees' => 'Sargyt tarifleri',
+    'order_fees' => [
+        'title' => 'Gyssaglylyk we ýatyrmak',
+        'hint' => 'Kesgitlenen tölegler: gyssagly sargyt we ýatyrmak',
+        'urgency' => 'Gyssaglylyk üçin töleg',
+        'cancel' => 'Ýatyrmak üçin töleg',
+    ],
     'call_out_fee' => [
         'title' => 'Ussanyň barmagy üçin töleg',
         'hint' => 'Ussa bellenenden soň sargydy ýatyranda müşderiniň görýän teksti',

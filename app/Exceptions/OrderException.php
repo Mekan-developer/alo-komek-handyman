@@ -34,6 +34,11 @@ class OrderException extends ApiException
         return new self((string) __('orders.errors.invalid_transition', ['from' => $from, 'to' => $to]));
     }
 
+    public static function scheduleNotEditable(): self
+    {
+        return new self((string) __('orders.errors.schedule_not_editable'));
+    }
+
     public static function notEditable(): self
     {
         return new self((string) __('orders.errors.not_editable'));
@@ -77,5 +82,10 @@ class OrderException extends ApiException
     public static function taskPhotoNotEditable(): self
     {
         return new self((string) __('orders.errors.task_photo_not_editable'));
+    }
+
+    public static function taskPhotoLimitReached(string $type): self
+    {
+        return new self((string) __('orders.errors.task_photo_limit', ['type' => $type]));
     }
 }

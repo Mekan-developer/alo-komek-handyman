@@ -1,11 +1,12 @@
 <script setup>
-import { watch } from 'vue'
+import { computed, watch } from 'vue'
 import { useForm } from '@inertiajs/vue3'
 import { useI18n } from 'vue-i18n'
 import Modal from '@/Components/Modal.vue'
 import InputError from '@/Components/InputError.vue'
 import PhoneInput from '@/Components/PhoneInput.vue'
 import CategoryPicker from '@/Components/CategoryPicker.vue'
+import { isTimeSlotAvailable, localTodayIso, formatTimeSlotLabel } from '@/utils/orderSchedule'
 
 const { t } = useI18n()
 
@@ -13,6 +14,8 @@ const props = defineProps({
     show: { type: Boolean, required: true },
     order: { type: Object, required: true },
     categories: { type: Array, default: () => [] },
+    timeSlots: { type: Array, default: () => [] },
+    urgencyFee: { type: Number, default: 20 },
 })
 
 const emit = defineEmits(['close'])
@@ -22,6 +25,9 @@ const form = useForm({
     client_name: '',
     client_phone: '',
     description: '',
+    preferred_date: '',
+    time_slot: null,
+    is_urgent: false,
     client_address: '',
     client_lat: '',
     client_lng: '',
@@ -33,10 +39,45 @@ watch(() => props.show, (val) => {
         form.client_name = props.order.client_name ?? ''
         form.client_phone = props.order.client_phone ?? ''
         form.description = props.order.description ?? ''
+        form.is_urgent = !!props.order.is_urgent
+        form.preferred_date = props.order.preferred_date ?? ''
+        form.time_slot = props.order.time_slot ?? null
         form.client_address = props.order.client_address ?? ''
         form.client_lat = props.order.client_lat ?? ''
         form.client_lng = props.order.client_lng ?? ''
+
+        if (!form.is_urgent && form.preferred_date && form.preferred_date < localTodayIso()) {
+            form.preferred_date = localTodayIso()
+        }
+
+        if (form.time_slot && !isTimeSlotAvailable(form.time_slot, form.preferred_date)) {
+            form.time_slot = null
+        }
+
         form.clearErrors()
+    }
+})
+
+function onUrgentChange() {
+    if (form.is_urgent) {
+        form.preferred_date = ''
+        form.time_slot = null
+    } else if (!form.preferred_date) {
+        form.preferred_date = localTodayIso()
+    }
+}
+
+const availableTimeSlots = computed(() =>
+    props.timeSlots.filter((slot) => isTimeSlotAvailable(slot, form.preferred_date))
+)
+
+watch(() => form.preferred_date, (date) => {
+    if (date && date < localTodayIso()) {
+        form.preferred_date = localTodayIso()
+    }
+
+    if (form.time_slot && !isTimeSlotAvailable(form.time_slot, form.preferred_date)) {
+        form.time_slot = null
     }
 })
 
@@ -73,7 +114,6 @@ const labelClass = 'block text-sm font-medium text-gray-700 dark:text-slate-300'
             <div class="flex-1 overflow-y-auto">
             <div class="grid grid-cols-1 gap-4 px-6 py-5 sm:grid-cols-2">
 
-                <!-- Client Name -->
                 <div class="space-y-1">
                     <label :class="labelClass">{{ t('orders.fields.client_name') }}</label>
                     <input
@@ -84,7 +124,6 @@ const labelClass = 'block text-sm font-medium text-gray-700 dark:text-slate-300'
                     <InputError :message="form.errors.client_name" />
                 </div>
 
-                <!-- Client Phone -->
                 <div class="space-y-1">
                     <label :class="labelClass">{{ t('orders.fields.client_phone') }}</label>
                     <PhoneInput
@@ -95,7 +134,6 @@ const labelClass = 'block text-sm font-medium text-gray-700 dark:text-slate-300'
                     <InputError :message="form.errors.client_phone" />
                 </div>
 
-                <!-- Client Address -->
                 <div class="space-y-1 sm:col-span-2">
                     <label :class="labelClass">{{ t('orders.fields.client_address') }}</label>
                     <input
@@ -106,7 +144,6 @@ const labelClass = 'block text-sm font-medium text-gray-700 dark:text-slate-300'
                     <InputError :message="form.errors.client_address" />
                 </div>
 
-                <!-- Lat / Lng -->
                 <div class="space-y-1">
                     <label :class="labelClass">{{ t('orders.fields.client_lat') }}</label>
                     <input
@@ -129,7 +166,6 @@ const labelClass = 'block text-sm font-medium text-gray-700 dark:text-slate-300'
                     <InputError :message="form.errors.client_lng" />
                 </div>
 
-                <!-- Description -->
                 <div class="space-y-1 sm:col-span-2">
                     <label :class="labelClass">{{ t('orders.fields.description') }}</label>
                     <textarea
@@ -140,7 +176,64 @@ const labelClass = 'block text-sm font-medium text-gray-700 dark:text-slate-300'
                     <InputError :message="form.errors.description" />
                 </div>
 
-                <!-- Category (ниже всех: группа-родитель → услуги-дети) -->
+                <div class="space-y-3 sm:col-span-2 rounded-xl border border-gray-200 p-4 dark:border-slate-700">
+                    <div class="text-sm font-medium text-gray-800 dark:text-slate-200">
+                        {{ t('orders.create.schedule_section') }}
+                    </div>
+                    <label class="flex cursor-pointer items-start gap-3 rounded-lg border border-amber-200 bg-amber-50/50 p-3 dark:border-amber-500/30 dark:bg-amber-500/10">
+                        <input
+                            v-model="form.is_urgent"
+                            type="checkbox"
+                            class="mt-0.5 h-4 w-4 rounded border-gray-300 text-amber-600"
+                            @change="onUrgentChange"
+                        />
+                        <span class="text-sm text-gray-800 dark:text-slate-200">
+                            {{ t('orders.fields.is_urgent') }}
+                            <span class="block text-xs text-gray-500">{{ t('orders.create.urgent_hint', { amount: urgencyFee }) }}</span>
+                        </span>
+                    </label>
+                    <template v-if="!form.is_urgent">
+                        <div class="space-y-1">
+                            <label :class="labelClass">{{ t('orders.fields.preferred_date') }}</label>
+                            <input
+                                v-model="form.preferred_date"
+                                type="date"
+                                :min="localTodayIso()"
+                                :class="[inputClass, form.errors.preferred_date ? errorInputClass : '']"
+                            />
+                            <InputError :message="form.errors.preferred_date" />
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <button
+                                type="button"
+                                @click="form.time_slot = null"
+                                :class="[
+                                    'rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors',
+                                    form.time_slot === null
+                                        ? 'border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-500/20 dark:text-blue-300'
+                                        : 'border-gray-300 text-gray-600 dark:border-slate-600 dark:text-slate-300',
+                                ]"
+                            >
+                                {{ t('orders.create.time_flexible') }}
+                            </button>
+                            <button
+                                v-for="slot in availableTimeSlots"
+                                :key="slot"
+                                type="button"
+                                @click="form.time_slot = slot"
+                                :class="[
+                                    'rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors',
+                                    form.time_slot === slot
+                                        ? 'border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-500/20 dark:text-blue-300'
+                                        : 'border-gray-300 text-gray-600 dark:border-slate-600 dark:text-slate-300',
+                                ]"
+                            >
+                                {{ formatTimeSlotLabel(slot) }}
+                            </button>
+                        </div>
+                    </template>
+                </div>
+
                 <div class="space-y-1 sm:col-span-2">
                     <CategoryPicker
                         v-model="form.category_id"

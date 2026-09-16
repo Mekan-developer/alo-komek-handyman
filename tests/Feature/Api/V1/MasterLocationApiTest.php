@@ -9,18 +9,20 @@ use Illuminate\Broadcasting\BroadcastEvent;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class MasterLocationApiTest extends TestCase
 {
     use LazilyRefreshDatabase;
 
-    public function test_active_master_can_post_location(): void
+    public function test_authenticated_master_can_post_location(): void
     {
         Event::fake([MasterLocationUpdated::class]);
         $master = Master::factory()->create();
+        Sanctum::actingAs($master);
 
-        $response = $this->postJson(route('api.v1.master.location.store', $master->id), [
+        $response = $this->postJson(route('api.v1.master.location.store'), [
             'latitude' => 37.952,
             'longitude' => 58.382,
         ]);
@@ -37,11 +39,20 @@ class MasterLocationApiTest extends TestCase
         Event::assertDispatched(MasterLocationUpdated::class);
     }
 
+    public function test_guest_cannot_post_location(): void
+    {
+        $this->postJson(route('api.v1.master.location.store'), [
+            'latitude' => 37.95,
+            'longitude' => 58.38,
+        ])->assertUnauthorized();
+    }
+
     public function test_inactive_master_cannot_post_location(): void
     {
         $master = Master::factory()->inactive()->create();
+        Sanctum::actingAs($master);
 
-        $this->postJson(route('api.v1.master.location.store', $master->id), [
+        $this->postJson(route('api.v1.master.location.store'), [
             'latitude' => 37.95,
             'longitude' => 58.38,
         ])->assertForbidden();
@@ -50,38 +61,32 @@ class MasterLocationApiTest extends TestCase
     public function test_master_with_expired_access_cannot_post_location(): void
     {
         $master = Master::factory()->expired()->create();
+        Sanctum::actingAs($master);
 
-        $this->postJson(route('api.v1.master.location.store', $master->id), [
+        $this->postJson(route('api.v1.master.location.store'), [
             'latitude' => 37.95,
             'longitude' => 58.38,
         ])->assertForbidden();
     }
 
-    public function test_unknown_master_returns_404(): void
-    {
-        $this->postJson(route('api.v1.master.location.store', 9999), [
-            'latitude' => 37.95,
-            'longitude' => 58.38,
-        ])->assertNotFound();
-    }
-
     public function test_location_post_validates_coordinates(): void
     {
-        $master = Master::factory()->create();
+        Sanctum::actingAs(Master::factory()->create());
 
-        $this->postJson(route('api.v1.master.location.store', $master->id), [
+        $this->postJson(route('api.v1.master.location.store'), [
             'latitude' => 999,
             'longitude' => 'not-a-number',
         ])->assertUnprocessable()
             ->assertJsonValidationErrors(['latitude', 'longitude']);
     }
 
-    public function test_location_can_be_attached_to_order(): void
+    public function test_location_can_be_attached_to_own_order(): void
     {
         $master = Master::factory()->create();
-        $order = Order::factory()->create();
+        $order = Order::factory()->forMaster($master)->assigned()->create();
+        Sanctum::actingAs($master);
 
-        $this->postJson(route('api.v1.master.location.store', $master->id), [
+        $this->postJson(route('api.v1.master.location.store'), [
             'latitude' => 37.95,
             'longitude' => 58.38,
             'order_id' => $order->id,
@@ -93,12 +98,27 @@ class MasterLocationApiTest extends TestCase
         ]);
     }
 
+    public function test_location_cannot_be_attached_to_another_masters_order(): void
+    {
+        $master = Master::factory()->create();
+        $otherMaster = Master::factory()->create();
+        $otherOrder = Order::factory()->forMaster($otherMaster)->assigned()->create();
+        Sanctum::actingAs($master);
+
+        $this->postJson(route('api.v1.master.location.store'), [
+            'latitude' => 37.95,
+            'longitude' => 58.38,
+            'order_id' => $otherOrder->id,
+        ])->assertNotFound();
+    }
+
     public function test_event_carries_correct_payload(): void
     {
         Event::fake([MasterLocationUpdated::class]);
         $master = Master::factory()->create();
+        Sanctum::actingAs($master);
 
-        $this->postJson(route('api.v1.master.location.store', $master->id), [
+        $this->postJson(route('api.v1.master.location.store'), [
             'latitude' => 37.95,
             'longitude' => 58.38,
         ])->assertCreated();
@@ -113,8 +133,9 @@ class MasterLocationApiTest extends TestCase
     {
         Queue::fake();
         $master = Master::factory()->create();
+        Sanctum::actingAs($master);
 
-        $this->postJson(route('api.v1.master.location.store', $master->id), [
+        $this->postJson(route('api.v1.master.location.store'), [
             'latitude' => 37.95,
             'longitude' => 58.38,
         ])->assertCreated();
@@ -124,7 +145,7 @@ class MasterLocationApiTest extends TestCase
         });
     }
 
-    public function test_event_broadcasts_on_the_single_masters_map_channel(): void
+    public function test_event_broadcasts_on_the_private_masters_map_channel(): void
     {
         $master = Master::factory()->create();
         $location = $master->locations()->create([
@@ -137,7 +158,7 @@ class MasterLocationApiTest extends TestCase
         $channels = $event->broadcastOn();
 
         $this->assertCount(1, $channels);
-        $this->assertEquals('masters-map', $channels[0]->name);
+        $this->assertEquals('private-masters-map', $channels[0]->name);
     }
 
     public function test_event_broadcast_payload_shape(): void

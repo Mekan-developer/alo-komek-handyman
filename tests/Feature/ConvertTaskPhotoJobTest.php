@@ -60,7 +60,7 @@ class ConvertTaskPhotoJobTest extends TestCase
             'type' => 'after',
             'status' => OrderTaskPhoto::STATUS_DONE,
         ], $event->broadcastWith());
-        $this->assertContains('orders', collect($event->broadcastOn())->map->name->all());
+        $this->assertContains('private-orders', collect($event->broadcastOn())->map->name->all());
     }
 
     public function test_failed_conversion_does_not_broadcast(): void

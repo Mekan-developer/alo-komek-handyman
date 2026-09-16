@@ -15,9 +15,11 @@ class ClientSettingApiTest extends TestCase
         $response = $this->getJson('/api/v1/client/settings');
 
         $response->assertOk()
-            ->assertJsonStructure(['data' => ['content', 'master_call_out_fee_note']])
+            ->assertJsonStructure(['data' => ['content', 'master_call_out_fee_note', 'order_urgency_fee', 'order_cancel_fee', 'time_slots']])
             ->assertJsonPath('data.content', '')
-            ->assertJsonPath('data.master_call_out_fee_note', '');
+            ->assertJsonPath('data.master_call_out_fee_note', '')
+            ->assertJsonPath('data.order_urgency_fee', 20)
+            ->assertJsonPath('data.order_cancel_fee', 0);
     }
 
     public function test_returns_call_out_fee_note_in_russian_by_default(): void

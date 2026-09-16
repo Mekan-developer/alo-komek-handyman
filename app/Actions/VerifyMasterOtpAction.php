@@ -5,14 +5,21 @@ namespace App\Actions;
 use App\Exceptions\MasterDisabledException;
 use App\Exceptions\OtpException;
 use App\Models\Master;
+use App\Services\OtpCodeVerifier;
 use App\Services\OtpTestAccountService;
-use Illuminate\Support\Facades\Cache;
 use Laravel\Sanctum\NewAccessToken;
 
 class VerifyMasterOtpAction
 {
-    public function __construct(private readonly OtpTestAccountService $testAccounts) {}
+    public function __construct(
+        private readonly OtpTestAccountService $testAccounts,
+        private readonly OtpCodeVerifier $verifier,
+    ) {}
 
+    /**
+     * @throws MasterDisabledException
+     * @throws OtpException
+     */
     public function handle(Master $master, string $code): NewAccessToken
     {
         if (! $master->is_active) {
@@ -24,13 +31,7 @@ class VerifyMasterOtpAction
         }
 
         if (! $this->testAccounts->matches($master->phone, $code)) {
-            $cached = Cache::get("master_otp:{$master->phone}");
-
-            if ($cached === null || $cached !== $code) {
-                throw OtpException::invalid();
-            }
-
-            Cache::forget("master_otp:{$master->phone}");
+            $this->verifier->verify("master_otp:{$master->phone}", $code);
         }
 
         $master->tokens()->where('name', 'mobile')->delete();

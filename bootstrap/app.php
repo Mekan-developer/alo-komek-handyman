@@ -46,6 +46,8 @@ return Application::configure(basePath: dirname(__DIR__))
             SetLocale::class,
         ]);
 
+        $middleware->throttleApi('api');
+
         // Resolve the request locale before authentication runs, otherwise errors
         // thrown by auth:sanctum (e.g. 401) would be rendered in the default locale
         // instead of the one requested via the X-Locale header.

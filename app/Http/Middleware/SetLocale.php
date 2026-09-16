@@ -9,6 +9,9 @@ use Symfony\Component\HttpFoundation\Response;
 
 class SetLocale
 {
+    /**
+     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     */
     public function handle(Request $request, Closure $next): Response
     {
         $supported = ['ru', 'tk'];
@@ -17,12 +20,14 @@ class SetLocale
             $locale = $request->header('X-Locale')
                 ?? substr((string) $request->header('Accept-Language', ''), 0, 2);
         } else {
-            $locale = session('locale', config('app.locale', 'ru'));
+            $locale = session('locale') ?? config('app.locale', 'ru');
         }
 
-        if (in_array($locale, $supported, strict: true)) {
-            App::setLocale($locale);
+        if (! in_array($locale, $supported, strict: true)) {
+            $locale = 'ru';
         }
+
+        App::setLocale($locale);
 
         return $next($request);
     }

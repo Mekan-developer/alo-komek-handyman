@@ -31,6 +31,7 @@ A platform for clients to search and book handyman services. Administrators mana
 | API Auth | Laravel Sanctum v4 |
 | WebSocket | Laravel Reverb |
 | Testing | PHPUnit v10 |
+| API collections | Bruno (`bruno-client/`, `bruno-master/`) |
 | Code Style | Laravel Pint v1 |
 | Basemap Renderer | MapLibre GL (`maplibre-gl`) via `@maplibre/maplibre-gl-leaflet` bridge on Leaflet |
 | Map Tiles | Self-hosted **tileserver-gl** — style + tiles + glyphs + sprites; URL via `TILES_STYLE_URL`. In dev: static `public/maps/style.json` + the `/tiles/{z}/{x}/{y}.pbf` route reading `storage/maps/tiles.mbtiles` |
@@ -481,7 +482,7 @@ The admin map (`/masters/map`) shows masters in real-time. When a master mobile 
 1. Master POSTs to `/api/v1/master/{id}/location`
 2. Backend stores it and dispatches `MasterLocationUpdated` — queued on `broadcasts`, so the mobile
    request returns immediately (see [Broadcast queues](#broadcast-queues))
-3. The queue worker broadcasts to public channel `masters-map`
+3. The queue worker broadcasts to private channel `masters-map`
 4. Admin's open map subscribes to that channel and animates the marker smoothly
 
 ### Basemap Rendering (`Pages/Masters/Map.vue`)
@@ -551,6 +552,8 @@ All Flutter mobile app communication uses the versioned REST API.
 
 Web (Inertia) and API controllers are **strictly separate**. Never reuse or share a controller between both.
 
+**Manual API testing**: Bruno collections in `bruno-client/` and `bruno-master/` — add a `.bru` file for every new endpoint.
+
 **Flutter developer reference**: see [docs/MASTER_APP_SPEC.md](docs/MASTER_APP_SPEC.md) for the full Master mobile app technical specification — endpoints, WebSocket contracts, screen flow, and open questions.
 
 ### Currently implemented endpoints
@@ -559,7 +562,7 @@ Web (Inertia) and API controllers are **strictly separate**. Never reuse or shar
 
 | Method | Path | Auth | Purpose |
 |--------|------|------|---------|
-| `POST` | `/api/v1/master/{master}/location` | open (dev) | Master pings GPS location; broadcasts to admin map |
+| `POST` | `/api/v1/master/location` | Sanctum master | Master pings GPS location; broadcasts to private admin map channel |
 
 **Client API**
 
@@ -709,7 +712,7 @@ Mobile apps must be updated before this release ships:
 | `city_id` in `complete-registration`, `PATCH /client/me`, create/update order | Drop the field; the address is carried by `client_address` + `client_lat` / `client_lng` |
 | `city` / `city_id` in client, profile, order and master responses | Removed from every resource |
 
-The broadcast channel is now the single public `masters-map` (was `masters-map.{cityId}`).
+The broadcast channel is now the single private `masters-map` (was `masters-map.{cityId}`).
 
 **Full migration guide for mobile developers**: [docs/API_V1_GEOGRAPHY_REMOVAL.md](docs/API_V1_GEOGRAPHY_REMOVAL.md)
 — before/after payloads, a per-app checklist, and the open questions to settle before release.
@@ -867,16 +870,12 @@ Tracked here so the list stays next to the code it describes.
 
 | # | Task | Priority |
 |---|---|---|
-| 1 | **`/docs` is unprotected** — `ProtectScribeDocs` exists but is wired nowhere (`config/scribe.php` was never published, so `route:list` shows an empty middleware stack on `docs`, `docs.openapi`, `docs.postman`). Publish the config and register the middleware. | High |
-| 2 | **Private `orders` + `masters-map.*` channels** + admin gate — mobile `client.*` / `master.*` are already private, admin channels are not (see the note in `routes/channels.php`) | Low |
-| 3 | **Auth for the location ping** — `POST /api/v1/master/{master}/location` is still open ("temporary open auth until OTP flow stabilises") | Low |
-| 4 | **`OrderStatus` enum location** — lives in `app/OrderStatus.php` instead of `app/Enums/` alongside `UserRole` / `CategoryIconType`; `PaymentModel` has the same problem | Low |
-| 5 | **Dashboard tests** — no coverage for `DashboardController` / `DashboardRepository` | Low |
-| 6 | **Notification tests** — no coverage for `NotificationController` | Low |
-| 7 | **Policies for the remaining modules** — only `UserPolicy` exists | Low |
-| 8 | **Flutter apps** — the API is ready, the master/client clients are not built | — |
-| 9 | **`\DomainException` in the task actions** — `CreateOrderTaskAction`, `DeleteOrderTaskAction` and `UploadTaskPhotoAction` throw raw `\DomainException` with hardcoded English strings, caught by `try/catch` in `MasterTaskController`. Every other API action throws a localized `ApiException` rendered centrally in `bootstrap/app.php` (see `UpdateOrderTaskAction`, `ReplaceTaskPhotoAction`). Convert the three and drop the `try/catch`. | Medium |
-| 10 | **`UploadTaskPhotoAction` ignores the order status** — creating, editing and deleting a task all require `in_progress`, and so does replacing a photo (`ReplaceTaskPhotoAction`), but uploading a *new* photo is allowed on a completed or cancelled order. Add the same guard. | Medium |
+| 1 | **`OrderStatus` enum location** — lives in `app/OrderStatus.php` instead of `app/Enums/` alongside `UserRole` / `CategoryIconType`; `PaymentModel` has the same problem | Low |
+| 2 | **Dashboard tests** — no coverage for `DashboardController` / `DashboardRepository` | Low |
+| 3 | **Notification tests** — no coverage for `NotificationController` | Low |
+| 4 | **Policies for the remaining modules** — only `UserPolicy` exists | Low |
+| 5 | **Flutter apps** — the API is ready, the master/client clients are not built | — |
+| 6 | **`\DomainException` in the task actions** — `CreateOrderTaskAction` and `DeleteOrderTaskAction` still throw raw `\DomainException` with hardcoded English strings, caught by `try/catch` in `MasterTaskController`. Prefer localized `ApiException` like `UploadTaskPhotoAction` / `ReplaceTaskPhotoAction`. | Medium |
 
 ---
 

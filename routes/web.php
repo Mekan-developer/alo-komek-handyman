@@ -58,8 +58,6 @@ Route::get('/', function () {
 });
 
 Route::middleware('auth')->group(function () {
-    Route::get('/system-status', SystemStatusController::class)->name('system.status');
-
     // Profile — accessible to all authenticated users (all roles)
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -67,6 +65,8 @@ Route::middleware('auth')->group(function () {
 
     // Dashboard & all other admin sections — administrator and manager only
     Route::middleware('role:administrator,manager')->group(function () {
+        Route::get('/system-status', SystemStatusController::class)->name('system.status');
+
         Route::get('/dashboard', [DashboardController::class, 'index'])
             ->middleware('verified')
             ->name('dashboard');
@@ -93,6 +93,7 @@ Route::middleware('auth')->group(function () {
 
         Route::resource('orders', OrderController::class)->only(['index', 'show', 'store', 'update', 'destroy']);
         Route::post('orders/{order}/assign', [OrderController::class, 'assign'])->name('orders.assign');
+        Route::put('orders/{order}/schedule', [OrderController::class, 'updateSchedule'])->name('orders.update-schedule');
         Route::post('orders/{order}/tasks/{task}/price', [OrderController::class, 'setTaskPrice'])->name('orders.tasks.set-price');
         Route::post('orders/{order}/discount', [OrderController::class, 'setDiscount'])->name('orders.set-discount');
         Route::post('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.update-status');

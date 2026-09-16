@@ -3,8 +3,8 @@
 namespace App\Events;
 
 use App\Models\MasterLocation;
-use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
@@ -33,11 +33,11 @@ class MasterLocationUpdated implements ShouldBroadcast
 
     public function __construct(public MasterLocation $location) {}
 
-    /** @return array<int, Channel> */
+    /** @return array<int, PrivateChannel> */
     public function broadcastOn(): array
     {
         return [
-            new Channel('masters-map'),
+            new PrivateChannel('masters-map'),
         ];
     }
 

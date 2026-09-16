@@ -3,10 +3,12 @@ import { ref, computed, watch, nextTick, onBeforeUnmount } from 'vue'
 import { useForm, usePage } from '@inertiajs/vue3'
 import { useI18n } from 'vue-i18n'
 import Modal from '@/Components/Modal.vue'
+import ConfirmModal from '@/Components/ConfirmModal.vue'
 import InputError from '@/Components/InputError.vue'
 import PhoneInput from '@/Components/PhoneInput.vue'
 import CategoryPicker from '@/Components/CategoryPicker.vue'
 import { loadMapStyle, suppressBlankIconWarnings } from '@/utils/loadMapStyle'
+import { isTimeSlotAvailable, localTodayIso, formatTimeSlotLabel } from '@/utils/orderSchedule'
 import 'leaflet/dist/leaflet.css'
 import 'maplibre-gl/dist/maplibre-gl.css'
 
@@ -17,11 +19,15 @@ const props = defineProps({
     show: { type: Boolean, required: true },
     categories: { type: Array, default: () => [] },
     clients: { type: Array, default: () => [] },
+    timeSlots: { type: Array, default: () => [] },
+    urgencyFee: { type: Number, default: 20 },
 })
 
 const emit = defineEmits(['close'])
 
 const TM_CENTER = [37.95, 58.38]
+
+const todayIso = localTodayIso()
 
 const form = useForm({
     client_id: null,
@@ -29,7 +35,11 @@ const form = useForm({
     client_phone: '',
     category_id: null,
     description: '',
+    preferred_date: todayIso,
+    time_slot: null,
+    is_urgent: false,
     client_address: '',
+
     client_lat: '',
     client_lng: '',
     photos: [],
@@ -199,18 +209,59 @@ function removePhoto(index) {
 }
 
 // ── Жизненный цикл модалки ────────────────────────────────────────────────────
+const showDiscardConfirm = ref(false)
+
+const isFormDirty = computed(() => {
+    return form.client_id !== null
+        || form.client_name.trim() !== ''
+        || form.client_phone.trim() !== ''
+        || form.category_id !== null
+        || form.description.trim() !== ''
+        || form.preferred_date !== todayIso
+        || form.time_slot !== null
+        || form.is_urgent
+        || form.client_address.trim() !== ''
+        || form.client_lat !== ''
+        || form.client_lng !== ''
+        || form.photos.length > 0
+        || clientMode.value === 'new'
+})
+
+function requestClose() {
+    if (isFormDirty.value) {
+        showDiscardConfirm.value = true
+        return
+    }
+
+    emit('close')
+}
+
+function confirmDiscard() {
+    showDiscardConfirm.value = false
+    emit('close')
+}
+
+function cancelDiscard() {
+    showDiscardConfirm.value = false
+}
+
 watch(() => props.show, async (val) => {
     if (val) {
         form.reset()
         form.clearErrors()
         form.photos = []
+        form.preferred_date = todayIso
+        form.time_slot = null
+        form.is_urgent = false
         photoPreviews.value = []
         clientSearch.value = ''
         showClientDropdown.value = false
         clientMode.value = 'search'
+        showDiscardConfirm.value = false
         await nextTick()
         initMap()
     } else {
+        showDiscardConfirm.value = false
         destroyMap()
     }
 })
@@ -224,13 +275,37 @@ function submit() {
     })
 }
 
+function onUrgentChange() {
+    if (form.is_urgent) {
+        form.preferred_date = ''
+        form.time_slot = null
+    } else if (!form.preferred_date) {
+        form.preferred_date = localTodayIso()
+    }
+}
+
+const availableTimeSlots = computed(() =>
+    props.timeSlots.filter((slot) => isTimeSlotAvailable(slot, form.preferred_date))
+)
+
+watch(() => form.preferred_date, (date) => {
+    if (date && date < localTodayIso()) {
+        form.preferred_date = localTodayIso()
+    }
+
+    if (form.time_slot && !isTimeSlotAvailable(form.time_slot, form.preferred_date)) {
+        form.time_slot = null
+    }
+})
+
 const inputClass = 'w-full rounded-xl border border-gray-300 bg-gray-50 px-4 py-2.5 text-sm focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-500/20 dark:border-slate-600 dark:bg-slate-700/50 dark:text-white dark:focus:bg-slate-700'
 const errorInputClass = 'border-red-400 dark:border-red-500'
 const labelClass = 'block text-sm font-medium text-gray-700 dark:text-slate-300'
 </script>
 
 <template>
-    <Modal :show="show" max-width="2xl" @close="emit('close')">
+    <div>
+    <Modal :show="show" max-width="2xl" :closeable="!showDiscardConfirm" @close="requestClose">
         <div class="flex h-full flex-col">
             <div class="flex shrink-0 items-center justify-between border-b border-gray-100 px-6 py-4 dark:border-slate-700">
                 <h2 class="text-base font-semibold text-gray-900 dark:text-white">
@@ -238,7 +313,7 @@ const labelClass = 'block text-sm font-medium text-gray-700 dark:text-slate-300'
                 </h2>
                 <button
                     type="button"
-                    @click="emit('close')"
+                    @click="requestClose"
                     class="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-slate-700 dark:hover:text-slate-300 transition-colors"
                 >
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
@@ -378,6 +453,77 @@ const labelClass = 'block text-sm font-medium text-gray-700 dark:text-slate-300'
                                 :class="[inputClass, form.errors.description ? errorInputClass : '']"
                             />
                             <InputError :message="form.errors.description" />
+                        </div>
+
+                        <!-- Schedule -->
+                        <div class="space-y-3 sm:col-span-2 rounded-xl border border-gray-200 p-4 dark:border-slate-700">
+                            <div class="text-sm font-medium text-gray-800 dark:text-slate-200">
+                                {{ t('orders.create.schedule_section') }}
+                            </div>
+
+                            <label class="flex cursor-pointer items-start gap-3 rounded-lg border border-amber-200 bg-amber-50/50 p-3 dark:border-amber-500/30 dark:bg-amber-500/10">
+                                <input
+                                    v-model="form.is_urgent"
+                                    type="checkbox"
+                                    class="mt-0.5 h-4 w-4 rounded border-gray-300 text-amber-600 focus:ring-amber-500 dark:border-slate-600 dark:bg-slate-700"
+                                    @change="onUrgentChange"
+                                />
+                                <span>
+                                    <span class="block text-sm font-medium text-gray-900 dark:text-slate-100">
+                                        {{ t('orders.fields.is_urgent') }}
+                                    </span>
+                                    <span class="mt-0.5 block text-xs text-gray-500 dark:text-slate-400">
+                                        {{ t('orders.create.urgent_hint', { amount: urgencyFee }) }}
+                                    </span>
+                                </span>
+                            </label>
+                            <InputError :message="form.errors.is_urgent" />
+
+                            <template v-if="!form.is_urgent">
+                                <div class="space-y-1">
+                                    <label :class="labelClass">{{ t('orders.fields.preferred_date') }} <span class="text-red-400">*</span></label>
+                                    <input
+                                        v-model="form.preferred_date"
+                                        type="date"
+                                        :min="todayIso"
+                                        :class="[inputClass, form.errors.preferred_date ? errorInputClass : '']"
+                                    />
+                                    <InputError :message="form.errors.preferred_date" />
+                                </div>
+
+                                <div class="space-y-1.5">
+                                    <label :class="labelClass">{{ t('orders.fields.time_slot') }}</label>
+                                    <div class="flex flex-wrap gap-2">
+                                        <button
+                                            type="button"
+                                            @click="form.time_slot = null"
+                                            :class="[
+                                                'rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors',
+                                                form.time_slot === null
+                                                    ? 'border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-500/20 dark:text-blue-300'
+                                                    : 'border-gray-300 text-gray-600 hover:border-blue-400 dark:border-slate-600 dark:text-slate-300',
+                                            ]"
+                                        >
+                                            {{ t('orders.create.time_flexible') }}
+                                        </button>
+                                        <button
+                                            v-for="slot in availableTimeSlots"
+                                            :key="slot"
+                                            type="button"
+                                            @click="form.time_slot = slot"
+                                            :class="[
+                                                'rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors',
+                                                form.time_slot === slot
+                                                    ? 'border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-500/20 dark:text-blue-300'
+                                                    : 'border-gray-300 text-gray-600 hover:border-blue-400 dark:border-slate-600 dark:text-slate-300',
+                                            ]"
+                                        >
+                                            {{ formatTimeSlotLabel(slot) }}
+                                        </button>
+                                    </div>
+                                    <InputError :message="form.errors.time_slot" />
+                                </div>
+                            </template>
                         </div>
 
                         <!-- Map picker -->
@@ -556,7 +702,7 @@ const labelClass = 'block text-sm font-medium text-gray-700 dark:text-slate-300'
                 <div class="flex shrink-0 justify-end gap-2 border-t border-gray-100 px-6 py-4 dark:border-slate-700">
                     <button
                         type="button"
-                        @click="emit('close')"
+                        @click="requestClose"
                         class="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 dark:text-slate-300 dark:hover:bg-slate-700 transition-colors"
                     >
                         {{ t('layout.actions.cancel') }}
@@ -572,4 +718,15 @@ const labelClass = 'block text-sm font-medium text-gray-700 dark:text-slate-300'
             </form>
         </div>
     </Modal>
+
+    <ConfirmModal
+        :show="showDiscardConfirm"
+        :title="t('orders.create.discard_title')"
+        :message="t('orders.create.discard_message')"
+        :confirm-text="t('orders.create.discard_confirm')"
+        :danger="false"
+        @confirm="confirmDiscard"
+        @close="cancelDiscard"
+    />
+    </div>
 </template>

@@ -33,6 +33,7 @@ class ConvertOrderPhotoJobTest extends TestCase
             'client_name' => 'Test Client',
             'client_phone' => '+99361000001',
             'description' => 'Broken pipe',
+            'preferred_date' => now()->toDateString(),
             'client_address' => '123 Main St',
             'client_lat' => 37.95,
             'client_lng' => 58.38,

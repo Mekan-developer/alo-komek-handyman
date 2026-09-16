@@ -5,9 +5,13 @@ meta {
 }
 
 post {
-  url: {{base_url}}/api/v1/master/{{master_id}}/location
+  url: {{base_url}}/api/v1/master/location
   body: json
-  auth: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
 }
 
 headers {
@@ -27,10 +31,10 @@ body:json {
 docs {
   # Send Live Location
   
-  Public endpoint (no auth required — temporary until OTP flow stabilises).
+  Requires master Sanctum Bearer token.
   Call every 10–15 seconds while the master is active.
   
-  - `order_id` — optional; set when tied to a specific order trip
+  - `order_id` — optional; must belong to this master
   - `recorded_at` — optional ISO8601; defaults to server now()
   
   **Response 201:**
@@ -48,6 +52,8 @@ docs {
   ```
   
   **Errors:**
-  - `404` — master not found
+  - `401` — missing / invalid token
+  - `403` — inactive / expired master
+  - `404` — order does not belong to this master
   - `422` — validation error
 }

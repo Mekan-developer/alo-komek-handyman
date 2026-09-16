@@ -26,7 +26,10 @@ body:json {
     "client_phone": "{{client_phone}}",
     "client_address": "ул. Атамырата Ниязова, д. 42, кв. 17",
     "client_lat": 37.9382,
-    "client_lng": 58.3833
+    "client_lng": 58.3833,
+    "preferred_date": "2026-09-16",
+    "time_slot": "10-12",
+    "is_urgent": false
   }
 }
 
@@ -43,6 +46,9 @@ docs {
   - `client_phone` — 6..20 chars
   - `client_address` — nullable, up to 255 chars
   - `client_lat` / `client_lng` — decimal coordinates
+  - `preferred_date` — `Y-m-d`, today or future (required unless `is_urgent`)
+  - `time_slot` — value from settings `time_slots`, or `null` = flexible
+  - `is_urgent` — if `true`, date/slot are cleared server-side; `urgency_fee` snapshotted
 
   To also add/remove photos in the same edit, see **Update Order Photos**
   (needs `multipart/form-data`, which requires a small workaround for PATCH).
@@ -50,10 +56,10 @@ docs {
   Allowed **only while the order is still `pending`** (no master assigned yet).
   Once a master is assigned/working/order is finished or cancelled, editing is forbidden.
 
-  **Response 200:** `ClientOrderResource`
+  **Response 200:** `ClientOrderResource` (includes schedule + `cancel_fee` / `urgency_fee`)
 
   **Errors:**
-  - `422` — validation error, or order is no longer editable (not `pending`)
+  - `422` — validation error, past date/slot, or order is no longer editable (not `pending`)
   - `404` — order not found or does not belong to this client
   - `401` — missing / invalid client token
 }

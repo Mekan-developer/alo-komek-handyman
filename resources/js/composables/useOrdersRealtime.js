@@ -2,7 +2,7 @@ import { onBeforeUnmount, onMounted } from 'vue'
 import { router } from '@inertiajs/vue3'
 
 /*
- * Публичный канал заказов. Подписан AdminLayout (тосты + счётчик уведомлений)
+ * Private channel заказов. Подписан AdminLayout (тосты + счётчик уведомлений)
  * и страницы, которым нужны свежие данные. Поэтому страницы отписываются через
  * `stopListening`, а не `leave`: канал общий, `leave` снял бы и слушателей лэйаута.
  */
@@ -48,7 +48,7 @@ export function useOrdersChannel(handlers) {
     onMounted(() => {
         if (!window.Echo) { return }
 
-        channel = window.Echo.channel(ORDERS_CHANNEL)
+        channel = window.Echo.private(ORDERS_CHANNEL)
 
         Object.entries(handlers).forEach(([event, handler]) => {
             channel.listen(event, handler)

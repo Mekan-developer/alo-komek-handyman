@@ -191,11 +191,13 @@ class ClientTest extends TestCase
     {
         $this->actingAsAdmin();
         $client = Client::factory()->create(['is_blocked' => false]);
+        $client->createToken('mobile-client');
 
         $this->post(route('clients.toggle-block', $client->id))
             ->assertRedirect(route('clients.index'));
 
         $this->assertDatabaseHas('clients', ['id' => $client->id, 'is_blocked' => true]);
+        $this->assertSame(0, $client->tokens()->count());
     }
 
     public function test_admin_can_unblock_client(): void

@@ -6,9 +6,18 @@ use App\Models\Client;
 
 class ToggleClientBlockAction
 {
+    /**
+     * Flip the client block flag and revoke API tokens when blocking.
+     */
     public function handle(Client $client): Client
     {
-        $client->update(['is_blocked' => ! $client->is_blocked]);
+        $blocking = ! $client->is_blocked;
+
+        $client->update(['is_blocked' => $blocking]);
+
+        if ($blocking) {
+            $client->tokens()->delete();
+        }
 
         return $client->fresh();
     }

@@ -2,13 +2,21 @@
 
 namespace App\Http\Requests\Api\V1\Client;
 
+use App\Http\Requests\Concerns\ValidatesOrderSchedule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class CreateClientOrderRequest extends FormRequest
 {
+    use ValidatesOrderSchedule;
+
     public function authorize(): bool
     {
         return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->prepareOrderSchedule();
     }
 
     /** @return array<string, mixed> */
@@ -22,7 +30,8 @@ class CreateClientOrderRequest extends FormRequest
             'client_lat' => ['required', 'numeric', 'between:-90,90'],
             'client_lng' => ['required', 'numeric', 'between:-180,180'],
             'photos' => ['nullable', 'array', 'max:4'],
-            'photos.*' => ['file', 'image', 'mimes:jpeg,jpg,png,webp', 'max:102400'],
+            'photos.*' => ['file', 'image', 'mimes:jpeg,jpg,png,webp', 'max:10240'],
+            ...$this->orderScheduleRules(),
         ];
     }
 }

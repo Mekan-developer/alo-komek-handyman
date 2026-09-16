@@ -3,8 +3,8 @@
 namespace App\Events;
 
 use App\Models\OrderTask;
-use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
+use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
@@ -15,10 +15,10 @@ class OrderTaskCreated implements ShouldBroadcastNow
 
     public function __construct(public OrderTask $task) {}
 
-    /** @return array<int, Channel> */
+    /** @return array<int, PrivateChannel> */
     public function broadcastOn(): array
     {
-        return [new Channel('orders')];
+        return [new PrivateChannel('orders')];
     }
 
     public function broadcastAs(): string

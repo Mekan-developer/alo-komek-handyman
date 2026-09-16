@@ -24,17 +24,28 @@ body:json {
 docs {
   # Request OTP
 
-  Sends a 6-digit OTP code to the master's phone via the SMS gateway
-  (Socket.IO bridge in `socket-server/` → Flutter SMS-gateway phone).
-  The code is valid for 3 minutes.
+  Sends a 6-digit OTP to the master's phone via the SMS gateway
+  (`socket-server/` → Flutter OTP Listener). TTL = `OTP_TTL_MINUTES` (default 3).
+
+  Rate limited: 3 req/min per IP and per phone (`throttle:otp-request`).
+
+  Unknown phones get the **same 200 shape** (no OTP cached) — anti-enumeration.
+  Inactive / expired masters still get **403**.
 
   **Response 200:**
   ```json
-  { "message": "OTP sent." }
+  {
+    "message": "OTP sent.",
+    "delivery": "sms",
+    "delivery_message": null
+  }
   ```
 
+  `delivery` may be `"manual"` when the SMS gateway is down; then
+  `delivery_message` explains that support will dictate the code.
+
   **Errors:**
-  - `404` — master with this phone not found
-  - `403` — master account is disabled
-  - `503` — SMS gateway unreachable or no gateway phone connected
+  - `403` — master inactive or access expired
+  - `422` — phone validation error
+  - `429` — too many requests
 }

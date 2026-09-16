@@ -7,17 +7,23 @@ import OrderStatusBadge from '@/Pages/Orders/Partials/OrderStatusBadge.vue'
 import AssignMasterModal from '@/Pages/Orders/Partials/AssignMasterModal.vue'
 import ChangeStatusModal from '@/Pages/Orders/Partials/ChangeStatusModal.vue'
 import EditOrderModal from '@/Pages/Orders/Partials/EditOrderModal.vue'
+import ChangeScheduleModal from '@/Pages/Orders/Partials/ChangeScheduleModal.vue'
 import OrderReceiptModal from '@/Pages/Orders/Partials/OrderReceiptModal.vue'
 import ImageLightbox from '@/Components/ImageLightbox.vue'
 import StarRating from '@/Components/StarRating.vue'
 import { formatPhone } from '@/utils/formatPhone'
+import { formatPreferredDate } from '@/utils/formatPreferredDate'
+import { localTodayIso, localTomorrowIso } from '@/utils/orderSchedule'
 import { loadMapStyle, suppressBlankIconWarnings } from '@/utils/loadMapStyle'
 import { scheduleRealtimeReload, useOrdersChannel } from '@/composables/useOrdersRealtime'
+import { useLocaleStore } from '@/stores/useLocaleStore'
+import { storeToRefs } from 'pinia'
 import 'leaflet/dist/leaflet.css'
 import 'maplibre-gl/dist/maplibre-gl.css'
 
 const { t } = useI18n()
 const page = usePage()
+const { locale } = storeToRefs(useLocaleStore())
 
 const props = defineProps({
     order: { type: Object, required: true },
@@ -25,12 +31,19 @@ const props = defineProps({
     categories: { type: Array, default: () => [] },
     eligibleMasters: { type: Array, default: () => [] },
     statuses: { type: Array, default: () => [] },
+    timeSlots: { type: Array, default: () => [] },
+    urgencyFee: { type: Number, default: 20 },
 })
 
 const showAssignModal = ref(false)
 const showStatusModal = ref(false)
 const showEditModal = ref(false)
+const showScheduleModal = ref(false)
 const showReceiptModal = ref(false)
+
+const canEditSchedule = computed(() =>
+    !['completed', 'cancelled'].includes(props.order.status)
+)
 
 const refreshing = ref(false)
 
@@ -106,6 +119,22 @@ const savingDiscount = ref(false)
 
 function formatMoney(value) {
     return value === null || value === undefined ? null : Number(value).toFixed(2)
+}
+
+function preferredDateLabel(value) {
+    if (!value) {
+        return '—'
+    }
+
+    if (value === localTodayIso()) {
+        return t('orders.fields.preferred_date_today')
+    }
+
+    if (value === localTomorrowIso()) {
+        return t('orders.fields.preferred_date_tomorrow')
+    }
+
+    return formatPreferredDate(value, locale.value) || '—'
 }
 
 function startEditingDiscount() {
@@ -273,7 +302,7 @@ async function startTrackingIfNeeded(L) {
 
     if (!window.Echo) { return }
 
-    window.Echo.channel(MASTERS_MAP_CHANNEL)
+    window.Echo.private(MASTERS_MAP_CHANNEL)
         .listen('.master.location.updated', (payload) => {
             if (payload.master_id !== props.order.master?.id) { return }
 
@@ -813,9 +842,60 @@ const sortedEligibleMasters = computed(() => {
                                 <p v-else class="italic text-red-400 dark:text-red-500/80">
                                     {{ t('orders.no_reason') }}
                                 </p>
+                                <div v-if="order.is_urgent || order.cancel_fee != null" class="mt-3 space-y-1 border-t border-red-200/70 pt-3 dark:border-red-900/50">
+                                    <p v-if="order.urgency_fee != null" class="flex justify-between text-red-800 dark:text-red-200">
+                                        <span>{{ t('orders.fields.urgency_fee') }}</span>
+                                        <span class="font-mono font-semibold">{{ formatMoney(order.urgency_fee) }}</span>
+                                    </p>
+                                    <p v-if="order.cancel_fee != null" class="flex justify-between text-red-800 dark:text-red-200">
+                                        <span>{{ t('orders.fields.cancel_fee') }}</span>
+                                        <span class="font-mono font-semibold">{{ formatMoney(order.cancel_fee) }}</span>
+                                    </p>
+                                </div>
                                 <p v-if="order.cancelled_at" class="mt-2 text-xs text-red-500/80 dark:text-red-400/70">
                                     {{ t('orders.fields.cancelled_at') }}: {{ order.cancelled_at }}
                                 </p>
+                            </div>
+                        </div>
+
+                        <!-- Schedule -->
+                        <div class="rounded-xl bg-white shadow-sm dark:bg-slate-800">
+                            <div class="flex items-center justify-between gap-2 border-b border-gray-100 px-4 py-2.5 dark:border-slate-700">
+                                <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-slate-500">
+                                    {{ t('orders.create.schedule_section') }}
+                                </h3>
+                                <button
+                                    v-if="canEditSchedule"
+                                    type="button"
+                                    @click="showScheduleModal = true"
+                                    class="text-xs font-medium text-blue-600 hover:underline dark:text-blue-400"
+                                >
+                                    {{ t('orders.create.change_schedule') }}
+                                </button>
+                            </div>
+                            <div class="space-y-2 px-4 py-3 text-sm">
+                                <template v-if="order.is_urgent">
+                                    <div class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 dark:border-amber-500/30 dark:bg-amber-500/10">
+                                        <p class="font-semibold text-amber-800 dark:text-amber-300">
+                                            {{ t('orders.fields.is_urgent') }}
+                                        </p>
+                                        <p v-if="order.urgency_fee != null" class="mt-2 font-mono text-sm font-semibold text-amber-800 dark:text-amber-300">
+                                            {{ t('orders.fields.urgency_fee') }}: {{ formatMoney(order.urgency_fee) }}
+                                        </p>
+                                    </div>
+                                </template>
+                                <template v-else>
+                                    <div class="flex justify-between gap-2">
+                                        <span class="text-gray-500 dark:text-slate-400">{{ t('orders.fields.preferred_date') }}</span>
+                                        <span class="font-medium text-gray-900 dark:text-slate-200">{{ preferredDateLabel(order.preferred_date) }}</span>
+                                    </div>
+                                    <div class="flex justify-between gap-2">
+                                        <span class="text-gray-500 dark:text-slate-400">{{ t('orders.fields.time_slot') }}</span>
+                                        <span class="font-medium text-gray-900 dark:text-slate-200">
+                                            {{ order.time_slot_label || t('orders.create.time_flexible') }}
+                                        </span>
+                                    </div>
+                                </template>
                             </div>
                         </div>
 
@@ -1099,7 +1179,16 @@ const sortedEligibleMasters = computed(() => {
             :show="showEditModal"
             :order="order"
             :categories="categories"
+            :time-slots="timeSlots"
+            :urgency-fee="urgencyFee"
             @close="showEditModal = false"
+        />
+        <ChangeScheduleModal
+            :show="showScheduleModal"
+            :order="order"
+            :time-slots="timeSlots"
+            :urgency-fee="urgencyFee"
+            @close="showScheduleModal = false"
         />
         <AssignMasterModal
             :show="showAssignModal"

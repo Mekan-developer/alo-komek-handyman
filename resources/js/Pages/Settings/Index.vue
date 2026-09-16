@@ -14,6 +14,8 @@ const props = defineProps({
     masterCallOutFeeNoteRu: { type: String, default: '' },
     masterCallOutFeeNoteTk: { type: String, default: '' },
     masterCallOutFeeNoteUpdatedAt: { type: String, default: null },
+    orderUrgencyFee: { type: [String, Number], default: '20' },
+    orderCancelFee: { type: [String, Number], default: '0' },
 })
 
 const form = useForm({
@@ -21,16 +23,19 @@ const form = useForm({
     client_app_rules: props.clientAppRules ?? '',
 })
 
-// ── Плата за выезд мастера ─────────────────────────────────────────────────
-// Отдельная форма: PUT уходит без ключей правил, поэтому сохранение текста
-// не перезатирает тексты правил приложений.
 const feeForm = useForm({
     master_call_out_fee_note_ru: props.masterCallOutFeeNoteRu ?? '',
     master_call_out_fee_note_tk: props.masterCallOutFeeNoteTk ?? '',
 })
 
+const orderFeesForm = useForm({
+    order_urgency_fee: props.orderUrgencyFee ?? '20',
+    order_cancel_fee: props.orderCancelFee ?? '0',
+})
+
 const feeSaved = ref(false)
 const feeLastSaved = ref(props.masterCallOutFeeNoteUpdatedAt)
+const orderFeesSaved = ref(false)
 
 function saveFee() {
     feeForm.put(route('settings.update'), {
@@ -39,6 +44,16 @@ function saveFee() {
             feeSaved.value = true
             feeLastSaved.value = new Date().toISOString()
             setTimeout(() => { feeSaved.value = false }, 2500)
+        },
+    })
+}
+
+function saveOrderFees() {
+    orderFeesForm.put(route('settings.update'), {
+        preserveScroll: true,
+        onSuccess() {
+            orderFeesSaved.value = true
+            setTimeout(() => { orderFeesSaved.value = false }, 2500)
         },
     })
 }
@@ -429,6 +444,55 @@ onBeforeUnmount(() => {
                     <h2 class="text-[13px] font-semibold uppercase tracking-[0.5px] text-slate-400">
                         {{ t('settings.section_cancellation') }}
                     </h2>
+                </div>
+
+                <div class="mb-4 overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-white/[0.07] dark:bg-[#131729]">
+                    <div class="flex flex-col gap-3.5 px-5 pb-4 pt-[18px] sm:flex-row sm:items-center">
+                        <div class="min-w-0 flex-1">
+                            <div class="text-[15px] font-semibold text-gray-900 dark:text-slate-100">{{ t('settings.order_fees.title') }}</div>
+                            <div class="mt-0.5 text-xs text-gray-400 dark:text-slate-500">{{ t('settings.order_fees.hint') }}</div>
+                        </div>
+                        <button
+                            type="button"
+                            @click="saveOrderFees"
+                            :disabled="orderFeesForm.processing"
+                            class="shrink-0 rounded-lg bg-amber-500 px-[18px] py-[7px] text-[12.5px] font-semibold text-white transition-colors hover:bg-amber-600 disabled:opacity-60"
+                        >
+                            {{ orderFeesSaved ? t('settings.saved_ok') : t('settings.save') }}
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-1 gap-3.5 px-5 pb-[18px] md:grid-cols-2">
+                        <div>
+                            <label class="mb-1.5 block text-[12.5px] font-medium text-gray-700 dark:text-slate-300">
+                                {{ t('settings.order_fees.urgency') }}
+                            </label>
+                            <input
+                                v-model="orderFeesForm.order_urgency_fee"
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                class="w-full rounded-[9px] border bg-gray-50 px-[13px] py-[10px] text-[13px] text-gray-700 outline-none focus:border-amber-500/50 dark:bg-white/[0.03] dark:text-slate-300"
+                            />
+                            <p v-if="orderFeesForm.errors.order_urgency_fee" class="mt-1.5 text-[11.5px] font-medium text-red-500">
+                                {{ orderFeesForm.errors.order_urgency_fee }}
+                            </p>
+                        </div>
+                        <div>
+                            <label class="mb-1.5 block text-[12.5px] font-medium text-gray-700 dark:text-slate-300">
+                                {{ t('settings.order_fees.cancel') }}
+                            </label>
+                            <input
+                                v-model="orderFeesForm.order_cancel_fee"
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                class="w-full rounded-[9px] border bg-gray-50 px-[13px] py-[10px] text-[13px] text-gray-700 outline-none focus:border-amber-500/50 dark:bg-white/[0.03] dark:text-slate-300"
+                            />
+                            <p v-if="orderFeesForm.errors.order_cancel_fee" class="mt-1.5 text-[11.5px] font-medium text-red-500">
+                                {{ orderFeesForm.errors.order_cancel_fee }}
+                            </p>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-white/[0.07] dark:bg-[#131729]">

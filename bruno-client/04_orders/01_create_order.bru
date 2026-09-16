@@ -20,11 +20,14 @@ auth:bearer {
 
 body:multipart-form {
   category_id: {{category_id}}
-  description: Кран в ванssной течёт, нужна замена прокладки и проверка сифона.
+  description: Кран в ванной течёт, нужна замена прокладки и проверка сифона.
   client_phone: {{client_phone}}
   client_address: ул. Атамырата Ниязова, д. 42, кв. 17
   client_lat: 37.9382
   client_lng: 58.3833
+  preferred_date: 2026-09-16
+  time_slot: 10-12
+  is_urgent: false
   ~photos[]: @file()
 }
 
@@ -36,22 +39,57 @@ script:post-response {
 
 docs {
   # Create Order
-  
-  Multipart form. Up to 4 photos may be attached as `photos[]` (uncomment to attach).
-  Order is created with status `pending`.
-  Photos go into background WebP-conversion via Queue.
-  Saves new order id into `client_order_id` env var.
-  
-  **Required fields:**
-  - `category_id`, `description`
-  - `client_phone`, `client_address`, `client_lat`, `client_lng`
-  
-  **Optional:**
-  - `photos[]` — up to 4 images (max 8 MB each)
-  
-  **Response 201:** `ClientOrderResource`
-  
+
+  `POST /api/v1/client/orders` — multipart form.
+
+  **Required:** `category_id`, `description`, `client_phone`, `client_lat`, `client_lng`
+
+  **Schedule (pick one mode):**
+
+  1. Planned visit:
+     - `preferred_date` — `Y-m-d`, today or future (required unless urgent)
+     - `time_slot` — one of settings `time_slots`, or omit/`null` = «по возможности»
+     - `is_urgent` — `false` / omit
+     - Today: only slots whose **start** is still in the future
+
+  2. Urgent («Срочно»):
+     - `is_urgent=true`
+     - Do **not** send date/slot (server clears them)
+     - Fee taken from settings → stored as `urgency_fee` on the order
+
+  **Response 201** schedule fields:
+  ```json
+  {
+    "preferred_date": "2026-09-16",
+    "time_slot": "10-12",
+    "time_slot_label": "10:00 - 12:00",
+    "time_flexible": false,
+    "is_urgent": false,
+    "urgency_fee": null,
+    "cancel_fee": null
+  }
+  ```
+
+  Urgent example response:
+  ```json
+  {
+    "preferred_date": null,
+    "time_slot": null,
+    "time_slot_label": null,
+    "time_flexible": true,
+    "is_urgent": true,
+    "urgency_fee": 20,
+    "cancel_fee": null
+  }
+  ```
+
+  `cancel_fee` is `null` until the order is cancelled.
+
+  **Photos (optional):** `photos[]` — image files, max **10 MB** each, up to 4 total.
+
   **Errors:**
+  - `401` — missing / invalid client token
+  - `403` — client is blocked
   - `422` — validation error
-  - `403` — client profile incomplete (name missing)
+  - `429` — API rate limit
 }

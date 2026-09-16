@@ -5,9 +5,13 @@ meta {
 }
 
 post {
-  url: {{base_url}}/api/v1/master/{{master_id}}/location
+  url: {{base_url}}/api/v1/master/location
   body: json
-  auth: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
 }
 
 headers {
@@ -24,7 +28,15 @@ body:json {
 
 docs {
   # Send Location (minimal ping)
-  
+
   Master is online but not tied to a specific order trip.
+  Requires Sanctum Bearer token (`POST /api/v1/master/location`).
   Backend defaults `recorded_at` to server now().
+
+  Broadcasts to private admin channel `masters-map`.
+
+  **Errors:**
+  - `401` — missing / invalid token
+  - `403` — inactive / expired master
+  - `422` — validation error
 }

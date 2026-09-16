@@ -68,11 +68,7 @@ class MasterTaskController extends Controller
 
         $task = OrderTask::where('order_id', $order->id)->findOrFail($taskId);
 
-        try {
-            $updated = $action->handle($master, $task, $request->validated('type'), $request->file('photo'));
-        } catch (\DomainException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        $updated = $action->handle($master, $task, $request->validated('type'), $request->file('photo'));
 
         return (new MasterTaskResource($updated))
             ->response()

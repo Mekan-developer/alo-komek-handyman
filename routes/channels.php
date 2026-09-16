@@ -10,13 +10,19 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
 });
 
 /*
- * Public channel for the admin map view — broadcasts every master location update.
- * The service covers Ashgabat only, so a single channel carries all masters.
- * Anyone (including unauthenticated guest in dev) can listen.
- * In production, switch to private channel + admin auth gate.
+ * Private admin channels — staff session (web guard) required.
+ * Operators may listen to operational channels; pending OTPs stay non-operator only.
  */
-Broadcast::channel('masters-map', function () {
-    return true;
+Broadcast::channel('orders', function ($user) {
+    return $user instanceof User;
+});
+
+Broadcast::channel('clients', function ($user) {
+    return $user instanceof User;
+});
+
+Broadcast::channel('masters-map', function ($user) {
+    return $user instanceof User;
 });
 
 /*

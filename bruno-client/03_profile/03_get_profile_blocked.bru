@@ -1,0 +1,33 @@
+meta {
+  name: Get Profile (blocked client)
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{base_url}}/api/v1/client/me
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{client_token}}
+}
+
+headers {
+  Accept: application/json
+}
+
+docs {
+  # Get Profile — blocked client
+
+  When the admin blocks a client, existing tokens are revoked and
+  `ensure.client` rejects further API calls with **403**.
+
+  ```json
+  { "message": "Учётная запись клиента заблокирована" }
+  ```
+
+  Use a token issued **before** block only if it was not revoked yet;
+  after `clients.toggle-block` all `mobile-client` tokens are deleted.
+}

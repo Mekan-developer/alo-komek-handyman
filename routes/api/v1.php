@@ -38,13 +38,14 @@ Route::prefix('master')->group(function () {
     // Public — app settings (rules/terms shown before registration)
     Route::get('settings', [MasterSettingController::class, 'show'])->name('api.v1.master.settings');
 
-    // Public — location ping (temporary open auth until OTP flow stabilises)
-    Route::post('{master}/location', [MasterLocationController::class, 'store'])->name('api.v1.master.location.store');
-
     // Auth
     Route::prefix('auth')->name('api.v1.master.auth.')->group(function () {
-        Route::post('request-otp', [MasterAuthController::class, 'requestOtp'])->name('request-otp');
-        Route::post('verify-otp', [MasterAuthController::class, 'verifyOtp'])->name('verify-otp');
+        Route::post('request-otp', [MasterAuthController::class, 'requestOtp'])
+            ->middleware('throttle:otp-request')
+            ->name('request-otp');
+        Route::post('verify-otp', [MasterAuthController::class, 'verifyOtp'])
+            ->middleware('throttle:otp-verify')
+            ->name('verify-otp');
         Route::post('logout', [MasterAuthController::class, 'logout'])
             ->middleware(['auth:sanctum', 'ensure.master'])
             ->name('logout');
@@ -52,6 +53,8 @@ Route::prefix('master')->group(function () {
 
     // Protected — requires Sanctum token + master tokenable
     Route::middleware(['auth:sanctum', 'ensure.master'])->group(function () {
+
+        Route::post('location', [MasterLocationController::class, 'store'])->name('api.v1.master.location.store');
 
         Route::get('me', [MasterProfileController::class, 'show'])->name('api.v1.master.me');
         Route::patch('availability', [MasterAvailabilityController::class, 'update'])->name('api.v1.master.availability.update');
@@ -88,8 +91,12 @@ Route::prefix('client')->group(function () {
 
     // Auth
     Route::prefix('auth')->name('api.v1.client.auth.')->group(function () {
-        Route::post('request-otp', [ClientAuthController::class, 'requestOtp'])->name('request-otp');
-        Route::post('verify-otp', [ClientAuthController::class, 'verifyOtp'])->name('verify-otp');
+        Route::post('request-otp', [ClientAuthController::class, 'requestOtp'])
+            ->middleware('throttle:otp-request')
+            ->name('request-otp');
+        Route::post('verify-otp', [ClientAuthController::class, 'verifyOtp'])
+            ->middleware('throttle:otp-verify')
+            ->name('verify-otp');
 
         // Require the token issued by verify-otp.
         Route::middleware(['auth:sanctum', 'ensure.client'])->group(function () {

@@ -44,7 +44,9 @@ Token is a Laravel Sanctum personal access token. Store it in flutter_secure_sto
 
 ### 3.1 Send live location
 
-`POST /api/v1/master/{masterId}/location`
+`POST /api/v1/master/location`
+
+Requires Sanctum Bearer token issued to the Master (`auth:sanctum` + `ensure.master`).
 
 The mobile app should call this every **10–15 seconds** while the master is online (and has at least one active assignment).
 
@@ -184,9 +186,11 @@ Build these screens in this order. Match JustLife visual style.
 While the OTP flow isn't implemented yet, you can test against the dev backend:
 
 ```bash
-# Pick any seeded active master id (1..15 typically work after `php artisan db:seed`)
-curl -X POST http://localhost:8000/api/v1/master/1/location \
+# Authenticate via OTP first, then ping location with the Bearer token
+curl -X POST http://localhost:8000/api/v1/master/location \
+  -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
   -d '{"latitude": 37.95, "longitude": 58.38}'
 ```
 
@@ -225,7 +229,7 @@ Resolve these with the team before starting auth + push integration.
 
 The following contracts are **stable** as of this document; the Flutter app can rely on them:
 
-- `POST /api/v1/master/{masterId}/location` request and response shape (Section 3.1)
+- `POST /api/v1/master/location` request and response shape (Section 3.1)
 - `master.location.updated` event payload shape (used by admin only, but the Flutter side won't break it)
 - Order status enum values: `pending`, `assigned`, `in_progress`, `completed`, `cancelled`
 - Payment model values: `percentage`, `fixed_per_job`, `salary`, `salary_percentage`

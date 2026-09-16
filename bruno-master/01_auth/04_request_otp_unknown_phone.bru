@@ -1,0 +1,37 @@
+meta {
+  name: Request OTP (unknown phone)
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{base_url}}/api/v1/master/auth/request-otp
+  body: json
+  auth: none
+}
+
+headers {
+  Content-Type: application/json
+  Accept: application/json
+}
+
+body:json {
+  {
+    "phone": "+99369999999"
+  }
+}
+
+docs {
+  # Request OTP — unknown phone
+
+  Same **200** response as a real send (anti-enumeration).
+  No OTP is stored in cache and no SMS is sent.
+
+  ```json
+  {
+    "message": "OTP sent.",
+    "delivery": "sms",
+    "delivery_message": null
+  }
+  ```
+}

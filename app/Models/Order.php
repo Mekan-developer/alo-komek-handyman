@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\OrderTimeSlot;
 use App\OrderStatus;
 use Database\Factories\OrderFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -24,6 +25,10 @@ class Order extends Model
         'client_name',
         'client_phone',
         'description',
+        'preferred_date',
+        'time_slot',
+        'is_urgent',
+        'urgency_fee',
         'client_address',
         'client_lat',
         'client_lng',
@@ -34,6 +39,7 @@ class Order extends Model
         'completed_at',
         'cancelled_at',
         'cancel_reason',
+        'cancel_fee',
         'master_change_reason',
     ];
 
@@ -41,6 +47,11 @@ class Order extends Model
     {
         return [
             'status' => OrderStatus::class,
+            'preferred_date' => 'date',
+            'time_slot' => OrderTimeSlot::class,
+            'is_urgent' => 'boolean',
+            'urgency_fee' => 'decimal:2',
+            'cancel_fee' => 'decimal:2',
             'client_lat' => 'decimal:7',
             'client_lng' => 'decimal:7',
             'final_price' => 'decimal:2',

@@ -9,12 +9,15 @@ class UpdateSettingsAction
     public function __construct(private readonly SettingRepository $repository) {}
 
     /**
-     * @param  array<string, string|null>  $settings
+     * @param  array<string, mixed>  $settings
      */
     public function handle(array $settings): void
     {
         foreach ($settings as $key => $value) {
-            $this->repository->set($key, $value);
+            $this->repository->set(
+                $key,
+                $value === null ? null : (string) $value,
+            );
         }
     }
 }

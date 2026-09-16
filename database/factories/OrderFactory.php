@@ -27,6 +27,10 @@ class OrderFactory extends Factory
             'client_phone' => fake()->numerify('+99362#######'),
             'description' => fake()->sentence(12),
             'client_address' => fake()->streetAddress(),
+            'preferred_date' => fake()->dateTimeBetween('now', '+7 days')->format('Y-m-d'),
+            'time_slot' => null,
+            'is_urgent' => false,
+            'urgency_fee' => null,
             'client_lat' => fake()->randomFloat(7, 37.9, 38.1),
             'client_lng' => fake()->randomFloat(7, 58.3, 58.5),
             'final_price' => null,
@@ -80,6 +84,16 @@ class OrderFactory extends Factory
             'started_at' => now()->subHours(rand(3, 24)),
             'completed_at' => now()->subHours(rand(1, 12)),
             'final_price' => fake()->randomFloat(2, 100, 1500),
+        ]);
+    }
+
+    public function urgent(): static
+    {
+        return $this->state([
+            'is_urgent' => true,
+            'urgency_fee' => 20,
+            'preferred_date' => null,
+            'time_slot' => null,
         ]);
     }
 

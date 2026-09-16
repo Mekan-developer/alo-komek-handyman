@@ -30,11 +30,19 @@ script:post-response {
 
 docs {
   # Verify OTP
-  
-  Verifies the OTP code. Auto-registers the client on first login.
-  Returns a Sanctum token with name `mobile-client`.
-  The script saves the token to `client_token` env var.
-  
+
+  Verifies the OTP. Auto-registers the client on first login.
+  Returns a Sanctum token named `mobile-client`.
+  The script saves it to `client_token`.
+
+  Rate limited: 10/min per IP, 5/min per phone.
+  After **5 failed** attempts the cached OTP is discarded.
+
+  Blocked clients (`is_blocked`) get **403** and do not receive a token.
+  Blocking a client also revokes existing Sanctum tokens.
+
+  Token lifetime: `SANCTUM_TOKEN_EXPIRATION` minutes (default 30 days).
+
   **Response 200:**
   ```json
   {
@@ -47,9 +55,11 @@ docs {
     }
   }
   ```
-  
-  Use `is_new: true` to redirect to the profile setup screen in Flutter.
-  
+
+  Use `is_new: true` to open the profile setup screen.
+
   **Errors:**
+  - `403` — client account is blocked
   - `422` — invalid or expired OTP
+  - `429` — too many requests
 }

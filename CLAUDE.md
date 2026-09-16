@@ -240,7 +240,7 @@ Vue components must have a single root element.
 2. **AssignMasterAction** валидирует 4 условия: статус не финальный, мастер активен, мастер доступен, категории мастера включают категорию заказа. Своя валидация не нужна — вызывать экшен.
 3. **CreditMasterBalanceAction** вызывается автоматически из `UpdateOrderStatusAction` при `Completed`. Вручную не звать. Списание баланса — отдельный `RecordMasterPayoutAction` со страницы Payments.
 4. **OTP** лежит в Cache: `master_otp:{phone}` / `client_otp:{phone}`, TTL — `config('services.otp.ttl_minutes')`. Отправка через `OtpGatewayService` (HTTP → `socket-server/` Socket.IO мост → Flutter SMS-gateway). Phone нормализуется в локальный формат без `+993`. Если шлюз недоступен — код всё равно кладётся в Cache, паркуется в `pending_otps` для ручной диктовки оператором, а `request-otp` отвечает 200 с `delivery: "manual"` (логин не блокируется). Телефоны из `services.otp.test_phones` (store-review аккаунты) целиком минуют этот путь: ничего не генерится и не кэшируется, а verify принимает `services.otp.test_code` — проверка только через `OtpTestAccountService`, не дублировать. Reverb (Pusher-протокол) несовместим с `socket_io_client` — поэтому отдельный Node-сервер.
-5. **Каналы вещания**: `orders` и `masters-map.*` пока публичные; `client.{id}` / `master.{id}` — приватные через Sanctum.
+5. **Каналы вещания**: `orders`, `clients`, `masters-map` — private для staff (`User`); `client.{id}` / `master.{id}` — приватные через Sanctum; `admin.pending-otps` — non-operator staff.
 6. **Фото-конвертация** отдаёт `.webp` и УДАЛЯЕТ оригинал. Только через `PhotoConverter::convert()`. Фото задач — `OrderTaskPhoto`, до 2 на тип (before/after).
 7. **Translations cache** — в production через дефолтный кэш-драйвер, в dev через `array` (см. `HandleInertiaRequests::loadTranslations`). Переводы не подхватились → `php artisan cache:clear`.
 8. **`MasterLocation`** — `public $timestamps = false`, таблица использует `recorded_at` вместо `created_at`/`updated_at`.
@@ -253,4 +253,3 @@ Vue components must have a single root element.
 
 ## Тестирование API вручную
 - **Bruno**: коллекции в `bruno-client/` и `bruno-master/`. Каждый новый эндпоинт = новый `.bru`-файл в нужной папке.
-- **Scribe**: `php artisan scribe:generate`, доки на `/docs`.

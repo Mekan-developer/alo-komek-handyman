@@ -23,5 +23,6 @@ return [
 
     'client' => [
         'token_required' => 'Müşderiniň awtorizasiýasy talap edilýär',
+        'blocked' => 'Müşderiniň hasaby petiklenen',
     ],
 ];

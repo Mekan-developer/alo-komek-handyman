@@ -64,4 +64,11 @@ class SystemStatusTest extends TestCase
     {
         $this->getJson(route('system.status'))->assertUnauthorized();
     }
+
+    public function test_operator_cannot_access_system_status(): void
+    {
+        $this->actingAs(User::factory()->operator()->create())
+            ->getJson(route('system.status'))
+            ->assertForbidden();
+    }
 }

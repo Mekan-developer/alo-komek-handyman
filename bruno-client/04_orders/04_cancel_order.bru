@@ -27,15 +27,43 @@ body:json {
 docs {
   # Cancel Order
 
-  Cancels the client's own order. Allowed **only while no master is assigned**
-  (status `pending`). Once a master is on the order, cancellation is forbidden.
+  `POST /api/v1/client/orders/{id}/cancel`
 
-  `reason` is optional (max 500 chars) and is stored on the order.
+  Allowed **only while no master is assigned** (`pending`).
+  Once a master is on the order → `422`.
 
-  **Response 200:** `ClientOrderResource` with `status: "cancelled"` and `cancelled_at` set.
+  Body (optional):
+  ```json
+  { "reason": "string, max 500" }
+  ```
+
+  Do **not** send fee fields. Server copies current `order_cancel_fee` setting
+  into `orders.cancel_fee` automatically.
+
+  **Response 200** (`ClientOrderResource` excerpt):
+  ```json
+  {
+    "data": {
+      "id": 12,
+      "status": "cancelled",
+      "cancelled_at": "2026-09-15 19:00:00",
+      "cancel_fee": 0,
+      "is_urgent": false,
+      "urgency_fee": null,
+      "preferred_date": "2026-09-16",
+      "time_slot": "10-12",
+      "time_slot_label": "10:00 - 12:00",
+      "time_flexible": false
+    }
+  }
+  ```
+
+  Before cancel: show `order_cancel_fee` from `GET /api/v1/client/settings`.
+  After cancel: use `cancel_fee` from the order (snapshot; may differ if admin
+  changed the setting later).
 
   **Errors:**
-  - `422` — a master is already assigned, or the order is in a final status
-  - `404` — order not found or does not belong to this client
-  - `401` — missing / invalid client token
+  - `422` — master already assigned, or order already final
+  - `404` — not found / not owned by client
+  - `401` — unauthorized
 }

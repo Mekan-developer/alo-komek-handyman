@@ -40,8 +40,8 @@ docs {
   included here too.
 
   **Fields:**
-  - `photos[]` — new photos to attach, up to 4 **total** (existing + new).
-    Go through the same background WebP-conversion queue as on create.
+  - `photos[]` — new photos to attach, up to 4 **total** (existing + new),
+    each max **10 MB**. Go through the same WebP-conversion queue as on create.
   - `remove_photo_ids[]` — IDs of existing photos to delete (uncomment and
     set real IDs from the order's `data.photos[].id`). Scoped to this order —
     an ID from another order is silently ignored.
@@ -51,7 +51,8 @@ docs {
   **Response 200:** `ClientOrderResource`
 
   **Errors:**
-  - `422` — validation error, resulting photo count > 4, or order no longer editable
+  - `422` — validation error, file > 10 MB, resulting photo count > 4, or order no longer editable
   - `404` — order not found or does not belong to this client
+  - `403` — client is blocked
   - `401` — missing / invalid client token
 }
