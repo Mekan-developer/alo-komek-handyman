@@ -37,15 +37,19 @@ class UpdateOrderStatusAction
         $updated = $this->repository->changeStatus($order, $newStatus);
 
         if ($newStatus === OrderStatus::Cancelled) {
-            $payload = [
-                'cancel_fee' => round((float) ($this->settings->get('order_cancel_fee') ?? '0'), 2),
-            ];
+            $payload = [];
+
+            if ($previousStatus === OrderStatus::InProgress) {
+                $payload['cancel_fee'] = round((float) ($this->settings->get('order_cancel_fee') ?? '0'), 2);
+            }
 
             if ($cancelReason !== null) {
                 $payload['cancel_reason'] = $cancelReason;
             }
 
-            $updated->update($payload);
+            if ($payload !== []) {
+                $updated->update($payload);
+            }
         }
 
         if ($newStatus === OrderStatus::Completed) {

@@ -626,9 +626,10 @@ the wording (and any figure inside it) is entirely the admin's.
   falling back to the Russian variant, `""` when nothing is written. The app shows it on the
   cancel-confirmation screen.
 - **Informational only** — the money changes hands in cash on site. Nothing is written to the
-  order, and the master's `balance` is untouched. `CancelClientOrderAction` still refuses to
-  cancel an order that already has a master (`OrderException::cannotCancelAssignedOrder()`),
-  so today that cancellation goes through an operator in the admin panel.
+  order, and the master's `balance` is untouched. Clients may cancel while the order is
+  `pending`, `assigned`, or `in_progress`. `cancel_fee` is snapshotted from `order_cancel_fee`
+  **only** when cancelling from `in_progress` (work already started); earlier cancels leave
+  `cancel_fee` as `null`.
 - The Settings page saves these fields with their own Inertia form, so saving the notice never
   overwrites the rules editors (`UpdateSettingsAction` only writes the keys present in the
   request).

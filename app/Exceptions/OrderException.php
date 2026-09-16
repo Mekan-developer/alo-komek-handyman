@@ -44,11 +44,6 @@ class OrderException extends ApiException
         return new self((string) __('orders.errors.not_editable'));
     }
 
-    public static function cannotCancelAssignedOrder(): self
-    {
-        return new self((string) __('orders.errors.cannot_cancel_assigned'));
-    }
-
     public static function tooManyPhotos(): self
     {
         return new self((string) __('orders.errors.too_many_photos'));

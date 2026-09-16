@@ -29,25 +29,33 @@ docs {
 
   `POST /api/v1/client/orders/{id}/cancel`
 
-  Allowed **only while no master is assigned** (`pending`).
-  Once a master is on the order → `422`.
+  Allowed while status is `pending`, `assigned`, or `in_progress`.
+  Final statuses (`completed` / `cancelled`) → `422`.
 
   Body (optional):
   ```json
   { "reason": "string, max 500" }
   ```
 
-  Do **not** send fee fields. Server copies current `order_cancel_fee` setting
-  into `orders.cancel_fee` automatically.
+  Do **not** send fee fields.
 
-  **Response 200** (`ClientOrderResource` excerpt):
+  **Cancel fee rules:**
+  - `pending` / `assigned` → `cancel_fee` stays `null` (free cancel)
+  - `in_progress` (master already started) → server snapshots `order_cancel_fee`
+    from settings into `orders.cancel_fee`
+
+  Before cancel from `in_progress`: show `order_cancel_fee` from
+  `GET /api/v1/client/settings`. After cancel: use `cancel_fee` from the order
+  (snapshot; may differ if admin changed the setting later).
+
+  **Response 200** (`ClientOrderResource` excerpt) — free cancel:
   ```json
   {
     "data": {
       "id": 12,
       "status": "cancelled",
       "cancelled_at": "2026-09-15 19:00:00",
-      "cancel_fee": 0,
+      "cancel_fee": null,
       "is_urgent": false,
       "urgency_fee": null,
       "preferred_date": "2026-09-16",
@@ -58,12 +66,18 @@ docs {
   }
   ```
 
-  Before cancel: show `order_cancel_fee` from `GET /api/v1/client/settings`.
-  After cancel: use `cancel_fee` from the order (snapshot; may differ if admin
-  changed the setting later).
+  In-progress cancel with fee:
+  ```json
+  {
+    "data": {
+      "status": "cancelled",
+      "cancel_fee": 15
+    }
+  }
+  ```
 
   **Errors:**
-  - `422` — master already assigned, or order already final
+  - `422` — order already final / invalid transition
   - `404` — not found / not owned by client
   - `401` — unauthorized
 }

@@ -174,7 +174,6 @@ return [
         'invalid_transition' => 'Ýagdaý üýtgetmek mümkin däl',
         'not_editable' => 'Sargydy diňe «Garaşylýar» ýagdaýynda redaktirläp bolýar',
         'schedule_not_editable' => 'Tamamlanan ýa-da ýatyrylan sargydyň meýilnamasyny üýtgedip bolmaýar',
-        'cannot_cancel_assigned' => 'Sargydy ýatyryp bolmaýar — eýýäm usta bellenildi',
         'master_unavailable' => 'Usta häzirki wagtda sargytlary kabul etmäge elýeterli däl',
         'master_not_assigned' => 'Ilki sargyda usta belläň',
         'too_many_photos' => 'Sargytda 4-den köp surat bolup bilmez',

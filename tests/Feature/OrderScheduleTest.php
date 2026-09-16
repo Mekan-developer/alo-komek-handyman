@@ -23,6 +23,7 @@ class OrderScheduleTest extends TestCase
 
     private function actingAsAdmin(): User
     {
+        /** @var User $user */
         $user = User::factory()->create();
         $this->actingAs($user);
 
@@ -168,9 +169,32 @@ class OrderScheduleTest extends TestCase
             ->assertSessionHasErrors('preferred_date');
     }
 
-    public function test_cancelling_urgent_order_stores_cancel_and_urgency_fees(): void
+    public function test_cancelling_in_progress_order_stores_cancel_fee(): void
     {
         Setting::create(['key' => 'order_urgency_fee', 'value' => '20']);
+        Setting::create(['key' => 'order_cancel_fee', 'value' => '15']);
+
+        $this->actingAsAdmin();
+        $order = Order::factory()->inProgress()->urgent()->create([
+            'urgency_fee' => 20,
+        ]);
+
+        $this->post(route('orders.update-status', $order), [
+            'status' => 'cancelled',
+            'cancel_reason' => 'Клиент передумал',
+        ])->assertRedirect();
+
+        $order->refresh();
+
+        $this->assertSame('cancelled', $order->status->value);
+        $this->assertTrue($order->is_urgent);
+        $this->assertEquals(20.0, (float) $order->urgency_fee);
+        $this->assertEquals(15.0, (float) $order->cancel_fee);
+        $this->assertSame('Клиент передумал', $order->cancel_reason);
+    }
+
+    public function test_cancelling_pending_order_does_not_store_cancel_fee(): void
+    {
         Setting::create(['key' => 'order_cancel_fee', 'value' => '15']);
 
         $this->actingAsAdmin();
@@ -186,9 +210,7 @@ class OrderScheduleTest extends TestCase
         $order->refresh();
 
         $this->assertSame('cancelled', $order->status->value);
-        $this->assertTrue($order->is_urgent);
-        $this->assertEquals(20.0, (float) $order->urgency_fee);
-        $this->assertEquals(15.0, (float) $order->cancel_fee);
+        $this->assertNull($order->cancel_fee);
         $this->assertSame('Клиент передумал', $order->cancel_reason);
     }
 

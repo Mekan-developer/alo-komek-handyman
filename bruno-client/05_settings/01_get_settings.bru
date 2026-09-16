@@ -38,7 +38,7 @@ docs {
   | `content` | HTML rules / T&C (WebView) |
   | `master_call_out_fee_note` | Text warning when cancelling after master assigned (cash call-out). Hide if `""` |
   | `order_urgency_fee` | Show on «Срочно» toggle — fee added to urgent order |
-  | `order_cancel_fee` | Show on cancel confirmation — fee snapshotted onto order when cancelled |
+  | `order_cancel_fee` | Show on cancel confirmation **only if** order status is `in_progress`. Snapshotted onto order as `cancel_fee` when cancelled from that status; otherwise cancel is free (`cancel_fee: null`) |
   | `time_slots` | Values for schedule picker (`"08-10"` …). Display as `08:00 - 10:00` |
 
   Locale: `X-Locale: ru` | `tk` (affects `content` notes / `master_call_out_fee_note`).
