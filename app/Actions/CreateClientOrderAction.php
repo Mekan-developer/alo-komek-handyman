@@ -8,12 +8,17 @@ use App\Models\Client;
 use App\Models\Order;
 use App\OrderStatus;
 use App\Repositories\OrderRepository;
+use App\Repositories\SettingRepository;
+use App\Support\OrderSchedule;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 
 class CreateClientOrderAction
 {
-    public function __construct(private readonly OrderRepository $repository) {}
+    public function __construct(
+        private readonly OrderRepository $repository,
+        private readonly SettingRepository $settings,
+    ) {}
 
     /**
      * @param  array<string, mixed>  $data
@@ -22,6 +27,8 @@ class CreateClientOrderAction
     public function handle(Client $client, array $data, array $photos = []): Order
     {
         return DB::transaction(function () use ($client, $data, $photos) {
+            $data = OrderSchedule::applyUrgency($data, $this->settings);
+
             $order = $this->repository->create([
                 'category_id' => $data['category_id'],
                 'client_id' => $client->id,
@@ -31,6 +38,10 @@ class CreateClientOrderAction
                 'client_lat' => $data['client_lat'],
                 'client_lng' => $data['client_lng'],
                 'description' => $data['description'],
+                'preferred_date' => $data['preferred_date'] ?? null,
+                'time_slot' => $data['time_slot'] ?? null,
+                'is_urgent' => $data['is_urgent'],
+                'urgency_fee' => $data['urgency_fee'],
                 'status' => OrderStatus::Pending,
             ]);
 
