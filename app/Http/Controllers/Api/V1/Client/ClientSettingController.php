@@ -18,6 +18,7 @@ class ClientSettingController extends Controller
                 'content' => $this->repository->get('client_app_rules') ?? '',
                 'master_call_out_fee_note' => $this->localizedNote('master_call_out_fee_note'),
                 'order_urgency_fee' => (float) ($this->repository->get('order_urgency_fee') ?? '20'),
+                'order_urgency_fee_note' => $this->localizedNote('order_urgency_fee_note'),
                 'order_cancel_fee' => (float) ($this->repository->get('order_cancel_fee') ?? '0'),
                 'order_cancel_fee_note' => $this->localizedNote('order_cancel_fee_note'),
                 'time_slots' => OrderTimeSlot::values(),

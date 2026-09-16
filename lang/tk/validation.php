@@ -264,6 +264,8 @@ return [
         'master_call_out_fee_note_tk' => 'ýol tölegi baradaky tekst (türkmençe)',
         'order_cancel_fee_note_ru' => 'sargydy ýatyrmak baradaky tekst (rusça)',
         'order_cancel_fee_note_tk' => 'sargydy ýatyrmak baradaky tekst (türkmençe)',
+        'order_urgency_fee_note_ru' => 'gyssaglylyk baradaky tekst (rusça)',
+        'order_urgency_fee_note_tk' => 'gyssaglylyk baradaky tekst (türkmençe)',
         'type' => 'görnüş',
         'email' => 'e-poçta',
         'password' => 'açar söz',

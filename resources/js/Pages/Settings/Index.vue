@@ -18,6 +18,8 @@ const props = defineProps({
     orderCancelFee: { type: [String, Number], default: '0' },
     orderCancelFeeNoteRu: { type: String, default: '' },
     orderCancelFeeNoteTk: { type: String, default: '' },
+    orderUrgencyFeeNoteRu: { type: String, default: '' },
+    orderUrgencyFeeNoteTk: { type: String, default: '' },
 })
 
 const form = useForm({
@@ -33,6 +35,8 @@ const feeForm = useForm({
 const orderFeesForm = useForm({
     order_urgency_fee: props.orderUrgencyFee ?? '20',
     order_cancel_fee: props.orderCancelFee ?? '0',
+    order_urgency_fee_note_ru: props.orderUrgencyFeeNoteRu ?? '',
+    order_urgency_fee_note_tk: props.orderUrgencyFeeNoteTk ?? '',
     order_cancel_fee_note_ru: props.orderCancelFeeNoteRu ?? '',
     order_cancel_fee_note_tk: props.orderCancelFeeNoteTk ?? '',
 })
@@ -497,6 +501,47 @@ onBeforeUnmount(() => {
                             </p>
                         </div>
                     </div>
+                    <div class="grid grid-cols-1 gap-3.5 px-5 pb-3 md:grid-cols-2">
+                        <div>
+                            <label class="mb-1.5 block text-[12.5px] font-medium text-gray-700 dark:text-slate-300">
+                                {{ t('settings.order_fees.urgency_note_ru') }}
+                            </label>
+                            <textarea
+                                v-model="orderFeesForm.order_urgency_fee_note_ru"
+                                rows="3"
+                                maxlength="500"
+                                :placeholder="t('settings.order_fees.urgency_note_ru_placeholder', { amount: orderFeesForm.order_urgency_fee || '0' })"
+                                class="w-full resize-y rounded-[9px] border bg-gray-50 px-[13px] py-[10px] text-[13px] leading-[1.6] text-gray-700 outline-none transition-colors focus:border-amber-500/50 dark:bg-white/[0.03] dark:text-slate-300"
+                                :class="orderFeesForm.errors.order_urgency_fee_note_ru
+                                    ? 'border-red-500/60'
+                                    : 'border-gray-200 dark:border-white/[0.07]'"
+                            />
+                            <p v-if="orderFeesForm.errors.order_urgency_fee_note_ru" class="mt-1.5 text-[11.5px] font-medium text-red-500">
+                                {{ orderFeesForm.errors.order_urgency_fee_note_ru }}
+                            </p>
+                        </div>
+                        <div>
+                            <label class="mb-1.5 block text-[12.5px] font-medium text-gray-700 dark:text-slate-300">
+                                {{ t('settings.order_fees.urgency_note_tk') }}
+                            </label>
+                            <textarea
+                                v-model="orderFeesForm.order_urgency_fee_note_tk"
+                                rows="3"
+                                maxlength="500"
+                                :placeholder="t('settings.order_fees.urgency_note_tk_placeholder', { amount: orderFeesForm.order_urgency_fee || '0' })"
+                                class="w-full resize-y rounded-[9px] border bg-gray-50 px-[13px] py-[10px] text-[13px] leading-[1.6] text-gray-700 outline-none transition-colors focus:border-amber-500/50 dark:bg-white/[0.03] dark:text-slate-300"
+                                :class="orderFeesForm.errors.order_urgency_fee_note_tk
+                                    ? 'border-red-500/60'
+                                    : 'border-gray-200 dark:border-white/[0.07]'"
+                            />
+                            <p v-if="orderFeesForm.errors.order_urgency_fee_note_tk" class="mt-1.5 text-[11.5px] font-medium text-red-500">
+                                {{ orderFeesForm.errors.order_urgency_fee_note_tk }}
+                            </p>
+                        </div>
+                    </div>
+                    <p class="px-5 pb-4 text-[11.5px] text-gray-400 dark:text-slate-500">
+                        {{ t('settings.order_fees.urgency_note_hint') }}
+                    </p>
                     <div class="grid grid-cols-1 gap-3.5 px-5 pb-[18px] md:grid-cols-2">
                         <div>
                             <label class="mb-1.5 block text-[12.5px] font-medium text-gray-700 dark:text-slate-300">

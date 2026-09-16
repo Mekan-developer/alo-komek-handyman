@@ -15,10 +15,11 @@ class ClientSettingApiTest extends TestCase
         $response = $this->getJson('/api/v1/client/settings');
 
         $response->assertOk()
-            ->assertJsonStructure(['data' => ['content', 'master_call_out_fee_note', 'order_urgency_fee', 'order_cancel_fee', 'order_cancel_fee_note', 'time_slots']])
+            ->assertJsonStructure(['data' => ['content', 'master_call_out_fee_note', 'order_urgency_fee', 'order_urgency_fee_note', 'order_cancel_fee', 'order_cancel_fee_note', 'time_slots']])
             ->assertJsonPath('data.content', '')
             ->assertJsonPath('data.master_call_out_fee_note', '')
             ->assertJsonPath('data.order_urgency_fee', 20)
+            ->assertJsonPath('data.order_urgency_fee_note', '')
             ->assertJsonPath('data.order_cancel_fee', 0)
             ->assertJsonPath('data.order_cancel_fee_note', '');
     }
@@ -45,6 +46,20 @@ class ClientSettingApiTest extends TestCase
         $this->getJson('/api/v1/client/settings', ['X-Locale' => 'tk'])
             ->assertOk()
             ->assertJsonPath('data.order_cancel_fee_note', 'Işe başlanandan soň ýatyrmak — 15 TMT');
+    }
+
+    public function test_returns_order_urgency_fee_note_by_locale(): void
+    {
+        Setting::create(['key' => 'order_urgency_fee_note_ru', 'value' => 'Срочный вызов +20 TMT']);
+        Setting::create(['key' => 'order_urgency_fee_note_tk', 'value' => 'Gyssagly çagyryş +20 TMT']);
+
+        $this->getJson('/api/v1/client/settings')
+            ->assertOk()
+            ->assertJsonPath('data.order_urgency_fee_note', 'Срочный вызов +20 TMT');
+
+        $this->getJson('/api/v1/client/settings', ['X-Locale' => 'tk'])
+            ->assertOk()
+            ->assertJsonPath('data.order_urgency_fee_note', 'Gyssagly çagyryş +20 TMT');
     }
 
     public function test_order_cancel_fee_note_falls_back_to_russian_when_turkmen_is_empty(): void

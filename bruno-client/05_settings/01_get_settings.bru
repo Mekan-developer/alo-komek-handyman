@@ -27,6 +27,7 @@ docs {
       "content": "<h1>Правила</h1><p>...</p>",
       "master_call_out_fee_note": "Если отмените после выезда мастера — оплатите выезд.",
       "order_urgency_fee": 20,
+      "order_urgency_fee_note": "Срочный вызов без даты и слота. К сумме добавится 20 TMT.",
       "order_cancel_fee": 15,
       "order_cancel_fee_note": "Если мастер уже начал работу, при отмене нужно оплатить 15 TMT.",
       "time_slots": ["08-10", "10-12", "12-14", "14-16", "16-18", "18-20"]
@@ -39,9 +40,10 @@ docs {
   | `content` | HTML rules / T&C (WebView) |
   | `master_call_out_fee_note` | Text warning when cancelling after master assigned (cash call-out). Hide if `""` |
   | `order_urgency_fee` | Show on «Срочно» toggle — fee added to urgent order |
+  | `order_urgency_fee_note` | Free-text urgency notice from admin (ru/tk via `X-Locale`). Hide if `""` |
   | `order_cancel_fee` | Show on cancel confirmation **only if** order status is `in_progress`. Snapshotted onto order as `cancel_fee` when cancelled from that status; otherwise cancel is free (`cancel_fee: null`) |
   | `order_cancel_fee_note` | Free-text cancel notice from admin (ru/tk via `X-Locale`). Hide if `""` |
   | `time_slots` | Values for schedule picker (`"08-10"` …). Display as `08:00 - 10:00` |
 
-  Locale: `X-Locale: ru` | `tk` (affects `content`, `master_call_out_fee_note`, `order_cancel_fee_note`).
+  Locale: `X-Locale: ru` | `tk` (affects `content`, `master_call_out_fee_note`, `order_urgency_fee_note`, `order_cancel_fee_note`).
 }

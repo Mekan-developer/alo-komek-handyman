@@ -644,6 +644,11 @@ Free-text notice for the client cancel-confirmation screen (wording is entirely 
   `X-Locale`, fallback to Russian, `""` when empty). Informational only — the numeric fee
   still comes from `order_cancel_fee` / the order snapshot.
 
+### Order urgency fee notice
+
+Same pattern for the «Срочно» toggle: `order_urgency_fee_note_ru` / `_tk` →
+`data.order_urgency_fee_note`. Hide in the app when empty.
+
 ### Order receipts
 
 Every order gets a receipt the moment it is completed — a till-roll style document listing

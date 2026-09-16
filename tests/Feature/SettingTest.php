@@ -179,16 +179,40 @@ class SettingTest extends TestCase
         ]);
     }
 
+    public function test_administrator_can_save_order_urgency_fee_notes(): void
+    {
+        $this->actingAs($this->administrator())
+            ->put(route('settings.update'), [
+                'order_urgency_fee' => '20',
+                'order_urgency_fee_note_ru' => 'Срочный вызов +20 TMT',
+                'order_urgency_fee_note_tk' => 'Gyssagly çagyryş +20 TMT',
+            ])
+            ->assertRedirect(route('settings.index'));
+
+        $this->assertDatabaseHas('settings', [
+            'key' => 'order_urgency_fee_note_ru',
+            'value' => 'Срочный вызов +20 TMT',
+        ]);
+        $this->assertDatabaseHas('settings', [
+            'key' => 'order_urgency_fee_note_tk',
+            'value' => 'Gyssagly çagyryş +20 TMT',
+        ]);
+    }
+
     public function test_settings_page_exposes_order_cancel_fee_notes(): void
     {
         Setting::create(['key' => 'order_cancel_fee_note_ru', 'value' => 'Отмена RU']);
         Setting::create(['key' => 'order_cancel_fee_note_tk', 'value' => 'Yatyrmak TK']);
+        Setting::create(['key' => 'order_urgency_fee_note_ru', 'value' => 'Срочность RU']);
+        Setting::create(['key' => 'order_urgency_fee_note_tk', 'value' => 'Gyssaglylyk TK']);
 
         $this->actingAs($this->administrator())
             ->get(route('settings.index'))
             ->assertInertia(fn ($page) => $page
                 ->where('orderCancelFeeNoteRu', 'Отмена RU')
                 ->where('orderCancelFeeNoteTk', 'Yatyrmak TK')
+                ->where('orderUrgencyFeeNoteRu', 'Срочность RU')
+                ->where('orderUrgencyFeeNoteTk', 'Gyssaglylyk TK')
             );
     }
 
@@ -197,6 +221,13 @@ class SettingTest extends TestCase
         $this->actingAs($this->administrator())
             ->put(route('settings.update'), ['order_cancel_fee_note_ru' => str_repeat('a', 501)])
             ->assertSessionHasErrors('order_cancel_fee_note_ru');
+    }
+
+    public function test_order_urgency_fee_note_is_capped_at_500_characters(): void
+    {
+        $this->actingAs($this->administrator())
+            ->put(route('settings.update'), ['order_urgency_fee_note_ru' => str_repeat('a', 501)])
+            ->assertSessionHasErrors('order_urgency_fee_note_ru');
     }
 
     public function test_operator_cannot_update_settings(): void
