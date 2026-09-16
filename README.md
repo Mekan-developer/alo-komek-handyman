@@ -634,6 +634,16 @@ the wording (and any figure inside it) is entirely the admin's.
   overwrites the rules editors (`UpdateSettingsAction` only writes the keys present in the
   request).
 
+### Order cancel fee notice
+
+Free-text notice for the client cancel-confirmation screen (wording is entirely the admin's).
+
+- Stored as `order_cancel_fee_note_ru` / `order_cancel_fee_note_tk` (`nullable|string|max:500`)
+  in the **Срочность и отмена** card on `/settings`, next to `order_cancel_fee`.
+- Exposed by `GET /api/v1/client/settings` as `data.order_cancel_fee_note` (locale via
+  `X-Locale`, fallback to Russian, `""` when empty). Informational only — the numeric fee
+  still comes from `order_cancel_fee` / the order snapshot.
+
 ### Order receipts
 
 Every order gets a receipt the moment it is completed — a till-roll style document listing

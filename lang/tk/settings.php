@@ -7,9 +7,14 @@ return [
     'section_order_fees' => 'Sargyt tarifleri',
     'order_fees' => [
         'title' => 'Gyssaglylyk we ýatyrmak',
-        'hint' => 'Kesgitlenen tölegler: gyssagly sargyt we ýatyrmak',
+        'hint' => 'Kesgitlenen tölegler we müşderi üçin ýatyrmak teksti',
         'urgency' => 'Gyssaglylyk üçin töleg',
         'cancel' => 'Ýatyrmak üçin töleg',
+        'cancel_note_ru' => 'Ýatyrmak barada tekst (rusça)',
+        'cancel_note_tk' => 'Ýatyrmak barada tekst (türkmençe)',
+        'cancel_note_ru_placeholder' => 'Например: Если мастер уже начал работу, при отмене нужно оплатить :amount TMT.',
+        'cancel_note_tk_placeholder' => 'Mysal üçin: Usta işe başlan bolsa, ýatyrmak üçin :amount TMT tölemeli.',
+        'cancel_note_hint' => 'Ýatyrmagy tassyklanda programmada görkezilýär. Boş bolsa iberilmeýär.',
     ],
     'call_out_fee' => [
         'title' => 'Ussanyň barmagy üçin töleg',

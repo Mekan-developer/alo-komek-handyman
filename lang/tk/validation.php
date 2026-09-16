@@ -262,6 +262,8 @@ return [
         'discount_percent' => 'arzanladyş',
         'master_call_out_fee_note_ru' => 'ýol tölegi baradaky tekst (rusça)',
         'master_call_out_fee_note_tk' => 'ýol tölegi baradaky tekst (türkmençe)',
+        'order_cancel_fee_note_ru' => 'sargydy ýatyrmak baradaky tekst (rusça)',
+        'order_cancel_fee_note_tk' => 'sargydy ýatyrmak baradaky tekst (türkmençe)',
         'type' => 'görnüş',
         'email' => 'e-poçta',
         'password' => 'açar söz',

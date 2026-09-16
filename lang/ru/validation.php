@@ -262,6 +262,8 @@ return [
         'discount_percent' => 'скидка',
         'master_call_out_fee_note_ru' => 'текст о плате за выезд (рус.)',
         'master_call_out_fee_note_tk' => 'текст о плате за выезд (туркм.)',
+        'order_cancel_fee_note_ru' => 'текст об отмене заказа (рус.)',
+        'order_cancel_fee_note_tk' => 'текст об отмене заказа (туркм.)',
         'type' => 'тип',
         'email' => 'email',
         'password' => 'пароль',

@@ -159,6 +159,46 @@ class SettingTest extends TestCase
             ->assertSessionHasErrors('master_call_out_fee_note_ru');
     }
 
+    public function test_administrator_can_save_order_cancel_fee_notes(): void
+    {
+        $this->actingAs($this->administrator())
+            ->put(route('settings.update'), [
+                'order_cancel_fee' => '15',
+                'order_cancel_fee_note_ru' => 'При отмене после начала работ оплатите 15 TMT',
+                'order_cancel_fee_note_tk' => 'Işe başlanandan soň ýatyrmak üçin 15 TMT töläň',
+            ])
+            ->assertRedirect(route('settings.index'));
+
+        $this->assertDatabaseHas('settings', [
+            'key' => 'order_cancel_fee_note_ru',
+            'value' => 'При отмене после начала работ оплатите 15 TMT',
+        ]);
+        $this->assertDatabaseHas('settings', [
+            'key' => 'order_cancel_fee_note_tk',
+            'value' => 'Işe başlanandan soň ýatyrmak üçin 15 TMT töläň',
+        ]);
+    }
+
+    public function test_settings_page_exposes_order_cancel_fee_notes(): void
+    {
+        Setting::create(['key' => 'order_cancel_fee_note_ru', 'value' => 'Отмена RU']);
+        Setting::create(['key' => 'order_cancel_fee_note_tk', 'value' => 'Yatyrmak TK']);
+
+        $this->actingAs($this->administrator())
+            ->get(route('settings.index'))
+            ->assertInertia(fn ($page) => $page
+                ->where('orderCancelFeeNoteRu', 'Отмена RU')
+                ->where('orderCancelFeeNoteTk', 'Yatyrmak TK')
+            );
+    }
+
+    public function test_order_cancel_fee_note_is_capped_at_500_characters(): void
+    {
+        $this->actingAs($this->administrator())
+            ->put(route('settings.update'), ['order_cancel_fee_note_ru' => str_repeat('a', 501)])
+            ->assertSessionHasErrors('order_cancel_fee_note_ru');
+    }
+
     public function test_operator_cannot_update_settings(): void
     {
         $this->actingAs($this->operator())

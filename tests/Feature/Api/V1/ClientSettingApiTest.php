@@ -15,11 +15,12 @@ class ClientSettingApiTest extends TestCase
         $response = $this->getJson('/api/v1/client/settings');
 
         $response->assertOk()
-            ->assertJsonStructure(['data' => ['content', 'master_call_out_fee_note', 'order_urgency_fee', 'order_cancel_fee', 'time_slots']])
+            ->assertJsonStructure(['data' => ['content', 'master_call_out_fee_note', 'order_urgency_fee', 'order_cancel_fee', 'order_cancel_fee_note', 'time_slots']])
             ->assertJsonPath('data.content', '')
             ->assertJsonPath('data.master_call_out_fee_note', '')
             ->assertJsonPath('data.order_urgency_fee', 20)
-            ->assertJsonPath('data.order_cancel_fee', 0);
+            ->assertJsonPath('data.order_cancel_fee', 0)
+            ->assertJsonPath('data.order_cancel_fee_note', '');
     }
 
     public function test_returns_call_out_fee_note_in_russian_by_default(): void
@@ -30,6 +31,29 @@ class ClientSettingApiTest extends TestCase
         $this->getJson('/api/v1/client/settings')
             ->assertOk()
             ->assertJsonPath('data.master_call_out_fee_note', 'Оплатите выезд мастера');
+    }
+
+    public function test_returns_order_cancel_fee_note_by_locale(): void
+    {
+        Setting::create(['key' => 'order_cancel_fee_note_ru', 'value' => 'При отмене после начала работ — 15 TMT']);
+        Setting::create(['key' => 'order_cancel_fee_note_tk', 'value' => 'Işe başlanandan soň ýatyrmak — 15 TMT']);
+
+        $this->getJson('/api/v1/client/settings')
+            ->assertOk()
+            ->assertJsonPath('data.order_cancel_fee_note', 'При отмене после начала работ — 15 TMT');
+
+        $this->getJson('/api/v1/client/settings', ['X-Locale' => 'tk'])
+            ->assertOk()
+            ->assertJsonPath('data.order_cancel_fee_note', 'Işe başlanandan soň ýatyrmak — 15 TMT');
+    }
+
+    public function test_order_cancel_fee_note_falls_back_to_russian_when_turkmen_is_empty(): void
+    {
+        Setting::create(['key' => 'order_cancel_fee_note_ru', 'value' => 'Текст отмены RU']);
+
+        $this->getJson('/api/v1/client/settings', ['X-Locale' => 'tk'])
+            ->assertOk()
+            ->assertJsonPath('data.order_cancel_fee_note', 'Текст отмены RU');
     }
 
     public function test_returns_call_out_fee_note_in_turkmen_for_tk_locale(): void
