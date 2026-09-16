@@ -44,6 +44,11 @@ class OrderException extends ApiException
         return new self((string) __('orders.errors.not_editable'));
     }
 
+    public static function clientScheduleNotEditable(): self
+    {
+        return new self((string) __('orders.errors.client_schedule_not_editable'));
+    }
+
     public static function tooManyPhotos(): self
     {
         return new self((string) __('orders.errors.too_many_photos'));

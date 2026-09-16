@@ -6,6 +6,7 @@ use App\Exceptions\OrderException;
 use App\Jobs\ConvertOrderPhotoJob;
 use App\Models\Order;
 use App\Models\OrderPhoto;
+use App\OrderStatus;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -13,6 +14,8 @@ use Illuminate\Support\Facades\Storage;
 class UpdateClientOrderAction
 {
     private const MAX_PHOTOS = 4;
+
+    private const SCHEDULE_FIELDS = ['is_urgent', 'preferred_date', 'time_slot'];
 
     public function __construct(private readonly UpdateOrderAction $updateOrder) {}
 
@@ -24,6 +27,10 @@ class UpdateClientOrderAction
     public function handle(Order $order, array $data, array $photos = [], array $removePhotoIds = []): Order
     {
         return DB::transaction(function () use ($order, $data, $photos, $removePhotoIds) {
+            if ($this->touchesSchedule($data) && $order->status !== OrderStatus::Pending) {
+                throw OrderException::clientScheduleNotEditable();
+            }
+
             $order = $this->updateOrder->handle($order, $data);
 
             if ($removePhotoIds !== []) {
@@ -54,5 +61,19 @@ class UpdateClientOrderAction
 
             return $order->fresh();
         });
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function touchesSchedule(array $data): bool
+    {
+        foreach (self::SCHEDULE_FIELDS as $field) {
+            if (array_key_exists($field, $data)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

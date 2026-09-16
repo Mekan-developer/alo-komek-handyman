@@ -73,6 +73,57 @@ class ClientOrderUpdateTest extends TestCase
         ]);
     }
 
+    public function test_client_can_update_schedule_on_pending_order(): void
+    {
+        $client = $this->actingAsClient();
+        $order = Order::factory()->create([
+            'client_id' => $client->id,
+            'preferred_date' => now()->toDateString(),
+            'time_slot' => '08-10',
+            'is_urgent' => false,
+        ]);
+
+        $this->patchJson(route('api.v1.client.orders.update', $order), [
+            'preferred_date' => now()->addDay()->toDateString(),
+            'time_slot' => '14-16',
+            'is_urgent' => false,
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.preferred_date', now()->addDay()->toDateString())
+            ->assertJsonPath('data.time_slot', '14-16')
+            ->assertJsonPath('data.is_urgent', false);
+
+        $order->refresh();
+
+        $this->assertSame(now()->addDay()->toDateString(), $order->preferred_date?->toDateString());
+        $this->assertSame('14-16', $order->time_slot?->value);
+        $this->assertFalse($order->is_urgent);
+    }
+
+    public function test_client_cannot_update_schedule_once_master_assigned(): void
+    {
+        $client = $this->actingAsClient();
+        $master = Master::factory()->create();
+        $order = Order::factory()->assigned()->create([
+            'client_id' => $client->id,
+            'master_id' => $master->id,
+            'preferred_date' => now()->toDateString(),
+            'time_slot' => '08-10',
+        ]);
+
+        $this->patchJson(route('api.v1.client.orders.update', $order), [
+            'preferred_date' => now()->addDay()->toDateString(),
+            'time_slot' => '14-16',
+        ])
+            ->assertStatus(422)
+            ->assertJsonPath('message', __('orders.errors.client_schedule_not_editable'));
+
+        $order->refresh();
+
+        $this->assertSame(now()->toDateString(), $order->preferred_date?->toDateString());
+        $this->assertSame('08-10', $order->time_slot?->value);
+    }
+
     public function test_client_cannot_update_order_once_master_assigned(): void
     {
         $client = $this->actingAsClient();

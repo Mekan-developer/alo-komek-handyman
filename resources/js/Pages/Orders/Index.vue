@@ -8,9 +8,14 @@ import CreateOrderModal from '@/Pages/Orders/Partials/CreateOrderModal.vue'
 import ConfirmModal from '@/Components/ConfirmModal.vue'
 import Pagination from '@/Components/Pagination.vue'
 import { formatPhone } from '@/utils/formatPhone'
+import { formatPreferredDate } from '@/utils/formatPreferredDate'
+import { localTodayIso, localTomorrowIso } from '@/utils/orderSchedule'
 import { scheduleRealtimeReload, useOrdersChannel } from '@/composables/useOrdersRealtime'
+import { storeToRefs } from 'pinia'
+import { useLocaleStore } from '@/stores/useLocaleStore'
 
 const { t } = useI18n()
+const { locale } = storeToRefs(useLocaleStore())
 
 const props = defineProps({
     orders: Object,
@@ -69,6 +74,37 @@ const activeFilters = computed(() => ({
 
 function isActiveUrgent(order) {
     return order.is_urgent && !['completed', 'cancelled'].includes(order.status)
+}
+
+function preferredDateLabel(value) {
+    if (!value) {
+        return null
+    }
+
+    if (value === localTodayIso()) {
+        return t('orders.fields.preferred_date_today')
+    }
+
+    if (value === localTomorrowIso()) {
+        return t('orders.fields.preferred_date_tomorrow')
+    }
+
+    return formatPreferredDate(value, locale.value)
+}
+
+function scheduleLabel(order) {
+    if (order.is_urgent) {
+        return null
+    }
+
+    const dateLabel = preferredDateLabel(order.preferred_date)
+    const timeLabel = order.time_slot_label || t('orders.create.time_flexible')
+
+    if (!dateLabel) {
+        return timeLabel
+    }
+
+    return `${dateLabel}, ${timeLabel}`
 }
 
 const deleteTarget = ref(null)
@@ -182,7 +218,7 @@ useOrdersChannel({
                                 <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">{{ t('orders.fields.category') }}</th>
                                 <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">{{ t('orders.fields.master') }}</th>
                                 <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">{{ t('orders.fields.status') }}</th>
-                                <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">{{ t('orders.fields.is_urgent') }}</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">{{ t('orders.create.schedule_section') }}</th>
                                 <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">{{ t('orders.fields.final_price') }}</th>
                                 <th class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400">{{ t('orders.fields.created_at') }}</th>
                                 <th class="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-slate-400" />
@@ -230,7 +266,9 @@ useOrdersChannel({
                                     >
                                         {{ t('orders.fields.urgent_badge') }}
                                     </span>
-                                    <span v-else class="text-gray-300 dark:text-slate-600">—</span>
+                                    <div v-else class="text-sm text-gray-700 dark:text-slate-300">
+                                        {{ scheduleLabel(order) }}
+                                    </div>
                                 </td>
                                 <td class="px-6 py-4 text-sm text-gray-700 dark:text-slate-300">
                                     <span v-if="order.final_price">{{ order.final_price }}</span>

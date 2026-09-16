@@ -50,16 +50,22 @@ docs {
   - `time_slot` — value from settings `time_slots`, or `null` = flexible
   - `is_urgent` — if `true`, date/slot are cleared server-side; `urgency_fee` snapshotted
 
+  **Schedule change** (`preferred_date` / `time_slot` / `is_urgent`):
+  - allowed only while status is `pending`
+  - once a master is assigned (`assigned` / `in_progress` / …) → `422` with
+    `orders.errors.client_schedule_not_editable`
+    («Мастер уже назначен. Свяжитесь с оператором… или отмените заказ»)
+
   To also add/remove photos in the same edit, see **Update Order Photos**
   (needs `multipart/form-data`, which requires a small workaround for PATCH).
 
-  Allowed **only while the order is still `pending`** (no master assigned yet).
-  Once a master is assigned/working/order is finished or cancelled, editing is forbidden.
+  Other fields also editable **only while `pending`**.
 
   **Response 200:** `ClientOrderResource` (includes schedule + `cancel_fee` / `urgency_fee`)
 
   **Errors:**
-  - `422` — validation error, past date/slot, or order is no longer editable (not `pending`)
+  - `422` — validation error, past date/slot, schedule locked after master assigned,
+    or order is no longer editable (not `pending`)
   - `404` — order not found or does not belong to this client
   - `401` — missing / invalid client token
 }
