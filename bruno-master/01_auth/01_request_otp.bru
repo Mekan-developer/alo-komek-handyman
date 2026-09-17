@@ -29,7 +29,7 @@ docs {
 
   Rate limited: 3 req/min per IP and per phone (`throttle:otp-request`).
 
-  Unknown phones get the **same 200 shape** (no OTP cached) — anti-enumeration.
+  Unknown phones get **404** (masters are staff accounts).
   Inactive / expired masters still get **403**.
 
   **Response 200:**
@@ -46,6 +46,7 @@ docs {
 
   **Errors:**
   - `403` — master inactive or access expired
+  - `404` — phone is not registered as a master
   - `422` — phone validation error
   - `429` — too many requests
 }

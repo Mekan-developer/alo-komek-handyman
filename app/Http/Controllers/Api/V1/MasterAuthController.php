@@ -16,23 +16,12 @@ use Illuminate\Http\Request;
 class MasterAuthController extends Controller
 {
     /**
-     * Request an OTP for a master phone.
-     * Unknown numbers get a generic success (no OTP cached) to avoid phone enumeration.
-     * Inactive / expired masters still receive a proper 403 from the action.
+     * Request an OTP for a registered master phone.
+     * Unknown numbers return 404 — masters are staff accounts, not public signup.
      */
     public function requestOtp(RequestOtpRequest $request, RequestMasterOtpAction $action): JsonResponse
     {
-        $master = Master::where('phone', $request->validated('phone'))->first();
-
-        if ($master === null) {
-            return response()->json([
-                'message' => 'OTP sent.',
-                'delivery' => OtpDeliveryChannel::Sms->value,
-                'delivery_message' => null,
-            ]);
-        }
-
-        $channel = $action->handle($master);
+        $channel = $action->handle($request->validated('phone'));
 
         return response()->json([
             'message' => 'OTP sent.',

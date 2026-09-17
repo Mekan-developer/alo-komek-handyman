@@ -77,13 +77,36 @@ class ClientAuthTest extends TestCase
         ])->assertOk()->assertJsonStructure(['token', 'client']);
     }
 
-    public function test_sms_delivery_does_not_park_a_code_for_operators(): void
+    public function test_sms_delivery_also_parks_a_code_for_operators(): void
     {
         Http::fake(['*/emit-otp' => Http::response(['message' => 'OTP event emitted'])]);
 
-        $this->postJson(route('api.v1.client.auth.request-otp'), ['phone' => '+99362111222'])
+        $phone = '+99362111222';
+
+        $this->postJson(route('api.v1.client.auth.request-otp'), ['phone' => $phone])
             ->assertOk()
             ->assertJsonPath('delivery', 'sms');
+
+        $this->assertDatabaseHas('pending_otps', [
+            'phone' => $phone,
+            'code' => Cache::get("client_otp:{$phone}"),
+            'recipient_type' => 'client',
+        ]);
+    }
+
+    public function test_verifying_otp_clears_the_parked_operator_code(): void
+    {
+        Http::fake(['*/emit-otp' => Http::response(['message' => 'OTP event emitted'])]);
+
+        $phone = '+99362111222';
+
+        $this->postJson(route('api.v1.client.auth.request-otp'), ['phone' => $phone])->assertOk();
+        $this->assertDatabaseCount('pending_otps', 1);
+
+        $this->postJson(route('api.v1.client.auth.verify-otp'), [
+            'phone' => $phone,
+            'code' => Cache::get("client_otp:{$phone}"),
+        ])->assertOk();
 
         $this->assertDatabaseCount('pending_otps', 0);
     }

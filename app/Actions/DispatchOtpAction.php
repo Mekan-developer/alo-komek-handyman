@@ -13,9 +13,8 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Generates an OTP and tries to deliver it over the SMS gateway. When the
- * gateway is down the code is still issued, but it is parked in the admin
- * panel so an operator can dictate it to the caller instead of blocking login.
+ * Generates an OTP, tries SMS delivery, and always parks the code in the admin
+ * panel so an operator can dictate it if the SMS does not arrive.
  */
 class DispatchOtpAction
 {
@@ -25,11 +24,17 @@ class DispatchOtpAction
         private readonly OtpTestAccountService $testAccounts,
     ) {}
 
+    /**
+     * Issues an OTP for the phone and returns how it was delivered to the caller.
+     */
     public function handle(string $phone, OtpRecipientType $recipient, ?string $recipientName = null): OtpDeliveryChannel
     {
-        // Store reviewers already know their code, so nothing is generated,
-        // sent or parked for them.
         if ($this->testAccounts->isTestPhone($phone)) {
+            Log::info('OTP skipped for store-review test phone', [
+                'phone' => $phone,
+                'recipient_type' => $recipient->value,
+            ]);
+
             return OtpDeliveryChannel::Sms;
         }
 
@@ -38,27 +43,44 @@ class DispatchOtpAction
 
         $channel = OtpDeliveryChannel::Sms;
 
+        Log::info('OTP dispatch started', [
+            'phone' => $phone,
+            'recipient_type' => $recipient->value,
+            'recipient_name' => $recipientName,
+            'code' => $code,
+        ]);
+
         try {
             $this->gateway->send($phone, $code);
         } catch (OtpException) {
             $channel = OtpDeliveryChannel::Manual;
 
-            $pendingOtp = $this->pendingOtps->replaceForPhone([
+            Log::warning('OTP SMS failed, parked for operator', [
                 'phone' => $phone,
+                'recipient_type' => $recipient->value,
                 'code' => $code,
-                'recipient_type' => $recipient,
-                'recipient_name' => $recipientName,
-                'expires_at' => $expiresAt,
             ]);
-
-            // Queued broadcast — open admin panels get the code without waiting
-            // on Reverb inside the caller's login request.
-            PendingOtpCreated::dispatch($pendingOtp);
-
-            Log::warning("OTP for {$phone} parked for manual delivery: SMS gateway unavailable.");
         }
 
+        $pendingOtp = $this->pendingOtps->replaceForPhone([
+            'phone' => $phone,
+            'code' => $code,
+            'recipient_type' => $recipient,
+            'recipient_name' => $recipientName,
+            'expires_at' => $expiresAt,
+        ]);
+
+        PendingOtpCreated::dispatch($pendingOtp);
+
         Cache::put($recipient->cacheKey($phone), $code, $expiresAt);
+
+        Log::info('OTP dispatch finished', [
+            'phone' => $phone,
+            'recipient_type' => $recipient->value,
+            'delivery' => $channel->value,
+            'code' => $code,
+            'pending_otp_id' => $pendingOtp->id,
+        ]);
 
         return $channel;
     }

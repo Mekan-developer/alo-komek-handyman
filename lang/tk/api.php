@@ -19,6 +19,7 @@ return [
         'token_required' => 'Ussanyň awtorizasiýasy talap edilýär',
         'disabled' => 'Ussanyň hasaby öçürilen',
         'access_expired' => 'Ussanyň girişiniň möhleti gutardy',
+        'not_found' => 'Şeýle belgili ussa tapylmady',
     ],
 
     'client' => [

@@ -5,14 +5,28 @@ namespace App\Actions;
 use App\Enums\OtpDeliveryChannel;
 use App\Enums\OtpRecipientType;
 use App\Exceptions\MasterDisabledException;
-use App\Models\Master;
+use App\Exceptions\MasterNotFoundException;
+use App\Repositories\MasterRepository;
 
 class RequestMasterOtpAction
 {
-    public function __construct(private readonly DispatchOtpAction $dispatcher) {}
+    public function __construct(
+        private readonly DispatchOtpAction $dispatcher,
+        private readonly MasterRepository $masters,
+    ) {}
 
-    public function handle(Master $master): OtpDeliveryChannel
+    /**
+     * @throws MasterNotFoundException
+     * @throws MasterDisabledException
+     */
+    public function handle(string $phone): OtpDeliveryChannel
     {
+        $master = $this->masters->findByPhone($phone);
+
+        if ($master === null) {
+            throw MasterNotFoundException::forPhone();
+        }
+
         if (! $master->is_active) {
             throw MasterDisabledException::inactive();
         }

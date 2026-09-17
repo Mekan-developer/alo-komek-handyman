@@ -5,6 +5,7 @@ namespace App\Actions;
 use App\Exceptions\MasterDisabledException;
 use App\Exceptions\OtpException;
 use App\Models\Master;
+use App\Repositories\PendingOtpRepository;
 use App\Services\OtpCodeVerifier;
 use App\Services\OtpTestAccountService;
 use Laravel\Sanctum\NewAccessToken;
@@ -12,6 +13,7 @@ use Laravel\Sanctum\NewAccessToken;
 class VerifyMasterOtpAction
 {
     public function __construct(
+        private readonly PendingOtpRepository $pendingOtps,
         private readonly OtpTestAccountService $testAccounts,
         private readonly OtpCodeVerifier $verifier,
     ) {}
@@ -33,6 +35,8 @@ class VerifyMasterOtpAction
         if (! $this->testAccounts->matches($master->phone, $code)) {
             $this->verifier->verify("master_otp:{$master->phone}", $code);
         }
+
+        $this->pendingOtps->deleteByPhone($master->phone);
 
         $master->tokens()->where('name', 'mobile')->delete();
 

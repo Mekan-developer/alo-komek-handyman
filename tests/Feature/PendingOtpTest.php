@@ -112,14 +112,19 @@ class PendingOtpTest extends TestCase
         $this->assertNotInstanceOf(ShouldBroadcastNow::class, new PendingOtpCreated(PendingOtp::factory()->create()));
     }
 
-    public function test_successful_sms_delivery_broadcasts_nothing(): void
+    public function test_successful_sms_delivery_still_broadcasts_parked_code(): void
     {
         Event::fake([PendingOtpCreated::class]);
         Http::fake(['*/emit-otp' => Http::response(['message' => 'OTP event emitted'])]);
 
-        $this->postJson(route('api.v1.client.auth.request-otp'), ['phone' => '+99362111222'])->assertOk();
+        $phone = '+99362111222';
 
-        Event::assertNotDispatched(PendingOtpCreated::class);
+        $this->postJson(route('api.v1.client.auth.request-otp'), ['phone' => $phone])->assertOk();
+
+        Event::assertDispatched(PendingOtpCreated::class, function (PendingOtpCreated $event) use ($phone) {
+            return $event->payload['phone'] === $phone
+                && $event->payload['code'] === Cache::get("client_otp:{$phone}");
+        });
     }
 
     public function test_only_non_operator_staff_may_subscribe_to_the_broadcast_channel(): void

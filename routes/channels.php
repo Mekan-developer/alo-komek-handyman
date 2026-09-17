@@ -26,7 +26,7 @@ Broadcast::channel('masters-map', function ($user) {
 });
 
 /*
- * Private channel carrying OTP codes parked for manual delivery. Codes are
+ * Private channel carrying OTP codes parked for operators. Codes are
  * secrets — only staff who can open the section may subscribe.
  */
 Broadcast::channel('admin.pending-otps', function ($user) {

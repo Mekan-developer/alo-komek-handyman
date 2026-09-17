@@ -24,14 +24,12 @@ body:json {
 docs {
   # Request OTP — unknown phone
 
-  Same **200** response as a real send (anti-enumeration).
-  No OTP is stored in cache and no SMS is sent.
+  Returns **404** — masters are pre-registered staff, not public signup.
+  No OTP is stored and no SMS is sent.
 
   ```json
   {
-    "message": "OTP sent.",
-    "delivery": "sms",
-    "delivery_message": null
+    "message": "Мастер с таким номером не найден"
   }
   ```
 }

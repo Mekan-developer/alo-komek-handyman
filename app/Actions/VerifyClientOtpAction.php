@@ -7,6 +7,7 @@ use App\Exceptions\ClientBlockedException;
 use App\Exceptions\OtpException;
 use App\Models\Client;
 use App\Repositories\ClientRepository;
+use App\Repositories\PendingOtpRepository;
 use App\Services\OtpCodeVerifier;
 use App\Services\OtpTestAccountService;
 use Laravel\Sanctum\NewAccessToken;
@@ -15,6 +16,7 @@ class VerifyClientOtpAction
 {
     public function __construct(
         private readonly ClientRepository $repository,
+        private readonly PendingOtpRepository $pendingOtps,
         private readonly OtpTestAccountService $testAccounts,
         private readonly OtpCodeVerifier $verifier,
     ) {}
@@ -30,6 +32,8 @@ class VerifyClientOtpAction
         if (! $this->testAccounts->matches($phone, $code)) {
             $this->verifier->verify("client_otp:{$phone}", $code);
         }
+
+        $this->pendingOtps->deleteByPhone($phone);
 
         $client = $this->repository->findByPhone($phone);
         $isNew = $client === null;

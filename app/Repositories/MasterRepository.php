@@ -43,6 +43,11 @@ class MasterRepository
         return Master::findOrFail($id);
     }
 
+    public function findByPhone(string $phone): ?Master
+    {
+        return Master::where('phone', $phone)->first();
+    }
+
     public function create(array $data): Master
     {
         $categories = $data['category_ids'] ?? [];

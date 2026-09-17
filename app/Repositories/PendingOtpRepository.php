@@ -45,6 +45,14 @@ class PendingOtpRepository
         $otp->delete();
     }
 
+    /**
+     * Removes any parked code for the phone after a successful verify.
+     */
+    public function deleteByPhone(string $phone): void
+    {
+        PendingOtp::where('phone', $phone)->delete();
+    }
+
     public function purgeExpired(): void
     {
         PendingOtp::where('expires_at', '<=', now())->delete();

@@ -29,7 +29,7 @@ The current backend has **no auth on the master endpoints** — they are open by
 
 | Step | Endpoint | Body | Response |
 |------|----------|------|----------|
-| 1. Request OTP | `POST /api/v1/master/auth/request-otp` | `{ "phone": "+99362111222" }` | `{ "message": "OTP sent" }` |
+| 1. Request OTP | `POST /api/v1/master/auth/request-otp` | `{ "phone": "+99362111222" }` | `{ "message": "OTP sent", "delivery": "sms" }` — unknown phone → **404** |
 | 2. Verify OTP | `POST /api/v1/master/auth/verify-otp` | `{ "phone": "+99362111222", "code": "1234" }` | `{ "token": "1\|abc...", "master": { ... } }` |
 | 3. Authenticated requests | any | header: `Authorization: Bearer <token>` | — |
 | 4. Logout | `POST /api/v1/master/auth/logout` | — | `204 No Content` |

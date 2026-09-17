@@ -25,18 +25,31 @@ class OtpGatewayService
                     'otp' => $code,
                 ]);
         } catch (Throwable $e) {
-            Log::error("SMS gateway unreachable for {$phone}: {$e->getMessage()}");
+            Log::error('SMS gateway unreachable', [
+                'phone' => $phone,
+                'error' => $e->getMessage(),
+            ]);
 
             throw OtpException::sendFailed();
         }
 
         if ($response->failed()) {
-            Log::error("SMS gateway rejected OTP for {$phone}: {$response->status()} {$response->body()}");
+            Log::error('SMS gateway rejected OTP', [
+                'phone' => $phone,
+                'local_phone' => $this->toLocalFormat($phone),
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
 
             throw OtpException::sendFailed();
         }
 
         Cache::put('otp_gateway:last_sent', now()->format('H:i'), now()->addDay());
+
+        Log::info('SMS gateway accepted OTP', [
+            'phone' => $phone,
+            'local_phone' => $this->toLocalFormat($phone),
+        ]);
     }
 
     private function toLocalFormat(string $phone): string

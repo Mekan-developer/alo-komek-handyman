@@ -2,9 +2,9 @@
 
 return [
     'title' => 'OTP kodlary',
-    'panel_title' => 'El bilen bermek üçin OTP kodlary',
-    'hint' => 'SMS derwezesi elýeterli däl. Kody müşderä telefon arkaly aýdyň.',
-    'empty' => 'El bilen bermeli kod ýok — SMS derwezesi işleýär.',
+    'panel_title' => 'OTP kodlary',
+    'hint' => 'Her OTP soragda kod peýda bolýar. SMS gelmese, kody aýdyň.',
+    'empty' => 'Işjeň OTP kod ýok.',
     'phone' => 'Belgi',
     'code' => 'Kod',
     'recipient' => 'Kim',
@@ -15,7 +15,7 @@ return [
     'dismiss' => 'Berildi',
     'dismiss_failed' => 'Kody gizlemek başartmady',
     'notifications' => [
-        'new' => 'El bilen bermek üçin täze OTP kody: {phone}',
+        'new' => 'Täze OTP kody: {phone}',
     ],
     'recipients' => [
         'client' => 'Müşderi',
