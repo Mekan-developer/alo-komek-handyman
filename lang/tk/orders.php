@@ -79,6 +79,7 @@ return [
         'price' => 'Bahasy',
         'subtotal' => 'Jemi',
         'discount' => 'Arzanladyş',
+        'urgency_fee' => 'Gyssaglylyk',
         'total' => 'JEMI',
         'no_items' => 'Işleriň bahasy görkezilmedik — çek boş',
         'not_issued' => 'Çek sargyt tamamlanandan soň awtomatiki döredilýär',
@@ -87,7 +88,7 @@ return [
 
     'no_master' => 'Bellenilmedi',
     'no_price' => 'Kesgitlenilmedi',
-    'price_from_tasks' => 'Işleriň jemi, arzanladyş aýrylan',
+    'price_from_tasks' => 'Işler − arzanladyş + gyssaglylyk',
     'no_discount' => 'Arzanladyşsyz',
     'no_reason' => 'Sebäbi görkezilmedi',
 

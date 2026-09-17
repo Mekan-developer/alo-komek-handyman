@@ -41,6 +41,14 @@ return [
         'placeholder' => 'Usta programmasy üçin düzgünleri giriziň...',
         'hint' => 'Usta mobil programmasyndaky düzgünler we şertler',
     ],
+    'master_app_download' => [
+        'title' => 'Usta programmasyny ýüklemek',
+        'hint' => 'Serwerdäki APK/faýlyň baglanyşygy — ondan saýtda QR emele gelýär',
+        'url' => 'Faýlyň URL-i',
+        'url_placeholder' => 'https://example.com/apps/master.apk',
+        'url_help' => 'Faýly serwere ýerleşdiriň we göni baglanyşygy giriziň. Boş bolsa QR düwmesi gizlenýär.',
+        'sidebar_note' => 'Saklanandan soň QR ähli işgärleriň saýt panelinde peýda bolýar',
+    ],
     'client_app' => [
         'title' => 'Müşderi programmasy',
         'label' => 'Düzgünler we şertler',

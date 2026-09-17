@@ -30,6 +30,7 @@ class IssueOrderReceiptAction
         $pricedTasks = $order->tasks->whereNotNull('price');
         $subtotal = round((float) $pricedTasks->sum('price'), 2);
         $discountAmount = $order->discountAmountFor($subtotal);
+        $urgencyFee = round((float) ($order->urgency_fee ?? 0), 2);
         $issuedAt = $order->completed_at ?? now();
 
         return $this->repository->create([
@@ -42,7 +43,8 @@ class IssueOrderReceiptAction
             'subtotal' => $this->decimal($subtotal),
             'discount_percent' => $this->decimal((float) $order->discount_percent),
             'discount_amount' => $this->decimal($discountAmount),
-            'total' => $this->decimal($subtotal - $discountAmount),
+            'urgency_fee' => $this->decimal($urgencyFee),
+            'total' => $this->decimal($subtotal - $discountAmount + $urgencyFee),
         ], $pricedTasks->map(fn ($task) => [
             'order_task_id' => $task->id,
             'title' => $task->title,

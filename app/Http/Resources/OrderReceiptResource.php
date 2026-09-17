@@ -31,6 +31,7 @@ class OrderReceiptResource extends JsonResource
             'subtotal' => (float) $this->subtotal,
             'discount_percent' => (float) $this->discount_percent,
             'discount_amount' => (float) $this->discount_amount,
+            'urgency_fee' => (float) $this->urgency_fee,
             'total' => (float) $this->total,
             'currency' => 'TMT',
 

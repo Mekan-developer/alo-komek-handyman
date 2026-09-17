@@ -30,6 +30,7 @@ class OrderReceipt extends Model
         'subtotal',
         'discount_percent',
         'discount_amount',
+        'urgency_fee',
         'total',
         'issued_at',
     ];
@@ -41,6 +42,7 @@ class OrderReceipt extends Model
             'subtotal' => 'decimal:2',
             'discount_percent' => 'decimal:2',
             'discount_amount' => 'decimal:2',
+            'urgency_fee' => 'decimal:2',
             'total' => 'decimal:2',
             'issued_at' => 'datetime',
         ];

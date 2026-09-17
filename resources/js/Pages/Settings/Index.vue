@@ -20,6 +20,7 @@ const props = defineProps({
     orderCancelFeeNoteTk: { type: String, default: '' },
     orderUrgencyFeeNoteRu: { type: String, default: '' },
     orderUrgencyFeeNoteTk: { type: String, default: '' },
+    masterAppDownloadUrl: { type: String, default: '' },
 })
 
 const form = useForm({
@@ -41,9 +42,14 @@ const orderFeesForm = useForm({
     order_cancel_fee_note_tk: props.orderCancelFeeNoteTk ?? '',
 })
 
+const downloadForm = useForm({
+    master_app_download_url: props.masterAppDownloadUrl ?? '',
+})
+
 const feeSaved = ref(false)
 const feeLastSaved = ref(props.masterCallOutFeeNoteUpdatedAt)
 const orderFeesSaved = ref(false)
+const downloadSaved = ref(false)
 
 function saveFee() {
     feeForm.put(route('settings.update'), {
@@ -62,6 +68,16 @@ function saveOrderFees() {
         onSuccess() {
             orderFeesSaved.value = true
             setTimeout(() => { orderFeesSaved.value = false }, 2500)
+        },
+    })
+}
+
+function saveDownloadUrl() {
+    downloadForm.put(route('settings.update'), {
+        preserveScroll: true,
+        onSuccess() {
+            downloadSaved.value = true
+            setTimeout(() => { downloadSaved.value = false }, 2500)
         },
     })
 }
@@ -672,6 +688,60 @@ onBeforeUnmount(() => {
                 </div>
 
                 <div class="flex flex-col gap-4">
+
+                    <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-white/[0.07] dark:bg-[#131729]">
+                        <div class="flex items-center gap-3.5 px-5 pb-3.5 pt-[18px]">
+                            <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-[11px] border border-emerald-500/20 bg-emerald-500/[0.15]">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="1.8">
+                                    <path d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z" />
+                                    <path d="M6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75v-.75zM16.5 6.75h.75v.75h-.75v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 19.5h.75v.75h-.75v-.75zM19.5 13.5h.75v.75h-.75v-.75zM19.5 19.5h.75v.75h-.75v-.75zM16.5 16.5h.75v.75h-.75v-.75z" />
+                                </svg>
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <div class="text-[15px] font-semibold text-gray-900 dark:text-slate-100">
+                                    {{ t('settings.master_app_download.title') }}
+                                </div>
+                                <div class="mt-0.5 text-xs text-gray-400 dark:text-slate-500">
+                                    {{ t('settings.master_app_download.hint') }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-3 px-5 pb-4">
+                            <div>
+                                <label class="mb-1.5 block text-[12px] font-medium text-gray-600 dark:text-slate-300">
+                                    {{ t('settings.master_app_download.url') }}
+                                </label>
+                                <input
+                                    v-model="downloadForm.master_app_download_url"
+                                    type="url"
+                                    :placeholder="t('settings.master_app_download.url_placeholder')"
+                                    class="w-full rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-900 outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-100 dark:focus:border-indigo-400 dark:focus:bg-white/[0.06]"
+                                    :class="downloadForm.errors.master_app_download_url ? 'border-red-400 focus:border-red-500 focus:ring-red-500/20' : ''"
+                                >
+                                <p v-if="downloadForm.errors.master_app_download_url" class="mt-1.5 text-[11.5px] font-medium text-red-500">
+                                    {{ downloadForm.errors.master_app_download_url }}
+                                </p>
+                                <p class="mt-1.5 text-[11.5px] text-gray-400 dark:text-slate-500">
+                                    {{ t('settings.master_app_download.url_help') }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col gap-1 border-t border-gray-100 bg-emerald-500/[0.04] px-5 py-3 dark:border-white/[0.05] sm:flex-row sm:items-center sm:justify-between">
+                            <span class="text-[11.5px] text-gray-400 dark:text-slate-500">
+                                {{ downloadSaved ? t('settings.saved_ok') : t('settings.master_app_download.sidebar_note') }}
+                            </span>
+                            <button
+                                type="button"
+                                class="inline-flex items-center justify-center rounded-lg bg-indigo-600 px-4 py-2 text-[12.5px] font-medium text-white transition hover:bg-indigo-700 disabled:opacity-60"
+                                :disabled="downloadForm.processing"
+                                @click="saveDownloadUrl"
+                            >
+                                {{ t('settings.save') }}
+                            </button>
+                        </div>
+                    </div>
 
                     <!-- ── MASTER CARD ───────────────────────────────────────────── -->
                     <div class="overflow-hidden rounded-2xl border border-gray-200 bg-white dark:border-white/[0.07] dark:bg-[#131729]">

@@ -28,6 +28,12 @@ class UpdateOrderAction
             $data = OrderSchedule::applyUrgency($data, $this->settings);
         }
 
-        return $this->repository->update($order, $data);
+        $updated = $this->repository->update($order, $data);
+
+        if (array_key_exists('urgency_fee', $data)) {
+            return $this->repository->syncFinalPriceFromTasks($updated);
+        }
+
+        return $updated;
     }
 }

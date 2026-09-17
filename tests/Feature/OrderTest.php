@@ -9,6 +9,7 @@ use App\Models\MasterLocation;
 use App\Models\Order;
 use App\Models\OrderTask;
 use App\Models\OrderTaskPhoto;
+use App\Models\Setting;
 use App\Models\User;
 use App\OrderStatus;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
@@ -662,6 +663,44 @@ class OrderTest extends TestCase
 
         $this->assertEquals('800.00', $order->fresh()->final_price);
         $this->assertEqualsWithDelta(400.0, (float) $master->fresh()->balance, 0.01);
+    }
+
+    public function test_order_total_includes_urgency_fee_after_discount(): void
+    {
+        $this->actingAsAdmin();
+        $master = Master::factory()->create();
+        $order = Order::factory()->forMaster($master)->inProgress()->urgent()->create([
+            'urgency_fee' => 20,
+            'discount_percent' => 10,
+        ]);
+        OrderTask::factory()->priced(100)->create(['order_id' => $order->id]);
+
+        $this->assertEquals('110.00', $order->fresh()->final_price);
+    }
+
+    public function test_toggling_urgency_off_removes_fee_from_final_price(): void
+    {
+        Setting::create(['key' => 'order_urgency_fee', 'value' => '20']);
+        $this->actingAsAdmin();
+        $master = Master::factory()->create();
+        $order = Order::factory()->forMaster($master)->inProgress()->urgent()->create([
+            'urgency_fee' => 20,
+        ]);
+        OrderTask::factory()->priced(100)->create(['order_id' => $order->id]);
+
+        $this->assertEquals('120.00', $order->fresh()->final_price);
+
+        $this->put(route('orders.update-schedule', $order), [
+            'is_urgent' => false,
+            'preferred_date' => now()->addDay()->toDateString(),
+            'time_slot' => '08-10',
+        ])->assertRedirect();
+
+        $order->refresh();
+
+        $this->assertFalse($order->is_urgent);
+        $this->assertNull($order->urgency_fee);
+        $this->assertEquals('100.00', $order->final_price);
     }
 
     public function test_task_price_must_not_be_negative(): void

@@ -239,4 +239,61 @@ class SettingTest extends TestCase
             ])
             ->assertForbidden();
     }
+
+    public function test_administrator_can_save_master_app_download_url(): void
+    {
+        $this->actingAs($this->administrator())
+            ->put(route('settings.update'), [
+                'master_app_download_url' => 'https://cdn.example.com/apps/master.apk',
+            ])
+            ->assertRedirect(route('settings.index'));
+
+        $this->assertDatabaseHas('settings', [
+            'key' => 'master_app_download_url',
+            'value' => 'https://cdn.example.com/apps/master.apk',
+        ]);
+    }
+
+    public function test_master_app_download_url_must_be_valid(): void
+    {
+        $this->actingAs($this->administrator())
+            ->put(route('settings.update'), [
+                'master_app_download_url' => 'not-a-url',
+            ])
+            ->assertSessionHasErrors('master_app_download_url');
+    }
+
+    public function test_settings_page_exposes_master_app_download_url(): void
+    {
+        Setting::create(['key' => 'master_app_download_url', 'value' => 'https://cdn.example.com/master.apk']);
+
+        $this->actingAs($this->administrator())
+            ->get(route('settings.index'))
+            ->assertInertia(fn ($page) => $page
+                ->where('masterAppDownloadUrl', 'https://cdn.example.com/master.apk'));
+    }
+
+    public function test_master_app_download_url_is_shared_with_authenticated_staff(): void
+    {
+        Setting::create(['key' => 'master_app_download_url', 'value' => 'https://cdn.example.com/master.apk']);
+
+        $this->actingAs($this->administrator())
+            ->get(route('profile.edit'))
+            ->assertInertia(fn ($page) => $page
+                ->where('masterAppDownloadUrl', 'https://cdn.example.com/master.apk'));
+
+        $this->actingAs($this->operator())
+            ->get(route('profile.edit'))
+            ->assertInertia(fn ($page) => $page
+                ->where('masterAppDownloadUrl', 'https://cdn.example.com/master.apk'));
+    }
+
+    public function test_empty_master_app_download_url_is_shared_as_null(): void
+    {
+        Setting::create(['key' => 'master_app_download_url', 'value' => '']);
+
+        $this->actingAs($this->administrator())
+            ->get(route('profile.edit'))
+            ->assertInertia(fn ($page) => $page->where('masterAppDownloadUrl', null));
+    }
 }

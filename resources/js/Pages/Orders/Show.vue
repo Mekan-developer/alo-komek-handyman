@@ -810,6 +810,16 @@ const sortedEligibleMasters = computed(() => {
                                     </span>
                                 </div>
 
+                                <div
+                                    v-if="order.urgency_fee != null"
+                                    class="flex items-center justify-between gap-2 border-t border-gray-100 pt-2 dark:border-slate-700"
+                                >
+                                    <span class="text-gray-500 dark:text-slate-400">{{ t('orders.fields.urgency_fee') }}</span>
+                                    <span class="font-mono text-sm font-semibold text-amber-700 dark:text-amber-300">
+                                        +{{ formatMoney(order.urgency_fee) }}
+                                    </span>
+                                </div>
+
                                 <div class="flex items-start justify-between gap-2 border-t border-gray-100 pt-2 dark:border-slate-700">
                                     <span class="text-gray-500 dark:text-slate-400">
                                         {{ t('orders.fields.final_price') }}

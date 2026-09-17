@@ -115,10 +115,11 @@ class OrderRepository
     }
 
     /**
-     * Recalculate the order total from its task prices, minus the order discount.
+     * Recalculate the order total from its task prices, minus discount, plus urgency fee.
      *
      * Tasks without a price are ignored; when no task is priced the order total
      * is reset to null so the "completed without price" guards keep working.
+     * Urgency fee is added after the discount (fixed surcharge, not discounted).
      */
     public function syncFinalPriceFromTasks(Order $order): Order
     {
@@ -128,7 +129,12 @@ class OrderRepository
         $order->update([
             'final_price' => $subtotal === null
                 ? null
-                : number_format($subtotal - $order->discountAmountFor($subtotal), 2, '.', ''),
+                : number_format(
+                    $subtotal - $order->discountAmountFor($subtotal) + (float) ($order->urgency_fee ?? 0),
+                    2,
+                    '.',
+                    ''
+                ),
         ]);
 
         return $order->fresh();

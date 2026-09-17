@@ -11,6 +11,7 @@ use App\Models\OrderReceipt;
 use App\Models\OrderTask;
 use App\Models\User;
 use App\OrderStatus;
+use App\Repositories\OrderRepository;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
 use Tests\TestCase;
 
@@ -106,7 +107,25 @@ class OrderReceiptTest extends TestCase
 
         $this->assertSame('100.00', $receipt->subtotal);
         $this->assertSame('10.00', $receipt->discount_amount);
+        $this->assertSame('0.00', $receipt->urgency_fee);
         $this->assertSame('90.00', $receipt->total);
+        $this->assertSame($completed->final_price, $receipt->total);
+    }
+
+    public function test_receipt_total_includes_urgency_fee_after_discount(): void
+    {
+        $order = $this->orderInProgressWithTasks(discountPercent: 10);
+        $order->update(['is_urgent' => true, 'urgency_fee' => 20]);
+        app(OrderRepository::class)->syncFinalPriceFromTasks($order->fresh());
+
+        $completed = $this->complete($order->fresh());
+
+        $receipt = OrderReceipt::where('order_id', $order->id)->firstOrFail();
+
+        $this->assertSame('100.00', $receipt->subtotal);
+        $this->assertSame('10.00', $receipt->discount_amount);
+        $this->assertSame('20.00', $receipt->urgency_fee);
+        $this->assertSame('110.00', $receipt->total);
         $this->assertSame($completed->final_price, $receipt->total);
     }
 

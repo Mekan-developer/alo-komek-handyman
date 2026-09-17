@@ -27,6 +27,7 @@ class OrderReceiptFactory extends Factory
             'subtotal' => $subtotal,
             'discount_percent' => 0,
             'discount_amount' => 0,
+            'urgency_fee' => 0,
             'total' => $subtotal,
             'issued_at' => now(),
         ];

@@ -26,11 +26,13 @@ class UpdateOrderScheduleAction
 
         $data = OrderSchedule::applyUrgency($data, $this->settings);
 
-        return $this->repository->update($order, [
+        $updated = $this->repository->update($order, [
             'preferred_date' => $data['preferred_date'] ?? null,
             'time_slot' => $data['time_slot'] ?? null,
             'is_urgent' => $data['is_urgent'],
             'urgency_fee' => $data['urgency_fee'],
         ]);
+
+        return $this->repository->syncFinalPriceFromTasks($updated);
     }
 }

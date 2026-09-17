@@ -36,6 +36,18 @@ return [
         'cancel' => 'Ýatyr',
         'close' => 'Ýap',
     ],
+    'master_app_qr' => [
+        'nav' => 'Usta programmasy',
+        'title' => 'Usta programmasyny ýükle',
+        'hint' => 'QR-y usta görkeziň ýa-da telefonyňyzda baglanyşygy açyň',
+        'generating' => 'QR döredilýär…',
+        'unavailable' => 'QR döredip bolmady',
+        'generate_failed' => 'QR kodyny döretmek şowsuz',
+        'copy' => 'Baglanyşygy göçür',
+        'copied' => 'Baglanyşyk göçürildi',
+        'copy_failed' => 'Baglanyşygy göçürip bolmady',
+        'download' => 'Ýükle',
+    ],
     'pagination' => [
         'showing' => '{from}–{to} / {total} görkezilýär',
         'prev' => 'Öňki',

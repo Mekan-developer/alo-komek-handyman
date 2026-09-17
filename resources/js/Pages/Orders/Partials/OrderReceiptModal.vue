@@ -16,6 +16,7 @@ const emit = defineEmits(['close'])
 const appName = import.meta.env.VITE_APP_NAME ?? 'Alo-komek'
 
 const hasDiscount = computed(() => Number(props.receipt?.discount_percent ?? 0) > 0)
+const hasUrgencyFee = computed(() => Number(props.receipt?.urgency_fee ?? 0) > 0)
 
 /** Чек печатается с запятой в качестве десятичного разделителя — как кассовая лента. */
 function money(value) {
@@ -120,6 +121,10 @@ function printReceipt() {
                         <div v-if="hasDiscount" class="flex justify-between gap-3">
                             <span>{{ t('orders.receipt.discount') }} −{{ Number(receipt.discount_percent) }}%</span>
                             <span class="tabular-nums">−{{ money(receipt.discount_amount) }}</span>
+                        </div>
+                        <div v-if="hasUrgencyFee" class="flex justify-between gap-3">
+                            <span>{{ t('orders.receipt.urgency_fee') }}</span>
+                            <span class="tabular-nums">{{ money(receipt.urgency_fee) }}</span>
                         </div>
                     </div>
 

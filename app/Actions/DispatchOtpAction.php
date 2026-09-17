@@ -43,23 +43,10 @@ class DispatchOtpAction
 
         $channel = OtpDeliveryChannel::Sms;
 
-        Log::info('OTP dispatch started', [
-            'phone' => $phone,
-            'recipient_type' => $recipient->value,
-            'recipient_name' => $recipientName,
-            'code' => $code,
-        ]);
-
         try {
             $this->gateway->send($phone, $code);
         } catch (OtpException) {
             $channel = OtpDeliveryChannel::Manual;
-
-            Log::warning('OTP SMS failed, parked for operator', [
-                'phone' => $phone,
-                'recipient_type' => $recipient->value,
-                'code' => $code,
-            ]);
         }
 
         $pendingOtp = $this->pendingOtps->replaceForPhone([
@@ -74,11 +61,11 @@ class DispatchOtpAction
 
         Cache::put($recipient->cacheKey($phone), $code, $expiresAt);
 
-        Log::info('OTP dispatch finished', [
+        Log::info('OTP dispatched', [
             'phone' => $phone,
             'recipient_type' => $recipient->value,
+            'recipient_name' => $recipientName,
             'delivery' => $channel->value,
-            'code' => $code,
             'pending_otp_id' => $pendingOtp->id,
         ]);
 

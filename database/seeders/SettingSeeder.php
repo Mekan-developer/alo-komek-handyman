@@ -14,6 +14,7 @@ class SettingSeeder extends Seeder
             'client_app_rules' => '',
             'order_urgency_fee' => '20',
             'order_cancel_fee' => '0',
+            'master_app_download_url' => '',
         ];
 
         foreach ($defaults as $key => $value) {

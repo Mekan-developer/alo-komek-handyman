@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Repositories\PendingOtpRepository;
+use App\Repositories\SettingRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
@@ -45,7 +46,26 @@ class HandleInertiaRequests extends Middleware
                 ? $request->user()->unreadNotifications()->count()
                 : 0,
             'pendingOtpCount' => $this->pendingOtpCount($request),
+            'masterAppDownloadUrl' => $this->masterAppDownloadUrl($request),
         ];
+    }
+
+    /**
+     * URL APK/приложения мастера для QR в сайдбаре. Пустой — кнопки нет.
+     */
+    private function masterAppDownloadUrl(Request $request): ?string
+    {
+        if ($request->user() === null) {
+            return null;
+        }
+
+        $url = app(SettingRepository::class)->get('master_app_download_url');
+
+        if ($url === null || trim($url) === '') {
+            return null;
+        }
+
+        return $url;
     }
 
     /**

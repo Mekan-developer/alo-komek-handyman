@@ -45,11 +45,6 @@ class OtpGatewayService
         }
 
         Cache::put('otp_gateway:last_sent', now()->format('H:i'), now()->addDay());
-
-        Log::info('SMS gateway accepted OTP', [
-            'phone' => $phone,
-            'local_phone' => $this->toLocalFormat($phone),
-        ]);
     }
 
     private function toLocalFormat(string $phone): string

@@ -34,6 +34,7 @@ class SettingController extends Controller
             'orderCancelFeeNoteTk' => $settings->get('order_cancel_fee_note_tk')?->value ?? '',
             'orderUrgencyFeeNoteRu' => $settings->get('order_urgency_fee_note_ru')?->value ?? '',
             'orderUrgencyFeeNoteTk' => $settings->get('order_urgency_fee_note_tk')?->value ?? '',
+            'masterAppDownloadUrl' => $settings->get('master_app_download_url')?->value ?? '',
         ]);
     }
 

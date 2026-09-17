@@ -266,6 +266,7 @@ return [
         'order_cancel_fee_note_tk' => 'текст об отмене заказа (туркм.)',
         'order_urgency_fee_note_ru' => 'текст о срочности (рус.)',
         'order_urgency_fee_note_tk' => 'текст о срочности (туркм.)',
+        'master_app_download_url' => 'ссылка на приложение мастера',
         'type' => 'тип',
         'email' => 'email',
         'password' => 'пароль',

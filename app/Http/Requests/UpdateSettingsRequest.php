@@ -28,6 +28,7 @@ class UpdateSettingsRequest extends FormRequest
             'order_urgency_fee_note_tk' => ['nullable', 'string', 'max:500'],
             'order_urgency_fee' => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
             'order_cancel_fee' => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
+            'master_app_download_url' => ['nullable', 'url', 'max:2048'],
         ];
     }
 }

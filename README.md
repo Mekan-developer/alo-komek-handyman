@@ -35,6 +35,7 @@ A platform for clients to search and book handyman services. Administrators mana
 | Code Style | Laravel Pint v1 |
 | Basemap Renderer | MapLibre GL (`maplibre-gl`) via `@maplibre/maplibre-gl-leaflet` bridge on Leaflet |
 | Map Tiles | Self-hosted **tileserver-gl** — style + tiles + glyphs + sprites; URL via `TILES_STYLE_URL`. In dev: static `public/maps/style.json` + the `/tiles/{z}/{x}/{y}.pbf` route reading `storage/maps/tiles.mbtiles` |
+| QR codes | `qrcode` (npm) — master app download QR in the admin sidebar |
 
 ---
 
@@ -577,15 +578,17 @@ Web (Inertia) and API controllers are **strictly separate**. Never reuse or shar
 ### Order pricing — per-task prices + discount
 
 An order's `final_price` is **derived**, not entered by hand: it is the sum of the prices of
-its tasks (`order_tasks.price`), minus the order discount (`orders.discount_percent`).
+its tasks (`order_tasks.price`), minus the order discount (`orders.discount_percent`), plus
+the urgency surcharge (`orders.urgency_fee`, if the order is urgent).
 
 - The admin sets a price on each task inline on `/orders/{id}` →
   `POST /orders/{order}/tasks/{task}/price` (`SetOrderTaskPriceAction`).
 - [`OrderTaskObserver`](app/Observers/OrderTaskObserver.php) recalculates
   `orders.final_price` via `OrderRepository::syncFinalPriceFromTasks()` whenever a task price
-  is created, changed or the task is deleted.
+  is created, changed or the task is deleted. The same sync runs when urgency or the discount
+  changes (`UpdateOrderScheduleAction`, `UpdateOrderAction`, `SetOrderDiscountAction`).
 - Tasks without a price are ignored for the subtotal. When no task is priced, `final_price` is
-  reset to `null`.
+  reset to `null` (urgency alone does not create a total).
 - An order can only move to `Completed` once **every** one of its tasks has a price (an order
   with zero tasks counts as unpriced too) — `UpdateOrderStatusAction` throws
   `OrderException::unpricedTasks()` otherwise. This applies to both the admin status-change
@@ -597,17 +600,18 @@ its tasks (`order_tasks.price`), minus the order discount (`orders.discount_perc
   `MasterTaskResource` and `ClientOrderResource`.
 
 **Discount.** `orders.discount_percent` (0–100, default `0`) is a percentage taken off the
-tasks subtotal.
+tasks subtotal only — the urgency fee is **not** discounted.
 
 - The admin edits it inline on `/orders/{id}` → `POST /orders/{order}/discount`
   (`SetOrderDiscountAction`), blocked once the order is in a final status.
-- `final_price = subtotal − round(subtotal × percent / 100, 2)`. The subtotal itself is never
-  stored; `Order::tasksTotal()` / `Order::discountAmount()` derive it from the loaded tasks for
-  display, `OrderRepository::tasksSubtotal()` from the database for the recalculation.
-- Because the discount lands in `final_price`, `CreditMasterBalanceAction` credits percentage
-  masters from the **discounted** total.
-- Resources expose `discount_percent`, `tasks_total` and `discount_amount` (`OrderResource`,
-  `ClientOrderResource`; the master resource gets `discount_percent` + `tasks_total`).
+- `final_price = subtotal − round(subtotal × percent / 100, 2) + urgency_fee`. The subtotal
+  itself is never stored; `Order::tasksTotal()` / `Order::discountAmount()` derive it from the
+  loaded tasks for display, `OrderRepository::tasksSubtotal()` from the database for the
+  recalculation. The receipt snapshots the same formula (`IssueOrderReceiptAction`).
+- Because the discount and urgency land in `final_price`, `CreditMasterBalanceAction` credits
+  percentage masters from that combined total.
+- Resources expose `discount_percent`, `tasks_total`, `discount_amount` and `urgency_fee`
+  (`OrderResource`, `ClientOrderResource`; the master resource gets the same money fields).
 
 > The manual "set final price" flow (`POST /orders/{order}/price`, `SetOrderFinalPriceAction`,
 > `SetPriceModal.vue`) has been removed.
@@ -648,6 +652,19 @@ Free-text notice for the client cancel-confirmation screen (wording is entirely 
 
 Same pattern for the «Срочно» toggle: `order_urgency_fee_note_ru` / `_tk` →
 `data.order_urgency_fee_note`. Hide in the app when empty.
+
+### Master app download QR
+
+Staff (administrator, manager, operator) can show masters a QR that opens the APK/download
+URL hosted on the server.
+
+- Setting key: `master_app_download_url` (`nullable|url|max:2048`), edited in
+  **Настройки → Скачивание приложения мастера**.
+- Shared to every authenticated Inertia page as `masterAppDownloadUrl` (or `null` when empty).
+- Sidebar button **Приложение мастера** opens a modal with the QR, copy-link and download.
+  The button is hidden until a URL is saved.
+- Put the file anywhere reachable by HTTPS (e.g. `public/apps/master.apk`) and paste the
+  absolute URL into settings.
 
 ### Order receipts
 
