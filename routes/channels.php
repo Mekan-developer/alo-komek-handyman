@@ -44,7 +44,7 @@ Broadcast::channel('client.{clientId}', function ($user, $clientId) {
 
 /*
  * Private channel for a specific master — used by the mobile master app to receive:
- * master.assigned (new job) and order.status.changed events.
+ * master.assigned, order.status.changed, and order.task.* events.
  * Auth: Sanctum token issued to the Master model.
  */
 Broadcast::channel('master.{masterId}', function ($user, $masterId) {

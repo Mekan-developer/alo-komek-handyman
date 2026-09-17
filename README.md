@@ -583,6 +583,9 @@ the urgency surcharge (`orders.urgency_fee`, if the order is urgent).
 
 - The admin sets a price on each task inline on `/orders/{id}` →
   `POST /orders/{order}/tasks/{task}/price` (`SetOrderTaskPriceAction`).
+  Staff can also **create** tasks from the same page →
+  `POST /orders/{order}/tasks` (`CreateOrderTaskAction::handleForStaff`), with an optional
+  price; the master app still creates tasks via the API while the order is `InProgress`.
 - [`OrderTaskObserver`](app/Observers/OrderTaskObserver.php) recalculates
   `orders.final_price` via `OrderRepository::syncFinalPriceFromTasks()` whenever a task price
   is created, changed or the task is deleted. The same sync runs when urgency or the discount

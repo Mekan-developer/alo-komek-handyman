@@ -18,7 +18,19 @@ class OrderTaskCreated implements ShouldBroadcastNow
     /** @return array<int, PrivateChannel> */
     public function broadcastOn(): array
     {
-        return [new PrivateChannel('orders')];
+        $this->task->loadMissing('order');
+
+        $channels = [new PrivateChannel('orders')];
+
+        if ($this->task->order?->client_id) {
+            $channels[] = new PrivateChannel('client.'.$this->task->order->client_id);
+        }
+
+        if ($this->task->order?->master_id) {
+            $channels[] = new PrivateChannel('master.'.$this->task->order->master_id);
+        }
+
+        return $channels;
     }
 
     public function broadcastAs(): string
@@ -33,6 +45,7 @@ class OrderTaskCreated implements ShouldBroadcastNow
             'order_id' => $this->task->order_id,
             'task_id' => $this->task->id,
             'title' => $this->task->title,
+            'description' => $this->task->description,
         ];
     }
 }

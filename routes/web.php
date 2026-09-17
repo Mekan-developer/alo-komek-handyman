@@ -95,6 +95,7 @@ Route::middleware('auth')->group(function () {
         Route::post('orders/{order}/assign', [OrderController::class, 'assign'])->name('orders.assign');
         Route::put('orders/{order}/schedule', [OrderController::class, 'updateSchedule'])->name('orders.update-schedule');
         Route::post('orders/{order}/tasks/{task}/price', [OrderController::class, 'setTaskPrice'])->name('orders.tasks.set-price');
+        Route::post('orders/{order}/tasks', [OrderController::class, 'storeTask'])->name('orders.tasks.store');
         Route::post('orders/{order}/discount', [OrderController::class, 'setDiscount'])->name('orders.set-discount');
         Route::post('orders/{order}/status', [OrderController::class, 'updateStatus'])->name('orders.update-status');
         Route::get('orders/{order}/master-trajectory', [OrderController::class, 'masterTrajectoryForOrder'])->name('orders.master-trajectory');

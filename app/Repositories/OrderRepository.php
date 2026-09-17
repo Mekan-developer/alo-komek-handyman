@@ -157,6 +157,14 @@ class OrderRepository
         return OrderTask::where('order_id', $orderId)->findOrFail($taskId);
     }
 
+    /**
+     * @param  array{title: string, description?: string|null}  $data
+     */
+    public function createTask(Order $order, array $data): OrderTask
+    {
+        return $order->tasks()->create($data);
+    }
+
     /** @param array<string, mixed> $data */
     public function updateTask(OrderTask $task, array $data): OrderTask
     {

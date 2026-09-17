@@ -75,9 +75,17 @@ const isPriceEditable = computed(() =>
     !!props.order.master && !['completed', 'cancelled'].includes(props.order.status)
 )
 
+const canManageTasks = computed(() => isPriceEditable.value)
+
 const editingTaskId = ref(null)
 const taskPriceInput = ref('')
 const savingTaskPrice = ref(false)
+
+const showAddTaskForm = ref(false)
+const newTaskTitle = ref('')
+const newTaskDescription = ref('')
+const newTaskPrice = ref('')
+const savingNewTask = ref(false)
 
 function startEditingTaskPrice(task) {
     editingTaskId.value = task.id
@@ -102,6 +110,39 @@ function saveTaskPrice(task) {
                 savingTaskPrice.value = false
                 cancelEditingTaskPrice()
             },
+        }
+    )
+}
+
+function resetNewTaskForm() {
+    newTaskTitle.value = ''
+    newTaskDescription.value = ''
+    newTaskPrice.value = ''
+    showAddTaskForm.value = false
+}
+
+function saveNewTask() {
+    const title = String(newTaskTitle.value).trim()
+    if (!title) {
+        return
+    }
+
+    const priceRaw = String(newTaskPrice.value).trim()
+
+    router.post(
+        route('orders.tasks.store', { order: props.order.id }),
+        {
+            title,
+            description: String(newTaskDescription.value).trim() || null,
+            price: priceRaw === '' ? null : Number(priceRaw),
+        },
+        {
+            preserveScroll: true,
+            onStart: () => (savingNewTask.value = true),
+            onFinish: () => {
+                savingNewTask.value = false
+            },
+            onSuccess: () => resetNewTaskForm(),
         }
     )
 }
@@ -1023,13 +1064,69 @@ const sortedEligibleMasters = computed(() => {
                         </div>
 
                         <!-- Tasks -->
-                        <div v-if="order.tasks?.length" class="rounded-xl bg-white shadow-sm dark:bg-slate-800">
-                            <div class="border-b border-gray-100 px-4 py-2.5 dark:border-slate-700">
+                        <div
+                            v-if="order.tasks?.length || canManageTasks"
+                            class="rounded-xl bg-white shadow-sm dark:bg-slate-800"
+                        >
+                            <div class="flex items-center justify-between gap-2 border-b border-gray-100 px-4 py-2.5 dark:border-slate-700">
                                 <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-slate-500">
                                     {{ t('orders.fields.tasks') }}
                                 </h3>
+                                <button
+                                    v-if="canManageTasks && !showAddTaskForm"
+                                    type="button"
+                                    class="text-xs font-medium text-blue-600 hover:underline dark:text-blue-400"
+                                    @click="showAddTaskForm = true"
+                                >
+                                    {{ t('orders.actions.add_task') }}
+                                </button>
                             </div>
-                            <div class="space-y-3 p-3">
+
+                            <div v-if="showAddTaskForm" class="space-y-2 border-b border-gray-100 p-3 dark:border-slate-700">
+                                <input
+                                    v-model="newTaskTitle"
+                                    type="text"
+                                    maxlength="255"
+                                    :placeholder="t('orders.fields.task_title')"
+                                    class="w-full rounded-md border-gray-300 text-sm dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"
+                                    @keyup.enter="saveNewTask"
+                                >
+                                <textarea
+                                    v-model="newTaskDescription"
+                                    rows="2"
+                                    maxlength="2000"
+                                    :placeholder="t('orders.fields.task_description')"
+                                    class="w-full rounded-md border-gray-300 text-sm dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"
+                                />
+                                <input
+                                    v-model="newTaskPrice"
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    :placeholder="t('orders.modals.price_placeholder')"
+                                    class="w-full rounded-md border-gray-300 font-mono text-sm dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200"
+                                    @keyup.enter="saveNewTask"
+                                >
+                                <div class="flex justify-end gap-2">
+                                    <button
+                                        type="button"
+                                        class="rounded-md px-3 py-1.5 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-100 dark:text-slate-400 dark:hover:bg-slate-700"
+                                        @click="resetNewTaskForm"
+                                    >
+                                        {{ t('layout.actions.cancel') }}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        :disabled="savingNewTask || !String(newTaskTitle).trim()"
+                                        class="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+                                        @click="saveNewTask"
+                                    >
+                                        {{ savingNewTask ? '...' : t('layout.actions.save') }}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div v-if="order.tasks?.length" class="space-y-3 p-3">
                                 <div
                                     v-for="task in order.tasks"
                                     :key="task.id"
@@ -1131,6 +1228,12 @@ const sortedEligibleMasters = computed(() => {
                                     </div>
                                 </div>
                             </div>
+                            <p
+                                v-else-if="canManageTasks && !showAddTaskForm"
+                                class="px-4 py-6 text-center text-xs text-gray-400 dark:text-slate-500"
+                            >
+                                {{ t('orders.empty_tasks') }}
+                            </p>
                         </div>
 
                     </div>

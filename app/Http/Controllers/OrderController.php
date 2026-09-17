@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Actions\AssignMasterAction;
 use App\Actions\CreateOrderForClientAction;
+use App\Actions\CreateOrderTaskAction;
 use App\Actions\DeleteOrderAction;
 use App\Actions\SetOrderDiscountAction;
 use App\Actions\SetOrderTaskPriceAction;
@@ -16,6 +17,7 @@ use App\Http\Requests\AssignMasterToOrderRequest;
 use App\Http\Requests\SetOrderDiscountRequest;
 use App\Http\Requests\SetOrderTaskPriceRequest;
 use App\Http\Requests\StoreOrderRequest;
+use App\Http\Requests\StoreOrderTaskRequest;
 use App\Http\Requests\UpdateOrderRequest;
 use App\Http\Requests\UpdateOrderScheduleRequest;
 use App\Http\Requests\UpdateOrderStatusRequest;
@@ -159,6 +161,25 @@ class OrderController extends Controller
             $data = $request->validated();
             $action->handle($order, (int) $data['master_id'], $data['change_reason'] ?? null);
             $this->notifySuccess('orders.notifications.master_assigned');
+        } catch (OrderException $e) {
+            $this->notifyError($e->getMessage());
+        }
+
+        return redirect()->route('orders.show', $order->id);
+    }
+
+    public function storeTask(StoreOrderTaskRequest $request, int $id, CreateOrderTaskAction $action): RedirectResponse
+    {
+        $order = $this->repository->findOrFail($id);
+        $data = $request->validated();
+
+        if (array_key_exists('price', $data) && $data['price'] !== null) {
+            $data['price'] = (float) $data['price'];
+        }
+
+        try {
+            $action->handleForStaff($order, $data);
+            $this->notifySuccess('orders.notifications.task_created');
         } catch (OrderException $e) {
             $this->notifyError($e->getMessage());
         }

@@ -30,11 +30,7 @@ class MasterTaskController extends Controller
 
         $order = $this->repository->findForMasterOrFail($orderId, $master);
 
-        try {
-            $task = $action->handle($master, $order, $request->validated());
-        } catch (\DomainException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
+        $task = $action->handle($master, $order, $request->validated());
 
         $task->load(['beforePhotos', 'afterPhotos']);
 

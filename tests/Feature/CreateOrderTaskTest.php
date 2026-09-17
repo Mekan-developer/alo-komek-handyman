@@ -72,19 +72,23 @@ class CreateOrderTaskTest extends TestCase
             && $event->task->title === 'Замена крана');
     }
 
-    public function test_order_task_created_broadcasts_on_the_public_orders_channel(): void
+    public function test_order_task_created_broadcasts_on_orders_and_master_channels(): void
     {
-        $order = Order::factory()->inProgress()->create();
-        $task = $order->tasks()->create(['title' => 'Замена крана']);
+        $master = Master::factory()->create();
+        $order = Order::factory()->forMaster($master)->inProgress()->create();
+        $task = $order->tasks()->create(['title' => 'Замена крана', 'description' => 'Подтёк']);
 
         $event = new OrderTaskCreated($task);
+        $channels = collect($event->broadcastOn())->map->name->all();
 
         $this->assertSame('order.task.created', $event->broadcastAs());
         $this->assertSame([
             'order_id' => $order->id,
             'task_id' => $task->id,
             'title' => 'Замена крана',
+            'description' => 'Подтёк',
         ], $event->broadcastWith());
-        $this->assertContains('private-orders', collect($event->broadcastOn())->map->name->all());
+        $this->assertContains('private-orders', $channels);
+        $this->assertContains('private-master.'.$master->id, $channels);
     }
 }
