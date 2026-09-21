@@ -3,7 +3,9 @@ import { computed } from 'vue'
 import { Link } from '@inertiajs/vue3'
 import { useI18n } from 'vue-i18n'
 import StarRating from '@/Components/StarRating.vue'
+import MasterAvatar from '@/Components/MasterAvatar.vue'
 import { formatPhone } from '@/utils/formatPhone'
+import { initials as nameInitials } from '@/utils/initials'
 
 const { t } = useI18n()
 
@@ -15,12 +17,7 @@ const props = defineProps({
 const initials = computed(() => {
     const name = props.review.client?.name ?? props.review.order?.client_name ?? '?'
 
-    return name
-        .split(' ')
-        .filter(Boolean)
-        .slice(0, 2)
-        .map((part) => part[0].toUpperCase())
-        .join('')
+    return nameInitials(name)
 })
 
 const clientName = computed(
@@ -75,14 +72,11 @@ const isNegative = computed(() => props.review.rating <= 2)
                     v-if="showMaster && review.master"
                     class="mt-2 flex items-center gap-2"
                 >
-                    <span class="h-6 w-6 shrink-0 overflow-hidden rounded-full bg-gray-100 ring-1 ring-gray-200 dark:bg-slate-700 dark:ring-slate-600">
-                        <img
-                            v-if="review.master.photo_url"
-                            :src="review.master.photo_url"
-                            :alt="review.master.name"
-                            class="h-full w-full object-cover"
-                        />
-                    </span>
+                    <MasterAvatar
+                        :name="review.master.name"
+                        :photo-url="review.master.photo_url"
+                        size="sm"
+                    />
                     <span class="text-xs font-medium text-gray-600 dark:text-slate-300">
                         {{ review.master.name }}
                     </span>

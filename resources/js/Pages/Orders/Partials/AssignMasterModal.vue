@@ -3,6 +3,7 @@ import { ref, watch } from 'vue'
 import { useForm } from '@inertiajs/vue3'
 import { useI18n } from 'vue-i18n'
 import Modal from '@/Components/Modal.vue'
+import MasterAvatar from '@/Components/MasterAvatar.vue'
 
 const { t } = useI18n()
 
@@ -92,9 +93,11 @@ function formatDistance(km) {
         <!-- Экран подтверждения — показывается после выбора мастера, только при смене -->
         <div v-if="pendingMaster" class="flex flex-1 flex-col overflow-hidden px-6 py-5">
             <div class="mb-4 flex items-center gap-3 rounded-xl border border-blue-200 bg-blue-50/60 p-3 dark:border-blue-500/30 dark:bg-blue-500/10">
-                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-100 text-sm font-bold text-blue-700 dark:bg-blue-500/20 dark:text-blue-300">
-                    {{ pendingMaster.name.trim().charAt(0).toUpperCase() }}
-                </div>
+                <MasterAvatar
+                    :name="pendingMaster.name"
+                    :photo-url="pendingMaster.photo_url"
+                    size="md"
+                />
                 <div class="min-w-0 flex-1">
                     <p class="truncate text-sm font-medium text-gray-900 dark:text-slate-200">{{ pendingMaster.name }}</p>
                     <p class="text-xs text-gray-500 dark:text-slate-400">{{ pendingMaster.phone }}</p>
@@ -154,7 +157,13 @@ function formatDistance(km) {
                     @click="pickMaster(m)"
                     class="flex w-full items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white p-3 text-left transition-all hover:border-blue-400 hover:bg-blue-50/40 disabled:opacity-50 dark:border-slate-600 dark:bg-slate-700/50 dark:hover:border-blue-500 dark:hover:bg-slate-700"
                 >
-                    <div class="min-w-0 flex-1">
+                    <div class="flex min-w-0 flex-1 items-start gap-3">
+                        <MasterAvatar
+                            :name="m.name"
+                            :photo-url="m.photo_url"
+                            size="md"
+                        />
+                        <div class="min-w-0 flex-1">
                         <div class="flex items-center gap-2">
                             <span class="text-sm font-medium text-gray-900 dark:text-slate-200">{{ m.name }}</span>
                             <span
@@ -179,6 +188,7 @@ function formatDistance(km) {
                                 :key="cat"
                                 class="inline-flex items-center rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-600 dark:bg-slate-700 dark:text-slate-400"
                             >{{ cat }}</span>
+                        </div>
                         </div>
                     </div>
                     <a

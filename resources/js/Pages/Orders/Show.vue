@@ -10,11 +10,13 @@ import EditOrderModal from '@/Pages/Orders/Partials/EditOrderModal.vue'
 import ChangeScheduleModal from '@/Pages/Orders/Partials/ChangeScheduleModal.vue'
 import OrderReceiptModal from '@/Pages/Orders/Partials/OrderReceiptModal.vue'
 import ImageLightbox from '@/Components/ImageLightbox.vue'
+import MasterAvatar from '@/Components/MasterAvatar.vue'
 import StarRating from '@/Components/StarRating.vue'
 import { formatPhone } from '@/utils/formatPhone'
 import { formatPreferredDate } from '@/utils/formatPreferredDate'
 import { localTodayIso, localTomorrowIso } from '@/utils/orderSchedule'
 import { loadMapStyle, suppressBlankIconWarnings } from '@/utils/loadMapStyle'
+import { initials } from '@/utils/initials'
 import { scheduleRealtimeReload, useOrdersChannel } from '@/composables/useOrdersRealtime'
 import { useLocaleStore } from '@/stores/useLocaleStore'
 import { storeToRefs } from 'pinia'
@@ -273,7 +275,7 @@ function renderCandidateMarkers(L) {
 
         const candidateIcon = L.divIcon({
             className: 'custom-marker-candidate',
-            html: `<div style="background:#94a3b8;width:26px;height:26px;border-radius:50%;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.25);display:flex;align-items:center;justify-content:center;color:white;font-weight:600;font-size:11px;">${escapeHtml(initialOf(m.name))}</div>`,
+            html: `<div style="background:#94a3b8;width:26px;height:26px;border-radius:50%;border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.25);display:flex;align-items:center;justify-content:center;color:white;font-weight:600;font-size:11px;">${escapeHtml(initials(m.name))}</div>`,
             iconSize: [26, 26],
             iconAnchor: [13, 13],
         })
@@ -514,10 +516,6 @@ function setupMapControls(L) {
             },
         },
     ])
-}
-
-function initialOf(name) {
-    return (name?.trim()?.charAt(0) ?? '?').toUpperCase()
 }
 
 function escapeHtml(value) {
@@ -970,7 +968,13 @@ const sortedEligibleMasters = computed(() => {
                                 </h3>
                             </div>
                             <div class="px-4 py-3 text-sm">
-                                <div v-if="order.master">
+                                <div v-if="order.master" class="flex gap-3">
+                                    <MasterAvatar
+                                        :name="order.master.name"
+                                        :photo-url="order.master.photo_url"
+                                        size="lg"
+                                    />
+                                    <div class="min-w-0 flex-1">
                                     <p class="font-medium text-gray-900 dark:text-slate-200">{{ order.master.name }}</p>
                                     <a :href="`tel:${order.master.phone}`" class="text-blue-600 hover:underline dark:text-blue-400">
                                         {{ formatPhone(order.master.phone) }}
@@ -1005,6 +1009,7 @@ const sortedEligibleMasters = computed(() => {
                                             </span>
                                         </div>
                                         <p class="mt-1 text-xs text-blue-500 dark:text-blue-400">при скорости {{ ETA_SPEED_KMH }} км/ч</p>
+                                    </div>
                                     </div>
                                 </div>
                                 <p v-else class="text-gray-400 dark:text-slate-500">{{ t('orders.no_master') }}</p>

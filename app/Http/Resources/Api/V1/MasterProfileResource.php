@@ -23,6 +23,7 @@ class MasterProfileResource extends JsonResource
             'payment_value' => (float) $this->payment_value,
             'is_active' => $this->is_active,
             'is_available' => $this->is_available,
+            'photo_url' => $this->photo ? asset('storage/'.$this->photo) : null,
             'access_expires_at' => $this->access_expires_at?->toDateString(),
             'categories' => $this->whenLoaded('categories', fn () => $this->categories->map(fn ($c) => [
                 'id' => $c->id,

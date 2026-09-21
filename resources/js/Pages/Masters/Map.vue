@@ -4,6 +4,7 @@ import { Link, usePage } from '@inertiajs/vue3'
 import { useI18n } from 'vue-i18n'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
 import { loadMapStyle, suppressBlankIconWarnings } from '@/utils/loadMapStyle'
+import { initials } from '@/utils/initials'
 import 'leaflet/dist/leaflet.css'
 import 'maplibre-gl/dist/maplibre-gl.css'
 
@@ -256,7 +257,7 @@ function addOrUpdateMarker(masterId, master, lat, lng, animated = false) {
 
     const icon = L.divIcon({
         className: 'master-marker',
-        html: `<div style="background:#2563eb;width:32px;height:32px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:11px;">${escapeHtml(initialOf(master.name))}</div>`,
+        html: `<div style="background:#2563eb;width:32px;height:32px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:11px;">${escapeHtml(initials(master.name))}</div>`,
         iconSize: [32, 32],
         iconAnchor: [16, 16],
     })
@@ -287,10 +288,6 @@ function animateMarkerTo(marker, targetLatLng, duration = 1500) {
         if (t < 1) { requestAnimationFrame(step) }
     }
     requestAnimationFrame(step)
-}
-
-function initialOf(name) {
-    return (name?.trim()?.charAt(0) ?? '?').toUpperCase()
 }
 
 function escapeHtml(value) {

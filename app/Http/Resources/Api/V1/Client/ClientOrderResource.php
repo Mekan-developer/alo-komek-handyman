@@ -39,6 +39,7 @@ class ClientOrderResource extends JsonResource
                 'id' => $this->master->id,
                 'name' => $this->master->name,
                 'phone' => $this->master->phone,
+                'photo_url' => $this->master->photo ? asset('storage/'.$this->master->photo) : null,
                 'location' => $this->masterLocationForClient(),
             ] : null),
 
