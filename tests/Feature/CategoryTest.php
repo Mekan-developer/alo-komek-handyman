@@ -31,6 +31,54 @@ class CategoryTest extends TestCase
         );
     }
 
+    /**
+     * PNG of the given size. With $noise every pixel is random, so it barely
+     * compresses — used to push the WebP over the 50 KB budget.
+     */
+    private function fakePng(int $width, int $height, bool $noise = false, string $name = 'photo.png'): UploadedFile
+    {
+        $image = imagecreatetruecolor($width, $height);
+        imagefill($image, 0, 0, imagecolorallocate($image, 40, 120, 200));
+
+        if ($noise) {
+            for ($x = 0; $x < $width; $x++) {
+                for ($y = 0; $y < $height; $y++) {
+                    imagesetpixel($image, $x, $y, mt_rand(0, 0xFFFFFF));
+                }
+            }
+        }
+
+        ob_start();
+        imagepng($image);
+        $content = (string) ob_get_clean();
+        imagedestroy($image);
+
+        return UploadedFile::fake()->createWithContent($name, $content);
+    }
+
+    /** @return array{0: int, 1: int} */
+    private function storedImageSize(string $path): array
+    {
+        [$width, $height] = getimagesize(Storage::disk('public')->path($path));
+
+        return [$width, $height];
+    }
+
+    /** @param  array<string, mixed>  $overrides */
+    private function storeCategoryWithImage(UploadedFile $file, array $overrides = []): Category
+    {
+        $this->post(route('categories.store'), array_merge([
+            'name_ru' => 'Клининг',
+            'name_tk' => 'Arassaçylyk',
+            'is_active' => true,
+            'parent_id' => null,
+            'icon_type' => 'image',
+            'icon_file' => $file,
+        ], $overrides))->assertRedirect(route('categories.index'));
+
+        return Category::where('name_ru', $overrides['name_ru'] ?? 'Клининг')->firstOrFail();
+    }
+
     // ── Index ─────────────────────────────────────────────────────────────────
 
     public function test_categories_index_requires_authentication(): void
@@ -484,6 +532,192 @@ class CategoryTest extends TestCase
 
         // File is a shared asset — kept after category deletion
         Storage::disk('service_icons')->assertExists("{$key}.svg");
+    }
+
+    // ── Image icons ───────────────────────────────────────────────────────────
+
+    public function test_can_create_category_with_image_icon_converted_to_webp(): void
+    {
+        Storage::fake('public');
+        $this->actingAsAdmin();
+
+        $category = $this->storeCategoryWithImage($this->fakePng(1200, 600));
+
+        $this->assertSame('image', $category->icon_type->value);
+        $this->assertMatchesRegularExpression('#^category-images/.+\.webp$#', $category->icon);
+        Storage::disk('public')->assertExists($category->icon);
+        $this->assertCount(1, Storage::disk('public')->files('category-images'), 'Original upload must be removed');
+        $this->assertSame(asset("storage/{$category->icon}"), $category->icon_url);
+        $this->assertSame([400, 200], $this->storedImageSize($category->icon));
+    }
+
+    public function test_image_icon_narrower_than_limit_keeps_its_size(): void
+    {
+        Storage::fake('public');
+        $this->actingAsAdmin();
+
+        $category = $this->storeCategoryWithImage($this->fakePng(120, 80, name: 'small.png'));
+
+        $this->assertSame([120, 80], $this->storedImageSize($category->icon));
+    }
+
+    public function test_tall_image_icon_is_shrunk_to_500px_height(): void
+    {
+        Storage::fake('public');
+        $this->actingAsAdmin();
+
+        // 400 wide, 800 tall → height >= 700, so it becomes 500 tall (width proportional).
+        $category = $this->storeCategoryWithImage($this->fakePng(400, 800));
+
+        $this->assertSame([250, 500], $this->storedImageSize($category->icon));
+    }
+
+    public function test_wide_and_tall_image_icon_is_capped_by_width_then_height(): void
+    {
+        Storage::fake('public');
+        $this->actingAsAdmin();
+
+        // 800×2000 → 400×1000 by width → still >= 700 tall → 200×500.
+        $category = $this->storeCategoryWithImage($this->fakePng(800, 2000));
+
+        $this->assertSame([200, 500], $this->storedImageSize($category->icon));
+    }
+
+    public function test_image_icon_is_compressed_to_at_most_50kb(): void
+    {
+        Storage::fake('public');
+        $this->actingAsAdmin();
+
+        $category = $this->storeCategoryWithImage($this->fakePng(400, 400, noise: true));
+
+        $this->assertLessThanOrEqual(50 * 1024, Storage::disk('public')->size($category->icon));
+        [$width] = $this->storedImageSize($category->icon);
+        $this->assertLessThanOrEqual(400, $width);
+    }
+
+    public function test_image_icon_requires_a_file(): void
+    {
+        $this->actingAsAdmin();
+
+        $this->post(route('categories.store'), [
+            'name_ru' => 'Тест',
+            'name_tk' => 'Test',
+            'is_active' => true,
+            'parent_id' => null,
+            'icon_type' => 'image',
+        ])->assertSessionHasErrors('icon_file');
+    }
+
+    public function test_image_icon_rejects_non_image_files(): void
+    {
+        Storage::fake('public');
+        $this->actingAsAdmin();
+
+        foreach ([$this->fakeSvg(), UploadedFile::fake()->create('doc.pdf', 10, 'application/pdf')] as $file) {
+            $this->post(route('categories.store'), [
+                'name_ru' => 'Тест',
+                'name_tk' => 'Test',
+                'is_active' => true,
+                'parent_id' => null,
+                'icon_type' => 'image',
+                'icon_file' => $file,
+            ])->assertSessionHasErrors('icon_file');
+        }
+
+        $this->assertDatabaseMissing('categories', ['name_ru' => 'Тест']);
+    }
+
+    public function test_svg_tab_still_rejects_raster_images(): void
+    {
+        Storage::fake('service_icons');
+        $this->actingAsAdmin();
+
+        $this->post(route('categories.store'), [
+            'name_ru' => 'Тест',
+            'name_tk' => 'Test',
+            'is_active' => true,
+            'parent_id' => null,
+            'icon_type' => 'custom',
+            'icon_file' => $this->fakePng(50, 50),
+        ])->assertSessionHasErrors('icon_file');
+    }
+
+    public function test_updating_without_new_image_keeps_existing_image(): void
+    {
+        Storage::fake('public');
+        $this->actingAsAdmin();
+        $category = $this->storeCategoryWithImage($this->fakePng(300, 300));
+        $path = $category->icon;
+
+        $this->put(route('categories.update', $category), [
+            'name_ru' => 'Клининг 2',
+            'name_tk' => 'Arassaçylyk 2',
+            'is_active' => true,
+            'parent_id' => null,
+            'icon_type' => 'image',
+            'icon' => null,
+        ])->assertRedirect(route('categories.index'));
+
+        $category->refresh();
+        $this->assertSame('image', $category->icon_type->value);
+        $this->assertSame($path, $category->icon);
+        Storage::disk('public')->assertExists($path);
+    }
+
+    public function test_replacing_image_icon_deletes_the_old_file(): void
+    {
+        Storage::fake('public');
+        $this->actingAsAdmin();
+        $category = $this->storeCategoryWithImage($this->fakePng(300, 300));
+        $oldPath = $category->icon;
+
+        $this->put(route('categories.update', $category), [
+            'name_ru' => $category->name_ru,
+            'name_tk' => $category->name_tk,
+            'is_active' => true,
+            'parent_id' => null,
+            'icon_type' => 'image',
+            'icon_file' => $this->fakePng(200, 200, name: 'new.png'),
+        ])->assertRedirect(route('categories.index'));
+
+        $category->refresh();
+        $this->assertNotSame($oldPath, $category->icon);
+        Storage::disk('public')->assertExists($category->icon);
+        Storage::disk('public')->assertMissing($oldPath);
+    }
+
+    public function test_switching_from_image_to_preset_deletes_the_image(): void
+    {
+        Storage::fake('public');
+        $this->actingAsAdmin();
+        $category = $this->storeCategoryWithImage($this->fakePng(300, 300));
+        $path = $category->icon;
+
+        $this->put(route('categories.update', $category), [
+            'name_ru' => $category->name_ru,
+            'name_tk' => $category->name_tk,
+            'is_active' => true,
+            'parent_id' => null,
+            'icon_type' => 'preset',
+            'icon' => 'wrench',
+        ])->assertRedirect(route('categories.index'));
+
+        $category->refresh();
+        $this->assertSame('preset', $category->icon_type->value);
+        Storage::disk('public')->assertMissing($path);
+    }
+
+    public function test_deleting_category_purges_its_image_icon(): void
+    {
+        Storage::fake('public');
+        $this->actingAsAdmin();
+        $category = $this->storeCategoryWithImage($this->fakePng(300, 300));
+        $path = $category->icon;
+
+        $this->delete(route('categories.destroy', $category))
+            ->assertRedirect(route('categories.index'));
+
+        Storage::disk('public')->assertMissing($path);
     }
 
     public function test_deleting_category_purges_legacy_custom_icon(): void

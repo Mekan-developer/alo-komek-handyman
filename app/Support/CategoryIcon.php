@@ -43,6 +43,19 @@ class CategoryIcon
     }
 
     /**
+     * Validation rules for `icon_file`, which depend on the chosen icon type:
+     * a monochrome SVG for `custom`, a raster image for `image`.
+     *
+     * @return array<int, string>
+     */
+    public static function fileRules(mixed $iconType): array
+    {
+        return $iconType === CategoryIconType::Image->value
+            ? ['file', 'image', 'mimes:png,jpg,jpeg,webp,gif', 'max:10240']
+            : ['file', 'extensions:svg', 'mimetypes:image/svg+xml,text/xml,text/plain', 'max:64'];
+    }
+
+    /**
      * Resolve the icon_type / icon columns from validated data and the uploaded
      * file. New uploads are stored to public/icons/services/ as permanent shared
      * assets (icon_type stays 'custom', key prefix 'u-'). Existing custom icons
@@ -57,8 +70,23 @@ class CategoryIcon
 
         $type = $data['icon_type'] ?? null;
         $previousCustom = $existing?->icon_type === CategoryIconType::Custom ? $existing->icon : null;
+        $previousImage = $existing?->icon_type === CategoryIconType::Image ? $existing->icon : null;
 
-        if ($type === CategoryIconType::Custom->value) {
+        // A raster image belongs to one category only: drop it once it is replaced or switched away from.
+        if ($previousImage !== null && ($type !== CategoryIconType::Image->value || $file instanceof UploadedFile)) {
+            Storage::disk('public')->delete($previousImage);
+            $previousImage = null;
+        }
+
+        if ($type === CategoryIconType::Image->value) {
+            if ($file instanceof UploadedFile) {
+                $data['icon'] = static::storeImage($file);
+            } elseif ($previousImage !== null) {
+                $data['icon'] = $previousImage;
+            } else {
+                [$data['icon_type'], $data['icon']] = [null, null];
+            }
+        } elseif ($type === CategoryIconType::Custom->value) {
             if ($file instanceof UploadedFile) {
                 $key = 'u-'.Str::uuid();
                 Storage::disk('service_icons')->put("{$key}.svg", $file->getContent());
@@ -76,13 +104,42 @@ class CategoryIcon
     }
 
     /**
-     * Remove a category's custom icon file from disk, if any.
-     * Only legacy icons stored on the public Storage disk are removed —
-     * new-style icons in service_icons are shared assets and not purged.
+     * Store an uploaded raster icon on the public disk, shrunk to a WebP of at most 50 KB.
+     * The original upload is removed; the returned path is relative to the public disk.
+     */
+    private static function storeImage(UploadedFile $file): string
+    {
+        $disk = Storage::disk('public');
+        $path = $file->store('category-images', 'public');
+        $webpAbsolute = PhotoConverter::convertCategoryIcon($disk->path($path));
+
+        $webpPath = 'category-images/'.basename($webpAbsolute);
+
+        if ($webpPath !== $path) {
+            $disk->delete($path);
+        }
+
+        return $webpPath;
+    }
+
+    /**
+     * Remove a category's own icon file from disk, if any.
+     * Raster images and legacy SVGs on the public Storage disk are removed —
+     * new-style SVGs in service_icons are shared assets and not purged.
      */
     public static function purge(Category $category): void
     {
-        if ($category->icon_type !== CategoryIconType::Custom || $category->icon === null) {
+        if ($category->icon === null) {
+            return;
+        }
+
+        if ($category->icon_type === CategoryIconType::Image) {
+            Storage::disk('public')->delete($category->icon);
+
+            return;
+        }
+
+        if ($category->icon_type !== CategoryIconType::Custom) {
             return;
         }
 

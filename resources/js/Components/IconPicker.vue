@@ -12,9 +12,14 @@ const props = defineProps({
     iconGroups: { type: Object, default: () => ({}) },
     // URL of an already-saved icon (used to preview a custom upload when editing).
     existingIconUrl: { type: String, default: null },
+    // icon_type of the already-saved icon, so its preview shows only in the matching tab.
+    existingIconType: { type: String, default: null },
 })
 
-const tab = ref('preset') // 'preset' | 'upload'
+const TAB_BY_TYPE = { custom: 'upload', image: 'image' }
+const IMAGE_ACCEPT = 'image/png,image/jpeg,image/webp,image/gif'
+
+const tab = ref('preset') // 'preset' | 'upload' | 'image'
 const search = ref('')
 const dragging = ref(false)
 const uploadPreview = ref(null) // object URL for a freshly chosen file
@@ -22,7 +27,7 @@ const uploadPreview = ref(null) // object URL for a freshly chosen file
 // Open the tab that matches the current selection.
 watch(
     () => props.form.icon_type,
-    (type) => { tab.value = type === 'custom' ? 'upload' : 'preset' },
+    (type) => { tab.value = TAB_BY_TYPE[type] ?? 'preset' },
     { immediate: true },
 )
 
@@ -51,25 +56,26 @@ function selectPreset(key) {
     props.form.icon_file = null
 }
 
-function pickFile(file) {
+// type: 'custom' (SVG) | 'image' (png/jpg/webp/gif — shrunk server-side)
+function pickFile(file, type) {
     if (!file) {
         return
     }
     clearPreview()
-    props.form.icon_type = 'custom'
+    props.form.icon_type = type
     props.form.icon_file = file
     props.form.icon = null
     uploadPreview.value = URL.createObjectURL(file)
 }
 
-function onInput(event) {
-    pickFile(event.target.files?.[0])
+function onInput(event, type) {
+    pickFile(event.target.files?.[0], type)
     event.target.value = '' // allow re-selecting the same file
 }
 
-function onDrop(event) {
+function onDrop(event, type) {
     dragging.value = false
-    pickFile(event.dataTransfer?.files?.[0])
+    pickFile(event.dataTransfer?.files?.[0], type)
 }
 
 function clearIcon() {
@@ -88,8 +94,16 @@ function clearPreview() {
 
 onBeforeUnmount(clearPreview)
 
-// Custom icon preview: a freshly chosen file wins over the saved one.
-const customPreviewUrl = computed(() => uploadPreview.value || props.existingIconUrl)
+// Upload preview for a tab: a freshly chosen file wins over the saved one.
+function previewFor(type) {
+    if (props.form.icon_type !== type) {
+        return null
+    }
+    return uploadPreview.value || (props.existingIconType === type ? props.existingIconUrl : null)
+}
+
+const customPreviewUrl = computed(() => previewFor('custom'))
+const imagePreviewUrl = computed(() => previewFor('image'))
 const hasIcon = computed(() => props.form.icon_type !== null && props.form.icon_type !== undefined)
 
 const tabBtn = (active) =>
@@ -131,6 +145,14 @@ const tabBtn = (active) =>
                 class="-mb-px border-b-2 px-1 pb-2 text-sm font-medium transition-colors"
             >
                 {{ t('categories.icon_tab_upload') }}
+            </button>
+            <button
+                type="button"
+                @click="tab = 'image'"
+                :class="tabBtn(tab === 'image')"
+                class="-mb-px border-b-2 px-1 pb-2 text-sm font-medium transition-colors"
+            >
+                {{ t('categories.icon_tab_image') }}
             </button>
         </div>
 
@@ -176,7 +198,7 @@ const tabBtn = (active) =>
             <label
                 @dragover.prevent="dragging = true"
                 @dragleave.prevent="dragging = false"
-                @drop.prevent="onDrop"
+                @drop.prevent="onDrop($event, 'custom')"
                 :class="dragging
                     ? 'border-blue-400 bg-blue-50 dark:border-blue-500/70 dark:bg-blue-500/10'
                     : 'border-gray-300 hover:border-gray-400 dark:border-slate-600 dark:hover:border-slate-500'"
@@ -186,7 +208,7 @@ const tabBtn = (active) =>
                     v-if="customPreviewUrl"
                     class="flex h-12 w-12 items-center justify-center rounded-lg bg-gray-100 text-gray-700 dark:bg-slate-700 dark:text-slate-200"
                 >
-                    <ServiceIcon :url="customPreviewUrl" class="h-7 w-7" />
+                    <ServiceIcon :url="customPreviewUrl" svg class="h-7 w-7" />
                 </span>
                 <svg v-else class="h-7 w-7 text-gray-400 dark:text-slate-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
@@ -197,7 +219,37 @@ const tabBtn = (active) =>
                 <span class="text-xs text-gray-400 dark:text-slate-500">
                     {{ t('categories.icon_upload_hint') }}
                 </span>
-                <input type="file" accept=".svg,image/svg+xml" class="hidden" @change="onInput" />
+                <input type="file" accept=".svg,image/svg+xml" class="hidden" @change="onInput($event, 'custom')" />
+            </label>
+        </div>
+
+        <!-- Upload raster image -->
+        <div v-show="tab === 'image'">
+            <label
+                @dragover.prevent="dragging = true"
+                @dragleave.prevent="dragging = false"
+                @drop.prevent="onDrop($event, 'image')"
+                :class="dragging
+                    ? 'border-blue-400 bg-blue-50 dark:border-blue-500/70 dark:bg-blue-500/10'
+                    : 'border-gray-300 hover:border-gray-400 dark:border-slate-600 dark:hover:border-slate-500'"
+                class="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 py-6 text-center transition-colors"
+            >
+                <img
+                    v-if="imagePreviewUrl"
+                    :src="imagePreviewUrl"
+                    alt=""
+                    class="h-16 max-w-[8rem] rounded-lg object-contain"
+                />
+                <svg v-else class="h-7 w-7 text-gray-400 dark:text-slate-500" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21zm10.5-11.25h.008v.008h-.008V9.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                </svg>
+                <span class="text-sm font-medium text-gray-600 dark:text-slate-300">
+                    {{ t('categories.icon_image_cta') }}
+                </span>
+                <span class="text-xs text-gray-400 dark:text-slate-500">
+                    {{ t('categories.icon_image_hint') }}
+                </span>
+                <input type="file" :accept="IMAGE_ACCEPT" class="hidden" @change="onInput($event, 'image')" />
             </label>
         </div>
     </div>

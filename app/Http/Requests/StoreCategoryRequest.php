@@ -24,7 +24,7 @@ class StoreCategoryRequest extends FormRequest
             'parent_id' => ['nullable', 'integer', 'exists:categories,id'],
             'icon_type' => ['nullable', Rule::enum(CategoryIconType::class)],
             'icon' => ['nullable', 'required_if:icon_type,preset', 'string', Rule::in(CategoryIcon::presetKeys())],
-            'icon_file' => ['nullable', 'required_if:icon_type,custom', 'file', 'extensions:svg', 'mimetypes:image/svg+xml,text/xml,text/plain', 'max:64'],
+            'icon_file' => ['nullable', 'required_if:icon_type,custom,image', ...CategoryIcon::fileRules($this->input('icon_type'))],
         ];
     }
 }

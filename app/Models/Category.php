@@ -68,6 +68,8 @@ class Category extends Model
     {
         return Attribute::get(fn (): ?string => match (true) {
             $this->icon_type === CategoryIconType::Preset && $this->icon !== null => asset("icons/services/{$this->icon}.svg"),
+            // Raster image (WebP) on the public Storage disk
+            $this->icon_type === CategoryIconType::Image && $this->icon !== null => asset("storage/{$this->icon}"),
             // New-style custom: bare key (u-uuid) stored in public/icons/services/
             $this->icon_type === CategoryIconType::Custom && $this->icon !== null && ! str_contains($this->icon, '/') => asset("icons/services/{$this->icon}.svg"),
             // Legacy custom: path with directory separator on the public Storage disk

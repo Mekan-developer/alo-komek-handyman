@@ -9,4 +9,7 @@ enum CategoryIconType: string
 
     /** Custom SVG file uploaded by the admin and stored on the public disk. */
     case Custom = 'custom';
+
+    /** Raster image (png/jpg/webp/gif) uploaded by the admin, shrunk to WebP and owned by one category. */
+    case Image = 'image';
 }

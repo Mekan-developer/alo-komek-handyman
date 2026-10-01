@@ -137,6 +137,8 @@ public/
 ├── icons/
 │   ├── logo/                   # App logo (also used as favicon)
 │   └── services/               # Category icons — preset set + `u-*.svg` admin uploads
+│                               # (raster category icons, icon_type=image, live in storage/app/public/category-images/*.webp —
+│                               #  shrunk by PhotoConverter::convertCategoryIcon to ≤400px wide, ≤50 KB, owned by one category)
 ├── maps/                       # MapLibre style.json, glyphs, sprites (self-hosted basemap)
 └── sounds/
     └── alarm.mp3               # Admin panel alert sound
