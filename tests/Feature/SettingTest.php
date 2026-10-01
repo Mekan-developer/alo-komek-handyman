@@ -25,19 +25,36 @@ class SettingTest extends TestCase
 
     public function test_administrator_can_view_settings_page(): void
     {
-        Setting::create(['key' => 'master_app_rules', 'value' => 'some rules']);
-        Setting::create(['key' => 'client_app_rules', 'value' => 'other rules']);
+        Setting::create(['key' => 'master_app_rules_ru', 'value' => 'some rules']);
+        Setting::create(['key' => 'master_app_rules_tk', 'value' => 'käbir düzgünler']);
+        Setting::create(['key' => 'client_app_rules_ru', 'value' => 'other rules']);
+        Setting::create(['key' => 'client_app_rules_tk', 'value' => 'başga düzgünler']);
 
         $response = $this->actingAs($this->administrator())->get(route('settings.index'));
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
             ->component('Settings/Index')
-            ->where('masterAppRules', 'some rules')
-            ->where('clientAppRules', 'other rules')
+            ->where('masterAppRulesRu', 'some rules')
+            ->where('masterAppRulesTk', 'käbir düzgünler')
+            ->where('clientAppRulesRu', 'other rules')
+            ->where('clientAppRulesTk', 'başga düzgünler')
             ->has('masterAppRulesUpdatedAt')
             ->has('clientAppRulesUpdatedAt')
         );
+    }
+
+    public function test_rules_updated_at_reflects_latest_locale_variant(): void
+    {
+        Setting::create(['key' => 'master_app_rules_ru', 'value' => 'ru'])->forceFill(['updated_at' => '2026-01-01 10:00:00'])->save();
+        Setting::create(['key' => 'master_app_rules_tk', 'value' => 'tk'])->forceFill(['updated_at' => '2026-03-01 10:00:00'])->save();
+
+        $this->actingAs($this->administrator())
+            ->get(route('settings.index'))
+            ->assertInertia(fn ($page) => $page
+                ->where('masterAppRulesUpdatedAt', fn (string $iso) => str_starts_with($iso, '2026-03-01'))
+                ->where('clientAppRulesUpdatedAt', null)
+            );
     }
 
     public function test_settings_page_reports_null_timestamps_when_nothing_saved_yet(): void
@@ -46,8 +63,10 @@ class SettingTest extends TestCase
 
         $response->assertInertia(fn ($page) => $page
             ->component('Settings/Index')
-            ->where('masterAppRules', '')
-            ->where('clientAppRules', '')
+            ->where('masterAppRulesRu', '')
+            ->where('masterAppRulesTk', '')
+            ->where('clientAppRulesRu', '')
+            ->where('clientAppRulesTk', '')
             ->where('masterAppRulesUpdatedAt', null)
             ->where('clientAppRulesUpdatedAt', null)
         );
@@ -69,34 +88,47 @@ class SettingTest extends TestCase
 
     public function test_administrator_can_update_settings(): void
     {
-        Setting::create(['key' => 'master_app_rules', 'value' => '']);
-        Setting::create(['key' => 'client_app_rules', 'value' => '']);
+        Setting::create(['key' => 'master_app_rules_ru', 'value' => '']);
+        Setting::create(['key' => 'client_app_rules_ru', 'value' => '']);
 
         $this->actingAs($this->administrator())
             ->put(route('settings.update'), [
-                'master_app_rules' => 'Master rules text',
-                'client_app_rules' => 'Client rules text',
+                'master_app_rules_ru' => 'Правила мастера',
+                'master_app_rules_tk' => 'Ussa düzgünleri',
+                'client_app_rules_ru' => 'Правила клиента',
+                'client_app_rules_tk' => 'Müşderi düzgünleri',
             ])
             ->assertRedirect(route('settings.index'));
 
-        $this->assertDatabaseHas('settings', ['key' => 'master_app_rules', 'value' => 'Master rules text']);
-        $this->assertDatabaseHas('settings', ['key' => 'client_app_rules', 'value' => 'Client rules text']);
+        $this->assertDatabaseHas('settings', ['key' => 'master_app_rules_ru', 'value' => 'Правила мастера']);
+        $this->assertDatabaseHas('settings', ['key' => 'master_app_rules_tk', 'value' => 'Ussa düzgünleri']);
+        $this->assertDatabaseHas('settings', ['key' => 'client_app_rules_ru', 'value' => 'Правила клиента']);
+        $this->assertDatabaseHas('settings', ['key' => 'client_app_rules_tk', 'value' => 'Müşderi düzgünleri']);
     }
 
     public function test_settings_can_be_updated_to_empty(): void
     {
-        Setting::create(['key' => 'master_app_rules', 'value' => 'old value']);
-        Setting::create(['key' => 'client_app_rules', 'value' => 'old value']);
+        Setting::create(['key' => 'master_app_rules_ru', 'value' => 'old value']);
+        Setting::create(['key' => 'client_app_rules_tk', 'value' => 'old value']);
 
         $this->actingAs($this->administrator())
             ->put(route('settings.update'), [
-                'master_app_rules' => null,
-                'client_app_rules' => null,
+                'master_app_rules_ru' => null,
+                'client_app_rules_tk' => null,
             ])
             ->assertRedirect(route('settings.index'));
 
-        $this->assertDatabaseHas('settings', ['key' => 'master_app_rules', 'value' => null]);
-        $this->assertDatabaseHas('settings', ['key' => 'client_app_rules', 'value' => null]);
+        $this->assertDatabaseHas('settings', ['key' => 'master_app_rules_ru', 'value' => null]);
+        $this->assertDatabaseHas('settings', ['key' => 'client_app_rules_tk', 'value' => null]);
+    }
+
+    public function test_legacy_unlocalized_rules_key_is_ignored(): void
+    {
+        $this->actingAs($this->administrator())
+            ->put(route('settings.update'), ['master_app_rules' => 'legacy'])
+            ->assertRedirect(route('settings.index'));
+
+        $this->assertDatabaseMissing('settings', ['key' => 'master_app_rules']);
     }
 
     // ── Текст о плате за выезд мастера ────────────────────────────────────────
@@ -116,15 +148,15 @@ class SettingTest extends TestCase
 
     public function test_saving_call_out_fee_note_keeps_app_rules_untouched(): void
     {
-        Setting::create(['key' => 'client_app_rules', 'value' => 'client rules']);
-        Setting::create(['key' => 'master_app_rules', 'value' => 'master rules']);
+        Setting::create(['key' => 'client_app_rules_ru', 'value' => 'client rules']);
+        Setting::create(['key' => 'master_app_rules_tk', 'value' => 'master rules']);
 
         $this->actingAs($this->administrator())
             ->put(route('settings.update'), ['master_call_out_fee_note_ru' => 'Оплатите выезд'])
             ->assertRedirect(route('settings.index'));
 
-        $this->assertDatabaseHas('settings', ['key' => 'client_app_rules', 'value' => 'client rules']);
-        $this->assertDatabaseHas('settings', ['key' => 'master_app_rules', 'value' => 'master rules']);
+        $this->assertDatabaseHas('settings', ['key' => 'client_app_rules_ru', 'value' => 'client rules']);
+        $this->assertDatabaseHas('settings', ['key' => 'master_app_rules_tk', 'value' => 'master rules']);
     }
 
     public function test_settings_page_exposes_call_out_fee_notes(): void
@@ -234,8 +266,8 @@ class SettingTest extends TestCase
     {
         $this->actingAs($this->operator())
             ->put(route('settings.update'), [
-                'master_app_rules' => 'text',
-                'client_app_rules' => 'text',
+                'master_app_rules_ru' => 'text',
+                'client_app_rules_ru' => 'text',
             ])
             ->assertForbidden();
     }

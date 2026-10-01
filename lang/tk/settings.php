@@ -55,6 +55,12 @@ return [
         'placeholder' => 'Müşderi programmasy üçin düzgünleri giriziň...',
         'hint' => 'Müşderi mobil programmasyndaky düzgünler we şertler',
     ],
+    'rules_lang' => [
+        'ru' => 'Русский',
+        'tk' => 'Türkmen',
+        'empty' => 'Doldurylmadyk',
+        'fallback_hint' => 'Türkmen teksti boş bolsa, programma rus tekstini görkezer',
+    ],
     'save' => 'Sakla',
     'edit' => 'Üýtget',
     'monitoring' => [

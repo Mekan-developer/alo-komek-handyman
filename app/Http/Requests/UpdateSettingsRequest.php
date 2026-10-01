@@ -18,8 +18,10 @@ class UpdateSettingsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'master_app_rules' => ['nullable', 'string'],
-            'client_app_rules' => ['nullable', 'string'],
+            'master_app_rules_ru' => ['nullable', 'string'],
+            'master_app_rules_tk' => ['nullable', 'string'],
+            'client_app_rules_ru' => ['nullable', 'string'],
+            'client_app_rules_tk' => ['nullable', 'string'],
             'master_call_out_fee_note_ru' => ['nullable', 'string', 'max:500'],
             'master_call_out_fee_note_tk' => ['nullable', 'string', 'max:500'],
             'order_cancel_fee_note_ru' => ['nullable', 'string', 'max:500'],

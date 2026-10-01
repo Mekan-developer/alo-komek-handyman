@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, reactive, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useForm } from '@inertiajs/vue3'
 import { useI18n } from 'vue-i18n'
 import AdminLayout from '@/Layouts/AdminLayout.vue'
@@ -7,8 +7,10 @@ import AdminLayout from '@/Layouts/AdminLayout.vue'
 const { t } = useI18n()
 
 const props = defineProps({
-    masterAppRules: { type: String, default: '' },
-    clientAppRules: { type: String, default: '' },
+    masterAppRulesRu: { type: String, default: '' },
+    masterAppRulesTk: { type: String, default: '' },
+    clientAppRulesRu: { type: String, default: '' },
+    clientAppRulesTk: { type: String, default: '' },
     masterAppRulesUpdatedAt: { type: String, default: null },
     clientAppRulesUpdatedAt: { type: String, default: null },
     masterCallOutFeeNoteRu: { type: String, default: '' },
@@ -24,8 +26,10 @@ const props = defineProps({
 })
 
 const form = useForm({
-    master_app_rules: props.masterAppRules ?? '',
-    client_app_rules: props.clientAppRules ?? '',
+    master_app_rules_ru: props.masterAppRulesRu ?? '',
+    master_app_rules_tk: props.masterAppRulesTk ?? '',
+    client_app_rules_ru: props.clientAppRulesRu ?? '',
+    client_app_rules_tk: props.clientAppRulesTk ?? '',
 })
 
 const feeForm = useForm({
@@ -85,6 +89,39 @@ function saveDownloadUrl() {
 // ── App cards ──────────────────────────────────────────────────────────────
 const MASTER_ID = 'rte-master'
 const CLIENT_ID = 'rte-client'
+const RULE_LOCALES = ['ru', 'tk']
+
+/** Один редактор на карточку; тексты обоих языков живут здесь, а в DOM — только активный. */
+const rules = reactive({
+    master: { ru: props.masterAppRulesRu ?? '', tk: props.masterAppRulesTk ?? '' },
+    client: { ru: props.clientAppRulesRu ?? '', tk: props.clientAppRulesTk ?? '' },
+})
+const rulesLang = reactive({ master: 'ru', client: 'ru' })
+
+const editorId = (which) => (which === 'master' ? MASTER_ID : CLIENT_ID)
+
+function isBlank(html) {
+    return html.replace(/<[^>]*>|&nbsp;/g, '').trim() === ''
+}
+
+function stashEditor(which) {
+    const el = document.getElementById(editorId(which))
+    if (el) { rules[which][rulesLang[which]] = el.innerHTML }
+}
+
+function loadEditor(which) {
+    const el = document.getElementById(editorId(which))
+    if (el) { el.innerHTML = rules[which][rulesLang[which]] }
+    const empty = isBlank(rules[which][rulesLang[which]])
+    if (which === 'master') { masterEmpty.value = empty } else { clientEmpty.value = empty }
+}
+
+function switchRulesLang(which, lang) {
+    if (rulesLang[which] === lang) { return }
+    stashEditor(which)
+    rulesLang[which] = lang
+    loadEditor(which)
+}
 
 const masterOn      = ref(true)
 const clientOn      = ref(true)
@@ -94,8 +131,8 @@ const masterSaved   = ref(false)
 const clientSaved   = ref(false)
 const masterLastSaved = ref(props.masterAppRulesUpdatedAt)
 const clientLastSaved = ref(props.clientAppRulesUpdatedAt)
-const masterEmpty   = ref(!props.masterAppRules)
-const clientEmpty   = ref(!props.clientAppRules)
+const masterEmpty   = ref(isBlank(rules.master.ru))
+const clientEmpty   = ref(isBlank(rules.client.ru))
 
 function formatSaved(iso) {
     if (!iso) { return t('settings.never_saved') }
@@ -118,12 +155,15 @@ function clearEditor(id) {
     const el = document.getElementById(id)
     if (!el) { return }
     el.innerHTML = ''
-    if (id === MASTER_ID) { masterEmpty.value = true } else { clientEmpty.value = true }
+    const which = id === MASTER_ID ? 'master' : 'client'
+    rules[which][rulesLang[which]] = ''
+    if (which === 'master') { masterEmpty.value = true } else { clientEmpty.value = true }
 }
 
 function onInput(which) {
-    const el = document.getElementById(which === 'master' ? MASTER_ID : CLIENT_ID)
+    const el = document.getElementById(editorId(which))
     const isEmpty = !el || el.innerText.trim() === ''
+    if (el) { rules[which][rulesLang[which]] = el.innerHTML }
     if (which === 'master') { masterEmpty.value = isEmpty } else { clientEmpty.value = isEmpty }
 }
 
@@ -138,12 +178,16 @@ function toggleEdit(which) {
     }
 
     editing.value = true
-    nextTick(() => document.getElementById(which === 'master' ? MASTER_ID : CLIENT_ID)?.focus())
+    nextTick(() => document.getElementById(editorId(which))?.focus())
 }
 
 function save(which) {
-    form.master_app_rules = document.getElementById(MASTER_ID)?.innerHTML ?? ''
-    form.client_app_rules = document.getElementById(CLIENT_ID)?.innerHTML ?? ''
+    stashEditor('master')
+    stashEditor('client')
+    form.master_app_rules_ru = rules.master.ru
+    form.master_app_rules_tk = rules.master.tk
+    form.client_app_rules_ru = rules.client.ru
+    form.client_app_rules_tk = rules.client.tk
 
     form.put(route('settings.update'), {
         preserveScroll: true,
@@ -250,10 +294,8 @@ onMounted(() => {
     metricsInterval = setInterval(tick, 2500)
 
     nextTick(() => {
-        const m = document.getElementById(MASTER_ID)
-        if (m) { m.innerHTML = props.masterAppRules ?? '' }
-        const c = document.getElementById(CLIENT_ID)
-        if (c) { c.innerHTML = props.clientAppRules ?? '' }
+        loadEditor('master')
+        loadEditor('client')
     })
 })
 
@@ -789,6 +831,30 @@ onBeforeUnmount(() => {
                             </div>
                         </div>
 
+                        <!-- Language tabs -->
+                        <div class="flex flex-wrap items-center gap-2 px-5 pb-2.5">
+                            <div class="flex items-center gap-0.5 rounded-lg border border-gray-200 bg-gray-50 p-0.5 dark:border-white/[0.07] dark:bg-white/[0.04]">
+                                <button
+                                    v-for="lang in RULE_LOCALES"
+                                    :key="lang"
+                                    type="button"
+                                    @click="switchRulesLang('master', lang)"
+                                    class="flex items-center gap-1.5 rounded-md px-3 py-1 text-[12px] font-medium transition-colors"
+                                    :class="rulesLang.master === lang
+                                        ? 'bg-indigo-500/15 text-indigo-500 dark:text-indigo-400'
+                                        : 'text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-200'"
+                                >
+                                    {{ t(`settings.rules_lang.${lang}`) }}
+                                    <span
+                                        v-if="isBlank(rules.master[lang])"
+                                        class="h-1.5 w-1.5 rounded-full bg-amber-400"
+                                        :title="t('settings.rules_lang.empty')"
+                                    />
+                                </button>
+                            </div>
+                            <span class="text-[11px] text-gray-400 dark:text-slate-500">{{ t('settings.rules_lang.fallback_hint') }}</span>
+                        </div>
+
                         <!-- Toolbar -->
                         <Transition name="toolbar">
                             <div v-if="masterEditing" class="px-5 pb-2.5">
@@ -910,6 +976,30 @@ onBeforeUnmount(() => {
                                     />
                                 </button>
                             </div>
+                        </div>
+
+                        <!-- Language tabs -->
+                        <div class="flex flex-wrap items-center gap-2 px-5 pb-2.5">
+                            <div class="flex items-center gap-0.5 rounded-lg border border-gray-200 bg-gray-50 p-0.5 dark:border-white/[0.07] dark:bg-white/[0.04]">
+                                <button
+                                    v-for="lang in RULE_LOCALES"
+                                    :key="lang"
+                                    type="button"
+                                    @click="switchRulesLang('client', lang)"
+                                    class="flex items-center gap-1.5 rounded-md px-3 py-1 text-[12px] font-medium transition-colors"
+                                    :class="rulesLang.client === lang
+                                        ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
+                                        : 'text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-slate-200'"
+                                >
+                                    {{ t(`settings.rules_lang.${lang}`) }}
+                                    <span
+                                        v-if="isBlank(rules.client[lang])"
+                                        class="h-1.5 w-1.5 rounded-full bg-amber-400"
+                                        :title="t('settings.rules_lang.empty')"
+                                    />
+                                </button>
+                            </div>
+                            <span class="text-[11px] text-gray-400 dark:text-slate-500">{{ t('settings.rules_lang.fallback_hint') }}</span>
                         </div>
 
                         <!-- Toolbar -->

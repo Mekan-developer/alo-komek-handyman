@@ -92,7 +92,7 @@ class ClientSettingApiTest extends TestCase
 
     public function test_returns_saved_client_rules(): void
     {
-        Setting::create(['key' => 'client_app_rules', 'value' => '<p>Условия</p>']);
+        Setting::create(['key' => 'client_app_rules_ru', 'value' => '<p>Условия</p>']);
 
         $response = $this->getJson('/api/v1/client/settings');
 
@@ -100,10 +100,29 @@ class ClientSettingApiTest extends TestCase
             ->assertJsonPath('data.content', '<p>Условия</p>');
     }
 
+    public function test_returns_client_rules_by_locale(): void
+    {
+        Setting::create(['key' => 'client_app_rules_ru', 'value' => '<p>Условия</p>']);
+        Setting::create(['key' => 'client_app_rules_tk', 'value' => '<p>Şertler</p>']);
+
+        $this->getJson('/api/v1/client/settings', ['X-Locale' => 'tk'])
+            ->assertOk()
+            ->assertJsonPath('data.content', '<p>Şertler</p>');
+    }
+
+    public function test_client_rules_fall_back_to_russian_when_turkmen_is_empty(): void
+    {
+        Setting::create(['key' => 'client_app_rules_ru', 'value' => '<p>Условия</p>']);
+
+        $this->getJson('/api/v1/client/settings', ['X-Locale' => 'tk'])
+            ->assertOk()
+            ->assertJsonPath('data.content', '<p>Условия</p>');
+    }
+
     public function test_does_not_return_master_rules(): void
     {
-        Setting::create(['key' => 'master_app_rules', 'value' => 'master content']);
-        Setting::create(['key' => 'client_app_rules', 'value' => 'client content']);
+        Setting::create(['key' => 'master_app_rules_ru', 'value' => 'master content']);
+        Setting::create(['key' => 'client_app_rules_ru', 'value' => 'client content']);
 
         $response = $this->getJson('/api/v1/client/settings');
 

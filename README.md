@@ -621,6 +621,17 @@ tasks subtotal only — the urgency fee is **not** discounted.
 > The manual "set final price" flow (`POST /orders/{order}/price`, `SetOrderFinalPriceAction`,
 > `SetPriceModal.vue`) has been removed.
 
+### App rules (ru / tk)
+
+Rules / T&C for both mobile apps are bilingual HTML edited on `/settings` (one editor per card,
+RU/TK tab switcher).
+
+- Stored as `master_app_rules_ru` / `master_app_rules_tk` and `client_app_rules_ru` /
+  `client_app_rules_tk` (legacy `*_app_rules` rows were renamed to `_ru` by migration).
+- `GET /api/v1/master/settings` and `GET /api/v1/client/settings` return `data.content`
+  resolved for `X-Locale`, falling back to Russian when the Turkmen text is empty
+  (`SettingRepository::getLocalized()`).
+
 ### Master call-out fee notice
 
 Free-text notice telling the client they owe the master for the call-out when they cancel an

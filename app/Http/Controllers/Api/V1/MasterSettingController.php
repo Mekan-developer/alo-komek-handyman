@@ -14,7 +14,7 @@ class MasterSettingController extends Controller
     {
         return response()->json([
             'data' => [
-                'content' => $this->repository->get('master_app_rules') ?? '',
+                'content' => $this->repository->getLocalized('master_app_rules', app()->getLocale()),
             ],
         ]);
     }

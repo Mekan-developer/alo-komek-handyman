@@ -21,7 +21,7 @@ class MasterSettingApiTest extends TestCase
 
     public function test_returns_saved_master_rules(): void
     {
-        Setting::create(['key' => 'master_app_rules', 'value' => '<h1>Правила</h1>']);
+        Setting::create(['key' => 'master_app_rules_ru', 'value' => '<h1>Правила</h1>']);
 
         $response = $this->getJson('/api/v1/master/settings');
 
@@ -29,10 +29,34 @@ class MasterSettingApiTest extends TestCase
             ->assertJsonPath('data.content', '<h1>Правила</h1>');
     }
 
+    public function test_returns_turkmen_rules_for_tk_locale(): void
+    {
+        Setting::create(['key' => 'master_app_rules_ru', 'value' => '<p>Правила</p>']);
+        Setting::create(['key' => 'master_app_rules_tk', 'value' => '<p>Düzgünler</p>']);
+
+        $this->getJson('/api/v1/master/settings', ['X-Locale' => 'tk'])
+            ->assertOk()
+            ->assertJsonPath('data.content', '<p>Düzgünler</p>');
+
+        $this->getJson('/api/v1/master/settings', ['X-Locale' => 'ru'])
+            ->assertOk()
+            ->assertJsonPath('data.content', '<p>Правила</p>');
+    }
+
+    public function test_falls_back_to_russian_when_turkmen_rules_are_empty(): void
+    {
+        Setting::create(['key' => 'master_app_rules_ru', 'value' => '<p>Правила</p>']);
+        Setting::create(['key' => 'master_app_rules_tk', 'value' => '']);
+
+        $this->getJson('/api/v1/master/settings', ['X-Locale' => 'tk'])
+            ->assertOk()
+            ->assertJsonPath('data.content', '<p>Правила</p>');
+    }
+
     public function test_does_not_return_client_rules(): void
     {
-        Setting::create(['key' => 'master_app_rules', 'value' => 'master content']);
-        Setting::create(['key' => 'client_app_rules', 'value' => 'client content']);
+        Setting::create(['key' => 'master_app_rules_ru', 'value' => 'master content']);
+        Setting::create(['key' => 'client_app_rules_ru', 'value' => 'client content']);
 
         $response = $this->getJson('/api/v1/master/settings');
 

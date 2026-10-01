@@ -10,8 +10,10 @@ class SettingSeeder extends Seeder
     public function run(): void
     {
         $defaults = [
-            'master_app_rules' => '',
-            'client_app_rules' => '',
+            'master_app_rules_ru' => '',
+            'master_app_rules_tk' => '',
+            'client_app_rules_ru' => '',
+            'client_app_rules_tk' => '',
             'order_urgency_fee' => '20',
             'order_cancel_fee' => '0',
             'master_app_download_url' => '',

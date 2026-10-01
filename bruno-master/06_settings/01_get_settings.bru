@@ -12,6 +12,7 @@ get {
 
 headers {
   Accept: application/json
+  X-Locale: ru
 }
 
 docs {
@@ -31,4 +32,6 @@ docs {
 
   `content` is raw HTML — render it in a WebView or parse it to display in the app.
   Returns empty string `""` if no rules have been configured yet.
+
+  Locale: `X-Locale: ru` | `tk`. If the Turkmen text is empty, the Russian one is returned.
 }
