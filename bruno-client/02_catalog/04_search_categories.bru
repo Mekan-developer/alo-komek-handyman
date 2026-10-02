@@ -26,7 +26,10 @@ docs {
   ordered by name, limited to 20 results.
 
   Each match carries its `parent` group (id + name) when it is a subcategory,
-  or `null` for a root category. Icon fields mirror the categories list endpoint.
+  or `null` for a root category. Icon fields mirror the categories list endpoint:
+  render from `icon_url`, choosing the widget by `icon_type` — `preset` / `custom`
+  are monochrome SVG (`SvgPicture.network`), `image` is a raster WebP
+  (`Image.network`), `null` means no icon.
 
   **Query params:**
   - `q` (required) — search term, 2–255 characters.
@@ -41,7 +44,16 @@ docs {
         "parent_id": 1,
         "icon_type": "preset",
         "icon": "wrench",
-        "icon_url": "http://localhost/icons/services/wrench.svg",
+        "icon_url": "http://192.168.31.158:8000/icons/services/wrench.svg",
+        "parent": { "id": 1, "name": "Сантехника" }
+      },
+      {
+        "id": 3,
+        "name": "Санузел под ключ",
+        "parent_id": 1,
+        "icon_type": "image",
+        "icon": "category-images/9f1c2e.webp",
+        "icon_url": "http://192.168.31.158:8000/storage/category-images/9f1c2e.webp",
         "parent": { "id": 1, "name": "Сантехника" }
       }
     ]

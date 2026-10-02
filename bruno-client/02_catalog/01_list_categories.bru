@@ -20,9 +20,22 @@ docs {
   Public endpoint. Returns active root categories with their active children.
   Use this on the order creation screen.
 
-  Each category carries an icon: `icon_type` is `preset` (built-in set),
-  `custom` (admin-uploaded SVG) or `null`. `icon_url` is the ready-to-render
-  SVG URL (monochrome, paint with the app's text color) — use it directly.
+  Root categories and subcategories each have their own icon — a subcategory
+  icon does not propagate to its parent group.
+
+  ## Icons
+
+  Always render from `icon_url` (absolute URL, ready to load). The `icon` key
+  is internal — do not map it to bundled assets. Pick the renderer by `icon_type`:
+
+  | `icon_type` | File | How to render |
+  |-------------|------|---------------|
+  | `preset` | monochrome SVG (`/icons/services/{key}.svg`) | `SvgPicture.network`, tint with the app's color |
+  | `custom` | admin-uploaded monochrome SVG (`/icons/services/u-{uuid}.svg`; legacy: `/storage/category-icons/*.svg`) | `SvgPicture.network`, tint with the app's color |
+  | `image` | raster **WebP** (`/storage/category-images/*.webp`), ≤ 50 KB | `Image.network` — **not** an SVG, do not tint |
+  | `null` | — (`icon_url` is `null`) | app's fallback icon |
+
+  `name` is localized by `Accept-Language` (`ru` / `tk`, fallback `ru`).
 
   **Response 200:**
   ```json
@@ -31,22 +44,45 @@ docs {
       {
         "id": 1,
         "name": "Сантехника",
+        "name_ru": "Сантехника",
+        "name_tk": "Santehnika",
         "parent_id": null,
         "icon_type": "preset",
         "icon": "wrench",
-        "icon_url": "http://localhost/icons/services/wrench.svg",
+        "icon_url": "http://192.168.31.158:8000/icons/services/wrench.svg",
         "children": [
           {
             "id": 5,
-            "name": "Замена труб",
+            "name": "Замена смесителя",
+            "name_ru": "Замена смесителя",
+            "name_tk": "Garyjy çalyşmak",
             "parent_id": 1,
+            "is_active": true,
+            "icon_type": "image",
+            "icon": "category-images/9f1c2e.webp",
+            "icon_url": "http://192.168.31.158:8000/storage/category-images/9f1c2e.webp",
+            "created_at": "2026-08-12T09:52:11.000000Z",
+            "updated_at": "2026-10-01T13:20:32.000000Z"
+          },
+          {
+            "id": 21,
+            "name": "Перетяжка дивана",
+            "name_ru": "Перетяжка дивана",
+            "name_tk": "Diwan örtmek",
+            "parent_id": 19,
+            "is_active": true,
             "icon_type": "custom",
-            "icon": "category-icons/abc123.svg",
-            "icon_url": "http://localhost/storage/category-icons/abc123.svg"
+            "icon": "u-9936f846-8fae-4324-937e-3e2b2be9f3d8",
+            "icon_url": "http://192.168.31.158:8000/icons/services/u-9936f846-8fae-4324-937e-3e2b2be9f3d8.svg",
+            "created_at": "2026-08-12T09:52:12.000000Z",
+            "updated_at": "2026-10-01T13:20:32.000000Z"
           }
         ]
       }
     ]
   }
   ```
+
+  Rely only on `id`, `name`, `parent_id`, `icon_type`, `icon_url`, `children` —
+  other fields are not part of the contract.
 }
