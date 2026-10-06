@@ -18,7 +18,7 @@ return [
         'cancel_note_ru' => 'Текст об отмене для клиента (рус.)',
         'cancel_note_tk' => 'Текст об отмене для клиента (туркм.)',
         'cancel_note_ru_placeholder' => 'Например: Если мастер уже начал работу, при отмене нужно оплатить :amount TMT.',
-        'cancel_note_tk_placeholder' => 'Mysal üçin: Usta işe başlan bolsa, ýatyrmak üçin :amount TMT tölemeli.',
+        'cancel_note_tk_placeholder' => 'Mysal üçin: Ussa işe başlan bolsa, ýatyrmak üçin :amount TMT tölemeli.',
         'cancel_note_hint' => 'Показывается в приложении при подтверждении отмены. Пустое поле — текст не отправляется.',
     ],
     'call_out_fee' => [

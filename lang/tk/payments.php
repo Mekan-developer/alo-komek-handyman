@@ -18,7 +18,7 @@ return [
     'payout_btn' => 'Töle',
 
     'fields' => [
-        'master' => 'Usta',
+        'master' => 'Ussa',
         'amount' => 'Möçber',
         'balance' => 'Balans',
         'model' => 'Töleg modeli',
@@ -30,7 +30,7 @@ return [
 
     'modal' => [
         'title' => 'Ussa töleg',
-        'message' => 'Usta :name. Tölege elýeterli: :amount.',
+        'message' => 'Ussa :name. Tölege elýeterli: :amount.',
         'amount' => 'Töleg möçberi',
         'full' => 'Ähli balans',
         'note' => 'Bellik (hökmany däl)',

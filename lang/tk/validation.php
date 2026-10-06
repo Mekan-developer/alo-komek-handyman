@@ -158,7 +158,7 @@ return [
     */
     'custom' => [
         'phone' => [
-            'exists' => 'Bu telefon belgisi bilen usta hasaba alynmadyk.',
+            'exists' => 'Bu telefon belgisi bilen Ussa hasaba alynmadyk.',
             'required' => 'Telefon belgiňizi giriziň.',
             'min' => 'Telefon belgisi gysga.',
             'max' => 'Telefon belgisi gaty uzyn.',
@@ -266,7 +266,7 @@ return [
         'order_cancel_fee_note_tk' => 'sargydy ýatyrmak baradaky tekst (türkmençe)',
         'order_urgency_fee_note_ru' => 'gyssaglylyk baradaky tekst (rusça)',
         'order_urgency_fee_note_tk' => 'gyssaglylyk baradaky tekst (türkmençe)',
-        'master_app_download_url' => 'usta programmasynyň baglanyşygy',
+        'master_app_download_url' => 'Ussa programmasynyň baglanyşygy',
         'type' => 'görnüş',
         'email' => 'e-poçta',
         'password' => 'açar söz',

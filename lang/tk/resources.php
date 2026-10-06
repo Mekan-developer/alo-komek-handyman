@@ -2,7 +2,7 @@
 
 return [
     'category' => 'Kategoriýa',
-    'master' => 'Usta',
+    'master' => 'Ussa',
     'client' => 'Müşderi',
     'order' => 'Sargyt',
     'payment' => 'Töleg',

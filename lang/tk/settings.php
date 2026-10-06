@@ -18,7 +18,7 @@ return [
         'cancel_note_ru' => 'Ýatyrmak barada tekst (rusça)',
         'cancel_note_tk' => 'Ýatyrmak barada tekst (türkmençe)',
         'cancel_note_ru_placeholder' => 'Например: Если мастер уже начал работу, при отмене нужно оплатить :amount TMT.',
-        'cancel_note_tk_placeholder' => 'Mysal üçin: Usta işe başlan bolsa, ýatyrmak üçin :amount TMT tölemeli.',
+        'cancel_note_tk_placeholder' => 'Mysal üçin: Ussa işe başlan bolsa, ýatyrmak üçin :amount TMT tölemeli.',
         'cancel_note_hint' => 'Ýatyrmagy tassyklanda programmada görkezilýär. Boş bolsa iberilmeýär.',
     ],
     'call_out_fee' => [
@@ -36,13 +36,13 @@ return [
     'never_saved' => 'entek saklanmady',
     'today' => 'şu gün',
     'master_app' => [
-        'title' => 'Usta programmasy',
+        'title' => 'Ussa programmasy',
         'label' => 'Düzgünler we şertler',
-        'placeholder' => 'Usta programmasy üçin düzgünleri giriziň...',
-        'hint' => 'Usta mobil programmasyndaky düzgünler we şertler',
+        'placeholder' => 'Ussa programmasy üçin düzgünleri giriziň...',
+        'hint' => 'Ussa mobil programmasyndaky düzgünler we şertler',
     ],
     'master_app_download' => [
-        'title' => 'Usta programmasyny ýüklemek',
+        'title' => 'Ussa programmasyny ýüklemek',
         'hint' => 'Serwerdäki APK/faýlyň baglanyşygy — ondan saýtda QR emele gelýär',
         'url' => 'Faýlyň URL-i',
         'url_placeholder' => 'https://example.com/apps/master.apk',
