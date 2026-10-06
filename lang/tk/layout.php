@@ -4,7 +4,7 @@ return [
     'nav' => [
         'dashboard' => 'Baş sahypa',
         'categories' => 'Kategoriyalar',
-        'masters' => 'Ussatlar',
+        'masters' => 'ussalar',
         'clients' => 'Müşderiler',
         'orders' => 'Sargytlar',
         'reviews' => 'Synlar',

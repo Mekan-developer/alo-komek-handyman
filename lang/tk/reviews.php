@@ -2,7 +2,7 @@
 
 return [
     'title' => 'Synlar',
-    'subtitle' => 'Müşderileriň ussatlaryň işine berýän bahalary we teswirleri',
+    'subtitle' => 'Müşderileriň ussalaryň işine berýän bahalary we teswirleri',
 
     'stats' => [
         'average' => 'Ortaça baha',
@@ -15,19 +15,19 @@ return [
     'stars' => '{count} ★',
 
     'filters' => [
-        'master' => 'Ussat',
-        'all_masters' => 'Ähli ussatlar',
+        'master' => 'ussa',
+        'all_masters' => 'Ähli ussalar',
         'rating' => 'Baha',
         'all_ratings' => 'Islendik baha',
         'only_with_comment' => 'Diňe teswirli',
-        'search' => 'Teswir, müşderi, ussat boýunça gözleg',
+        'search' => 'Teswir, müşderi, ussa boýunça gözleg',
         'date_from' => 'Başlangyç',
         'date_to' => 'Soňky',
         'reset' => 'Arassala',
     ],
 
     'fields' => [
-        'master' => 'Ussat',
+        'master' => 'ussa',
         'client' => 'Müşderi',
         'order' => 'Sargyt',
         'rating' => 'Baha',
@@ -42,7 +42,7 @@ return [
     'order_no' => ':id belgili sargyt',
 
     'master_panel' => [
-        'title' => 'Ussat baradaky synlar',
+        'title' => 'ussa baradaky synlar',
         'loading' => 'Synlar ýüklenýär...',
         'error' => 'Synlary ýükläp bolmady',
         'show_all' => 'Ussadyň ähli synlary',

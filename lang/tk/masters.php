@@ -1,8 +1,8 @@
 <?php
 
 return [
-    'title' => 'Ussatlar',
-    'map' => 'Ussatlaryň kartasy',
+    'title' => 'ussalar',
+    'map' => 'ussalaryň kartasy',
     'add' => 'Ussady goş',
     'edit' => 'Ussady üýtget',
 
@@ -42,11 +42,11 @@ return [
     'filters' => [
         'reset' => 'Arassala',
     ],
-    'empty' => 'Ussatlar tapylmady',
+    'empty' => 'ussalar tapylmady',
     'view_map' => 'Kartada',
     'no_location' => 'Ýerleşiş maglumaty ýok',
     'last_seen' => 'Soňky ýerleşiş',
-    'fit_all' => 'Ähli ussatlary görkez',
+    'fit_all' => 'Ähli ussalary görkez',
     'my_location' => 'Meniň ýerleşişim',
     'fullscreen' => 'Doly ekran',
     'mode' => 'Režim',

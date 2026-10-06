@@ -4,7 +4,7 @@ return [
     'title' => 'Baş sahypa',
     'stats' => [
         'total_orders' => 'Jemi sargytlar',
-        'active_masters' => 'Işjeň ussatlar',
+        'active_masters' => 'Işjeň ussalar',
         'pending_orders' => 'Garaşýan sargytlar',
         'completed_orders' => 'Tamamlanan sargytlar',
         'in_progress_orders' => 'Işde',

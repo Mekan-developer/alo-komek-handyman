@@ -2,16 +2,16 @@
 
 return [
     'title' => 'Tölegler',
-    'subtitle' => 'Ussatlara tölegler we hasaplama taryhy',
+    'subtitle' => 'ussalara tölegler we hasaplama taryhy',
     'currency' => 'manat',
 
     'stats' => [
         'total_paid' => 'Jemi tölendi',
         'pending_payouts' => 'Töleg garaşýar',
-        'masters_with_balance' => 'Balansy bolan ussatlar',
+        'masters_with_balance' => 'Balansy bolan ussalar',
     ],
 
-    'pending_title' => 'Balansy bolan ussatlar',
+    'pending_title' => 'Balansy bolan ussalar',
     'history_title' => 'Töleg taryhy',
     'no_pending' => 'Tölege garaşýan balansly ussa ýok',
     'no_history' => 'Heniz töleg geçirilmedi',
